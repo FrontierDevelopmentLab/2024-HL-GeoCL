@@ -1,0 +1,47 @@
+program: train_hyperparametersweep.py
+method: bayes
+metric:
+  name: val_MSE
+  goal: minimize
+parameters:
+  learning_rate:
+    distribution: categorical
+    values:
+      - 1e-4
+      - 5e-4
+      - 5e-5
+      - 1e-5
+  l2reg:
+    distribution: log_uniform
+    min: -6
+    max: -3 
+  nmax:
+    distribution: categorical
+    values:
+      - 15
+      - 20
+      - 25
+  omni_resolution:
+    distribution: categorical
+    values:
+      - 1
+  past_omni_length:
+    distribution: categorical
+    values:
+      - 120
+      - 600
+  n_hidden:
+    distribution: categorical
+    values:
+      - 16
+      - 64
+  dropout_prob:
+    distribution: uniform
+    min: 0.4
+    max: 0.8
+  loss:
+    values:
+      - 'MaxSqEr'
+      # - 'MAE'
+      # - 'SumSE'
+  
