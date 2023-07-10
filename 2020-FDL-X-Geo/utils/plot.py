@@ -70,13 +70,13 @@ def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, m
         (np.arange(shape_spherical[0]) + 0.5) / shape_spherical[0] * np.pi / 4
     )  # colat
     grid_phi_spherical = grid_phi_spherical.reshape(shape_spherical[0], 1) @ np.ones(
-        (1, shape_spherical[1]), dtype=np.float
+        (1, shape_spherical[1]), dtype=np.float64
     )
     grid_theta_spherical = (
         (np.arange(shape_spherical[1]) + 0.5) / shape_spherical[1] * 2.0 * np.pi
     )  # longitude
     grid_theta_spherical = np.ones(
-        (shape_spherical[0], 1), dtype=np.float
+        (shape_spherical[0], 1), dtype=np.float64
     ) @ grid_theta_spherical.reshape(1, shape_spherical[1])
 
     basis_grid = basis_matrix(
