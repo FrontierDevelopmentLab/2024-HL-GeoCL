@@ -14,6 +14,7 @@ import h5py
 from glob import glob
 from astropy.time import Time
 import sys
+from wrapt_timeout_decorator import *
 
 sys.path.append('../')
 from dataloader import (OMNIDataset, ShpericalHarmonicsDataset,
@@ -86,6 +87,13 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True):
     else:
         raise TypeError("year must be either a list of years, or a single year.")
 
+@timeout(10)
+def load_file(f):
+    try:
+        x = np.load(f, allow_pickle=True)
+    except:
+        return None
+    return x
 
 def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
 
@@ -110,7 +118,9 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
 
     print("loading supermag iaga data...")
     for i, f in enumerate(tqdm.tqdm(files)):
-        x = np.load(f, allow_pickle=True)
+        x = load_file(f)
+        if x is None:
+            continue
         if load_data:
             data.append(x["data"])
         dates.append(x["dates"])
