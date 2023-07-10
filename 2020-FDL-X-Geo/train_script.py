@@ -50,12 +50,12 @@ md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
 hyperparameter_defaults = hyperparameter_best
 
-wandb.init(config=hyperparameter_defaults)
-config = wandb.config
+wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True)
 
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
 def train(config):
+    print(config)
     future_length = config.future_length 
     past_omni_length = config.past_omni_length
     omni_resolution = config.omni_resolution
@@ -73,13 +73,13 @@ def train(config):
 
     wandb.run.name = f"CorrectTestNorm_FULL_{config.model}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
 
-    yearlist = list(np.arange(2011,2018).astype(int))
-    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="full_data_panos/iaga/",year=yearlist))
-    yearlist = list(np.arange(2011,2018).astype(str))
+    yearlist = list(np.arange(2013,2014).astype(int))
+    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
+    yearlist = list(np.arange(2013,2014).astype(int))
     omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 
-    yearlist = list(np.arange(2011,2018).astype(int))
-    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="full_data_panos/iaga/",year=yearlist,
+    yearlist = list(np.arange(2013,2014).astype(int))
+    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
                                                         LENGTH=past_omni_length,LAG=lag,
                                                         omni_path="data_local/omni/sw_data.h5",
                                                         weimer_path="data_local/weimer/")
@@ -113,13 +113,13 @@ def train(config):
     scaler = train_ds.scaler
 
     wiemer_loader = data.DataLoader(
-        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=12
+        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=4
     )
     train_loader = data.DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True, num_workers=12
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=4
     )
     val_loader = data.DataLoader(
-        val_ds, batch_size=batch_size, shuffle=False, num_workers=12
+        val_ds, batch_size=batch_size, shuffle=False, num_workers=4
     )
     # test_loader = data.DataLoader(
     #     test_ds, batch_size=batch_size, shuffle=False, num_workers=12
@@ -163,7 +163,8 @@ def train(config):
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
-        gpus=-1,
+        devices=-1,
+        accelerator="gpu",
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         max_epochs=max_epochs,
@@ -180,6 +181,7 @@ def train(config):
 
 
 if __name__ == '__main__':
-
+    
+    config = hyperparameter_defaults
     print(f'Starting a run with {config}')
     train(config)
