@@ -69,7 +69,7 @@ else:
 if os.path.exists("cache/wiemer_ds.p"):
     wiemer_ds = pickle.load(open("cache/wiemer_ds.p", "rb"))
 else:
-    wiemer_ds = get_wiemer_data(targets, scaler, lag, past_omni_length, future_length)
+    wiemer_ds = get_wiemer_data(targets, scaler, lag, past_omni_length, future_length, wyear="2015")
     pickle.dump(wiemer_ds, open("cache/wiemer_ds.p", "wb"))
 
 wiemer_loader = data.DataLoader(
