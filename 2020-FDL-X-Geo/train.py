@@ -106,7 +106,8 @@ pickle.dump(scaler, open('checkpoints/scalers.p', "wb"))
 
 checkpoint_callback = ModelCheckpoint(dirpath="checkpoints")
 trainer = pl.Trainer(
-    gpus=-1,
+    devices=-1,
+    accelerator="gpu",
     check_val_every_n_epoch=5,
     logger=wandb_logger,
     callbacks=[checkpoint_callback, EarlyStopping(monitor='val_MSE')]
