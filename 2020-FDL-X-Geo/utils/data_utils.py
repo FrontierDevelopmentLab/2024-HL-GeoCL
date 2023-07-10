@@ -194,7 +194,7 @@ def get_wiemer_data(targets, scaler, lag, past_omni_length, future_length,wyear)
                 for k in f.keys():
                     weimer[k] = f.get(k)[:]
 
-            sg_data = SuperMAGIAGADataset(*get_iaga_data(f"data_local/iaga/{year}/{year}/"))
+            sg_data = SuperMAGIAGADataset(*get_iaga_data(f"data_local/iaga/{year}/"))
             omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=year))
             weimer_times_unix = Time(weimer["JDTIMES"], format="jd").to_value("unix")
             wstart = np.argmin(np.abs(weimer_times_unix[0] - sg_data.dates)) - past_omni_length -lag - future_length +2
