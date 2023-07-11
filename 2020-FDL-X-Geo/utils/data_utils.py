@@ -43,12 +43,12 @@ def get_omni_data(path=None, year="2016"):
     if isinstance(year,str):
         return pd.read_hdf(path, key=year)
     elif isinstance(year,list):
-        return pd.concat([pd.read_hdf(path, key=y) for y in year])
+        return pd.concat([pd.read_hdf(path, key=str(y)) for y in year])
     else:
         raise TypeError("year must be either a list of years, or a single year.")
         
 def get_iaga_max_stations(base="full_data_panos/iaga/",tiny=False):
-    yearlist = list(np.arange(2010,2019).astype(int))
+    yearlist = list(np.arange(2013, 2014).astype(int))
     if tiny:
         files = [g for y in yearlist for g in sorted(glob(f"{base}{y}/supermag_iaga_tiny*.npz"),key=lambda f: int(re.sub("\D", "", f)),) ]
     else:
