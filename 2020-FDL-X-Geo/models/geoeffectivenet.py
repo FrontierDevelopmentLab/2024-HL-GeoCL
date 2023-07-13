@@ -194,7 +194,7 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
         [hidden] * levels
 
         self.omni_past_encoder = nn.GRU(
-            25, hidden, num_layers=1, bidirectional=False, batch_first=True
+            29, hidden, num_layers=1, bidirectional=False, batch_first=True
         )
 
         # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
@@ -226,6 +226,12 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
         # add the wiemer2013 features
         bt = (past_omni["by"] ** 2 + past_omni["bz"] ** 2) ** 0.5
         v = (past_omni["vx"] ** 2 + past_omni["vy"] ** 2 + past_omni["vz"] ** 2) ** 0.5
+        
+        features.append(past_omni["SME"])
+        features.append(past_omni["SMU"])
+        features.append(past_omni["SML"])
+        features.append(past_omni["SMR"])
+
 
         features.append(past_omni["bx"])
         features.append(past_omni["by"])
