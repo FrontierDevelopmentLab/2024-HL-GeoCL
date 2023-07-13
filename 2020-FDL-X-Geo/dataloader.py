@@ -55,6 +55,11 @@ class SuperMAGIAGADataset:
 class OMNIDataset:
     def __init__(self, data):
         self.data = data
+        
+
+class InputDataset:
+    def __init__(self, data):
+        self.data = data
 
 
 def basis_matrix(nmax, theta, phi):
@@ -248,7 +253,6 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
 
         self.omni = omni_data.data.values
         #This shape is (n_total,n_omni)
-
         print("extracting f107")
         self.f107path = f107_dataset
         f107_data = np.load(f107_dataset)
@@ -299,7 +303,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             sel_ind = self.sg_indices[si]
             new_inds = np.linspace(sel_ind[:,0],sel_ind[:,1],(sel_ind[:,1]-sel_ind[:,0])[0]).astype(int).T
             target = self.supermag_data[new_inds,...][...,self.target_idx]
-
+            
             target_mean = np.nanmean(target, axis=(0,1,2))
             target_std = np.nanstd(target, axis=(0,1,2))
             self.scaler["supermag"] = [target_mean, target_std]
@@ -310,6 +314,8 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             new_omni=np.concatenate([self.omni[i,...] for i in new_inds],axis=0)
             target = np.concatenate([new_omni,dipole_tilt(dt).reshape([-1,1]),f107_tmp.reshape([-1,1])],axis=-1)
             del new_omni
+            # import pdb
+            # pdb.set_trace()
             omni_mean = np.nanmean(target, axis=0)
             omni_std = np.nanstd(target, axis=0)
             self.scaler["omni"] = [omni_mean, omni_std]
