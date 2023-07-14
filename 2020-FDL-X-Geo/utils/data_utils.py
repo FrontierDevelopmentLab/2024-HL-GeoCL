@@ -17,7 +17,7 @@ import sys
 from wrapt_timeout_decorator import *
 
 sys.path.append('../')
-from dataloader import (OMNIDataset, ShpericalHarmonicsDataset,
+from dataloader import (OMNIDataset, ShpericalHarmonicsDataset, ShpericalHarmonicsDatasetBucketized,
                         SuperMAGIAGADataset)
 
 
@@ -199,7 +199,7 @@ def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_dat
     else:
         raise TypeError("Weimer year must be either a list of years, or a single year.")
 
-def get_wiemer_data(omni_data, supermag_data, targets, scaler, lag, past_omni_length, future_length,wyear):
+def get_wiemer_data(omni_data, supermag_data, idx, targets, scaler, lag, past_omni_length, future_length, bucketed):
     """
         Function to load the OMNI and SuperMAG measurements corresponding to Weimer storm time.
         NOTE:::::!!This function actually load the data, and not just returns the indices.
@@ -220,36 +220,52 @@ def get_wiemer_data(omni_data, supermag_data, targets, scaler, lag, past_omni_le
             wstart = np.argmin(np.abs(weimer_times_unix[0] - supermag_data.dates)) - past_omni_length -lag - future_length +2
             wend = (np.argmin(np.abs(weimer_times_unix[-1] - supermag_data.dates)) + 1)
             weimerinds = np.arange(wstart, wend).astype(int)
-            datasets[year] = (ShpericalHarmonicsDataset(
-                                                        supermag_data,
-                                                        omni_data,
-                                                        weimerinds,
-                                                        scaler=scaler,
-                                                        targets=targets,
-                                                        past_omni_length=past_omni_length,
-                                                        future_length=future_length,
-                                                        f107_dataset="data_local/f107.npz"
-                                                    ))
+
+            if bucketed:
+                datasets[year] = ShpericalHarmonicsDatasetBucketized(supermag_data, omni_data, idx,
+                    f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+                    past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+                    zero_supermag=False,scaler=None,training_batch=True)
+            else:
+                datasets[year] = (ShpericalHarmonicsDataset(
+                                                            supermag_data,
+                                                            omni_data,
+                                                            weimerinds,
+                                                            scaler=scaler,
+                                                            lag=lag,
+                                                            targets=targets,
+                                                            past_omni_length=past_omni_length,
+                                                            future_length=future_length,
+                                                            f107_dataset="data_local/f107.npz"
+                                                        ))
         return datasets
     else:
         raise TypeError("Weimer year must be either a list of years, or a single year.")
 
 
-def load_cached_data(filename, idx, scaler, supermag_data, omni_data, targets, past_omni_length, future_length):
+def load_cached_data(filename, idx, scaler, supermag_data, omni_data, targets, past_omni_length, future_length, lag, bucketed):
     if os.path.exists(filename):
         data = pickle.load(open(filename, "rb"))
         return data, data.scaler
     else:
-        data = ShpericalHarmonicsDataset(
-            supermag_data,
-            omni_data,
-            idx,
-            scaler=scaler,
-            targets=targets,
-            past_omni_length=past_omni_length,
-            future_length=future_length,
-            f107_dataset="data_local/f107.npz",
-        )
+        if bucketed:
+            data = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,idx,
+            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+            zero_supermag=False,scaler=None,training_batch=True)
+
+        else:
+            data = ShpericalHarmonicsDataset(
+                supermag_data,
+                omni_data,
+                idx,
+                scaler=scaler,
+                lag=lag,
+                targets=targets,
+                past_omni_length=past_omni_length,
+                future_length=future_length,
+                f107_dataset="data_local/f107.npz",
+            )
         directorypath = '/'.join(filename.split('/')[:-1])
         if not os.path.isdir(directorypath):
             os.makedirs(directorypath)

@@ -166,7 +166,7 @@ class NeuralRNNWiemer(BaseModel):
 
         return basis, coeffs, predictions
 
- 
+
 class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
     def __init__(
         self,
@@ -185,8 +185,8 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
 
         self.omni_resolution = omni_resolution
 
-        hidden = 8 #kwargs.pop('n_hidden',16)
-        dropout_prob = kwargs.pop('dropout',0.5)
+        hidden = 8
+        dropout_prob = kwargs.pop('dropout', 0.5)
         levels = 2
         kernel_size = 24
         levels = levels
@@ -226,7 +226,7 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
         # add the wiemer2013 features
         bt = (past_omni["by"] ** 2 + past_omni["bz"] ** 2) ** 0.5
         v = (past_omni["vx"] ** 2 + past_omni["vy"] ** 2 + past_omni["vz"] ** 2) ** 0.5
-        
+
         features.append(past_omni["SME"])
         features.append(past_omni["SMU"])
         features.append(past_omni["SML"])
@@ -330,4 +330,4 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
             import pdb
             pdb.set_trace()
 
-        return basis, coeffs, predictions       
+        return basis, coeffs, predictions

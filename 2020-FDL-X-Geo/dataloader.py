@@ -55,7 +55,7 @@ class SuperMAGIAGADataset:
 class OMNIDataset:
     def __init__(self, data):
         self.data = data
-        
+
 
 class InputDataset:
     def __init__(self, data):
@@ -97,7 +97,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
         training_batch=True,
         nmax=20
     ):
-        
+
         self.dates = supermag_data.dates[idx]
 
         self.supermag_data = supermag_data.data[idx]
@@ -145,6 +145,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
 
         if scaler is not None:
             print("using existing scaler")
+
             self.omni = scaler["omni"].transform(self.omni)
             target = self.supermag_data[..., self.target_idx]
             target_mean, target_std = scaler["supermag"]
@@ -158,6 +159,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
             target_mean = np.nanmean(np.nanmean(target, 0), 0)
             target_std = np.nanstd(np.nanstd(target, 0), 0)
             self.scaler["supermag"] = [target_mean, target_std]
+
             self.omni = self.scaler["omni"].fit_transform(self.omni)
             self.supermag_data[...,self.target_idx] = (target-target_mean)/target_std
 
@@ -240,7 +242,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         # Generate the slices correspondong to each bucket
         self.sg_indices = idx
         # new_inds = np.linspace(idx[:,0],idx[:,1],(idx[:,1]-idx[:,0])[0]).astype(int).T
-        #Now use new_inds to index the array elements. 
+        #Now use new_inds to index the array elements.
         #Size of data should now be [N_buckets,N_elements_in_bucket,...]
 
         self.dates = supermag_data.dates
@@ -256,7 +258,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         print("extracting f107")
         self.f107path = f107_dataset
         f107_data = np.load(f107_dataset)
-        
+
         # Vectorized operation: pd datetime needs 1D array, and give unit as 's'
         # tmp_dates = pd.to_datetime(self.dates.reshape(-1),unit='s').to_numpy().reshape(list(self.dates.shape))
         # #Find the best matching f10.7 index along 3rd dimension
@@ -301,9 +303,10 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             np.random.seed(0)
             si = np.random.choice(len(self.sg_indices),size=int(N_SAMPLES/self.window_length),replace=False)
             sel_ind = self.sg_indices[si]
+
             new_inds = np.linspace(sel_ind[:,0],sel_ind[:,1],(sel_ind[:,1]-sel_ind[:,0])[0]).astype(int).T
             target = self.supermag_data[new_inds,...][...,self.target_idx]
-            
+
             target_mean = np.nanmean(target, axis=(0,1,2))
             target_std = np.nanstd(target, axis=(0,1,2))
             self.scaler["supermag"] = [target_mean, target_std]
@@ -325,7 +328,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             print("So, during Wandb execution, the valures in val, weimer ds are all normalized. ")
             print("BUT THIS IS NOT THE CASE DURING STORM EXCECUTION IN SPACEML")
             self.supermag_data[...,self.target_idx] = (self.supermag_data[...,self.target_idx]-target_mean)/target_std
-            
+
             self.omni = (self.omni-omni_mean[:-2])/omni_std[:-2]
 
 
@@ -337,12 +340,12 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
 
     def __getitem__(self, index):
         """
-            The dataset should be of shape (n_buckets,n_points_per_bucket,...).  
-            If there are M possible indices per bucket 
-            (i.e., index = m gives → output = bucket[-1]), 
-            the size of dataset would be n_buckets*M. 
+            The dataset should be of shape (n_buckets,n_points_per_bucket,...).
+            If there are M possible indices per bucket
+            (i.e., index = m gives → output = bucket[-1]),
+            the size of dataset would be n_buckets*M.
             Any index k will be addressed as (k/M,k%M,...).
-             k/M will give which bucket is taken, while k%M will put index within the bucket. 
+             k/M will give which bucket is taken, while k%M will put index within the bucket.
         """
         sg_ind = self.sg_indices[index]
         po = self.omni[sg_ind[0]:sg_ind[0]+self.past_omni_length,...]
@@ -350,7 +353,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         past_dates = self.dates[sg_ind[0]:sg_ind[0]+self.past_omni_length]
         dp = (dipole_tilt(self.dates[sg_ind[0]:sg_ind[0]+self.past_omni_length])-self.scaler["omni"][0][-2])/(self.scaler["omni"][0][-2])
         tmp_dates = pd.to_datetime(past_dates.reshape(-1),unit='s').to_numpy().reshape([-1,1])
-        
+
         #Find the best matching f10.7 index along 2nd dimension
         match = np.argmin(np.abs(tmp_dates-self.f107[1].reshape([1,-1])),axis=-1)
         f107 = (self.f107[0][match]-self.scaler["omni"][0][-1])/(self.scaler["omni"][0][-1])
