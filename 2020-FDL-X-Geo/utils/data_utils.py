@@ -47,7 +47,7 @@ def get_omni_data(path=None, year="2016"):
         return pd.concat([pd.read_hdf(path, key=str(y)) for y in year])
     else:
         raise TypeError("year must be either a list of years, or a single year.")
-        
+
 
 def get_input_data(omni_path=None, indices_path=None, year="2016"):
     import pandas as pd
@@ -92,7 +92,7 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True):
         return get_iaga_data(f"{base}{year}/",tiny=tiny,load_data=load_data)
     elif isinstance(year,list):
         dates = []
-        data = [] 
+        data = []
         features = []
         max_stations = get_iaga_max_stations(base=base)
         for y in year:
@@ -101,7 +101,7 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True):
             features.append(feat)
             if load_data:
                 data.append(dat)
-        dates = np.concatenate(dates,axis=0)  
+        dates = np.concatenate(dates,axis=0)
 
         if load_data:
             data = np.concatenate(data,axis=0)
@@ -168,19 +168,19 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
 
 def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_data,weimer_years):
     """
-        Function to return the indices corresponding to storm times. 
+        Function to return the indices corresponding to storm times.
         We have 3 storms for Weimer data: 2011, 2015 and 2017. These 3 will be in weimer/ folder.
-        This code takes in the already loaded supermag measurements, and finds the correct times of 
-        weimer predictions. These form our test set. 
+        This code takes in the already loaded supermag measurements, and finds the correct times of
+        weimer predictions. These form our test set.
 
         Code needs either a single year as a string, or a list of years for generating the indices.
 
-        USE THIS CODE TO REMOVE THE INDICES CORRESPONDING TO WEIMER DATA (IF ANY) FROM THE TRAINING 
-        SET. 
+        USE THIS CODE TO REMOVE THE INDICES CORRESPONDING TO WEIMER DATA (IF ANY) FROM THE TRAINING
+        SET.
     """
     if isinstance(weimer_years,str):
         weimer_years = [weimer_years]
-    
+
     if isinstance(weimer_years,list):
         storm_inds = []
         for year in weimer_years:
@@ -199,7 +199,7 @@ def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_dat
     else:
         raise TypeError("Weimer year must be either a list of years, or a single year.")
 
-def get_wiemer_data(targets, scaler, lag, past_omni_length, future_length,wyear):
+def get_wiemer_data(omni_data, supermag_data, targets, scaler, lag, past_omni_length, future_length,wyear):
     """
         Function to load the OMNI and SuperMAG measurements corresponding to Weimer storm time.
         NOTE:::::!!This function actually load the data, and not just returns the indices.
@@ -216,14 +216,12 @@ def get_wiemer_data(targets, scaler, lag, past_omni_length, future_length,wyear)
                 for k in f.keys():
                     weimer[k] = f.get(k)[:]
 
-            sg_data = SuperMAGIAGADataset(*get_iaga_data(f"data_local/iaga/{year}/"))
-            omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=year))
             weimer_times_unix = Time(weimer["JDTIMES"], format="jd").to_value("unix")
-            wstart = np.argmin(np.abs(weimer_times_unix[0] - sg_data.dates)) - past_omni_length -lag - future_length +2
-            wend = (np.argmin(np.abs(weimer_times_unix[-1] - sg_data.dates)) + 1)
+            wstart = np.argmin(np.abs(weimer_times_unix[0] - supermag_data.dates)) - past_omni_length -lag - future_length +2
+            wend = (np.argmin(np.abs(weimer_times_unix[-1] - supermag_data.dates)) + 1)
             weimerinds = np.arange(wstart, wend).astype(int)
             datasets[year] = (ShpericalHarmonicsDataset(
-                                                        sg_data,
+                                                        supermag_data,
                                                         omni_data,
                                                         weimerinds,
                                                         scaler=scaler,
