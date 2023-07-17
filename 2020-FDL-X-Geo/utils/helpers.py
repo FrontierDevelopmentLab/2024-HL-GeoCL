@@ -30,7 +30,7 @@ def basis_matrix(nmax, theta, phi):
     # theta is longitude, phi is colat
     assert len(theta) == len(phi)
     nbasis = (nmax + 1) * (nmax + 1) * 2  # 2 for real and imag components of Y_mn
-    basis = np.zeros(shape=(len(theta), nbasis), dtype=np.float)
+    basis = np.zeros(shape=(len(theta), nbasis), dtype=np.float64)
     for n in range(nmax + 1):
         for m in range(-n, n + 1):
             y_mn = sph_harm(m, n, theta, phi)

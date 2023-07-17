@@ -20,9 +20,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class SqueezedNorm(matplotlib.colors.Normalize):
     def __init__(self, vmin=None, vmax=None, mid=0, s1=2, s2=2, clip=False):
-        self.vmin = vmin # minimum value
+        # self.vmin = vmin # minimum value
         self.mid  = mid  # middle value
-        self.vmax = vmax # maximum value
+        # self.vmax = vmax # maximum value
         self.s1=s1; self.s2=s2
         f = lambda x, zero,vmax,s: np.abs((x-zero)/(vmax-zero))**(1./s)*0.5
         self.g = lambda x, zero,vmin,vmax, s1,s2: f(x,zero,vmax,s1)*(x>=zero) - \
@@ -30,7 +30,7 @@ class SqueezedNorm(matplotlib.colors.Normalize):
         matplotlib.colors.Normalize.__init__(self, vmin, vmax, clip)
 
     def __call__(self, value, clip=None):
-        r = self.g(value, self.mid,self.vmin,self.vmax, self.s1,self.s2)
+        r = self.g(value, self.mid, self._vmin, self._vmax, self.s1,self.s2)
         return np.ma.masked_array(r)
 
 
@@ -70,13 +70,13 @@ def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, m
         (np.arange(shape_spherical[0]) + 0.5) / shape_spherical[0] * np.pi / 4
     )  # colat
     grid_phi_spherical = grid_phi_spherical.reshape(shape_spherical[0], 1) @ np.ones(
-        (1, shape_spherical[1]), dtype=np.float
+        (1, shape_spherical[1]), dtype=np.float64
     )
     grid_theta_spherical = (
         (np.arange(shape_spherical[1]) + 0.5) / shape_spherical[1] * 2.0 * np.pi
     )  # longitude
     grid_theta_spherical = np.ones(
-        (shape_spherical[0], 1), dtype=np.float
+        (shape_spherical[0], 1), dtype=np.float64
     ) @ grid_theta_spherical.reshape(1, shape_spherical[1])
 
     basis_grid = basis_matrix(
