@@ -42,9 +42,10 @@ torch.set_default_dtype(torch.float64)  # this is important else it will overflo
 
 hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
-                                learning_rate = 5e-03,batch_size = 8500,
+                                learning_rate = 5e-03,batch_size = 3500,
                                 l2reg=1e-3,epochs = 1000, dropout_prob=0.9,n_hidden=8,
-                                loss='MAE',model='NeuralRNNWiemer_HidddenSuperMAG')
+                                loss='MAE',model='NeuralRNNWiemer_HidddenSuperMAG',
+                                wandb_logging = True)
                                 # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
@@ -56,22 +57,26 @@ wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True)
 #----- Hence this process will be repeated per training cycle.
 def train(config):
     print(config)
-    future_length = config.future_length 
-    past_omni_length = config.past_omni_length
-    omni_resolution = config.omni_resolution
-    nmax = config.nmax
+    future_length = config["future_length"]
+    past_omni_length = config["past_omni_length"]
+    omni_resolution = config["omni_resolution"]
+    nmax = config["nmax"]
     targets = ["dbe_nez", "dbn_nez"] #config.targets
-    lag = config.lag
-    learning_rate = config.learning_rate
-    batch_size = config.batch_size
-    l2reg=config.l2reg
-    max_epochs = config.epochs
-    n_hidden=config.n_hidden
-    dropout_prob=config.dropout_prob
-    loss = config.loss
-    NN_md = md[config.model]
+    lag = config["lag"]
+    learning_rate = config["learning_rate"]
+    batch_size = config["batch_size"]
+    l2reg=config["l2reg"]
+    max_epochs = config["epochs"]
+    n_hidden=config["n_hidden"]
+    dropout_prob=config["dropout_prob"]
+    loss = config["loss"]
+    NN_md = md[config["model"]]
 
-    wandb.run.name = f"CorrectTestNorm_FULL_{config.model}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
+    wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
+    if config["wandb_logging"]:
+        wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
+    else:
+        wandb_logger = None
 
     yearlist = list(np.arange(2013,2014).astype(int))
     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
@@ -152,18 +157,15 @@ def train(config):
 
     # save the scaler to de-standarize prediction
     # checkpoint_path = f"checkpoints_{int(learning_rate*1e5)}_{int(batch_size)}_{int(l2reg*1e6)}_{nmax}_{loss}"
-    checkpoint_path = wandb.run.name
+    checkpoint_path = wandb_run_name
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
     pickle.dump(scaler, open(f'{checkpoint_path}/scalers.p', "wb"))
 
-    wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True)
-    wandb_logger.watch(model)
-
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
-        devices=-1,
+        devices=1,
         accelerator="gpu",
         check_val_every_n_epoch=1,
         logger=wandb_logger,
