@@ -8,7 +8,7 @@ import tqdm
 from scipy.special import sph_harm
 from sklearn.preprocessing import StandardScaler
 from torch.utils import data
-
+import pickle
 from utils.helpers import dipole_tilt
 
 
@@ -362,6 +362,26 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
 
     def __getitem__(self, index):
         features_dict = self.sg_indices_dict[index]
+        return (features_dict["past_omni"],
+                features_dict["past_supermag"],
+                features_dict["future_supermag"],
+                features_dict["past_dates"],
+                features_dict["future_dates"],
+                features_dict["coords_radians"],
+        )
+    
+class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
+    def __init__(
+        self,
+        file_path
+    ):
+        self.features_dict = pickle.load(open(file_path, 'rb'))
+    
+    def __len__(self):
+        return int(len(self.features_dict))
+    
+    def __getitem__(self, index):
+        features_dict = self.features_dict[index]
         return (features_dict["past_omni"],
                 features_dict["past_supermag"],
                 features_dict["future_supermag"],

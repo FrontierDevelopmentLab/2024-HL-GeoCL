@@ -16,7 +16,7 @@ from models.geoeffectivenet import *
 from models.spherical_harmonics import SphericalHarmonics
 from utils.data_utils import get_iaga_data, get_omni_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list
 from utils.splitter import generate_indices
-from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset
+from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
 # #-----------------------------------
 # import argparse
 # parser = argparse.ArgumentParser(description = 'GeoeffectiveNET hyperparameter tuning!!!')
@@ -43,16 +43,15 @@ torch.set_default_dtype(torch.float64)  # this is important else it will overflo
 hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
                                 learning_rate = 5e-03,batch_size = 3500,
-                                l2reg=1e-3,epochs = 1000, dropout_prob=0.9,n_hidden=8,
-                                loss='MAE',model='NeuralRNNWiemer_HidddenSuperMAG',
+                                l2reg=1e-3,epochs = 1000, dropout_prob=0.3,n_hidden=8,
+                                loss='MAE',model='NeuralRNNWiemer',
                                 wandb_logging = True)
                                 # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
 hyperparameter_defaults = hyperparameter_best
 
-wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True)
-
+preprocessed_path = './processed_data'
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
 def train(config):
@@ -78,44 +77,49 @@ def train(config):
     else:
         wandb_logger = None
 
-    yearlist = list(np.arange(2013,2014).astype(int))
-    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    yearlist = list(np.arange(2013,2014).astype(int))
-    omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
+    #yearlist = list(np.arange(2013,2014).astype(int))
+    #supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
+    #yearlist = list(np.arange(2013,2014).astype(int))
+    #omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 
-    yearlist = list(np.arange(2013,2014).astype(int))
-    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
-                                                        LENGTH=past_omni_length,LAG=lag,
-                                                        omni_path="data_local/omni/sw_data.h5",
-                                                        weimer_path="data_local/weimer/")
-    train_idx = np.asarray(train_idx)
-    val_idx = np.asarray(val_idx)
-    test_idx = np.asarray(test_idx)
-    wiemer_idx = np.asarray(wiemer_idx)
+    #yearlist = list(np.arange(2013,2014).astype(int))
+    #train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
+    #                                                   LENGTH=past_omni_length,LAG=lag,
+    #                                                    omni_path="data_local/omni/sw_data.h5",
+    #                                                    weimer_path="data_local/weimer/")
+    #train_idx = np.asarray(train_idx)
+    #val_idx = np.asarray(val_idx)
+    #test_idx = np.asarray(test_idx)
+    #wiemer_idx = np.asarray(wiemer_idx)
 
-    train_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,train_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=None,training_batch=True,nmax=nmax)
-    print("Train dataloader defined....")
-    val_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,val_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    print("Val dataloader defined....")
+    #train_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,train_idx,
+    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+    #        zero_supermag=False,scaler=None,training_batch=True,nmax=nmax)
+    #print("Train dataloader defined....")
+    #val_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,val_idx,
+    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+    #        zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
+    #print("Val dataloader defined....")
     # test_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,test_idx,
     #         f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
     #         past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
     #         zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
     # print("Test dataloader defined....")
-    wiemer_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,wiemer_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    print("Weimer dataloader defined....")
+    #wiemer_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,wiemer_idx,
+    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+    #        zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
+    #print("Weimer dataloader defined....")
 
     #Save the scaler
-    scaler = train_ds.scaler
+    
+    train_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'train_data.p'))
+    val_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'val_data.p'))
+    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'wiemer_data.p'))
+    
+    scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
     wiemer_loader = data.DataLoader(
         wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=4
@@ -131,15 +135,17 @@ def train(config):
     # )
 
     plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
+    supermag_features = pickle.load(open(os.path.join(preprocessed_path, 'supermag_features.p'), 'rb'))
+    omni_features = pickle.load(open(os.path.join(preprocessed_path, 'omni_features.p'), 'rb'))
     
-    targets_idx = [np.where(train_ds.supermag_features == target)[0][0] for target in targets]
+    targets_idx = [np.where(supermag_features == target)[0][0] for target in targets]
 
     # initialize model
     model = NN_md(
         past_omni_length,
         future_length,
-        train_ds.omni_features,
-        train_ds.supermag_features,
+        omni_features,
+        supermag_features,
         omni_resolution,
         nmax,
         targets_idx,learning_rate = learning_rate,
