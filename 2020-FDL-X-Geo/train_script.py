@@ -1,11 +1,11 @@
 import os.path
 import pickle
-import pandas as pd
+
 import h5py
 import numpy as np
 import pytorch_lightning as pl
 import torch.optim
-import wandb
+import tqdm
 from astropy.time import Time
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
@@ -14,177 +14,103 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from models.geoeffectivenet import *
 from models.spherical_harmonics import SphericalHarmonics
-from utils.data_utils import get_iaga_data, get_omni_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list, get_input_data
-from utils.splitter import generate_indices
-from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, InputDataset
-# #-----------------------------------
-# import argparse
-# parser = argparse.ArgumentParser(description = 'GeoeffectiveNET hyperparameter tuning!!!')
-# parser.add_argument('future_length',default = 1 ,type=int,help = 'future_length')
-# parser.add_argument('past_omni_length',default = 600 ,type=int,help = 'past_omni_length')
-# parser.add_argument('omni_resolution',default = 10,type=int,help = 'omni_resolution')
-# parser.add_argument('nmax',default = 20,type=int,help = 'nmax modes')
-# parser.add_argument('lag',default = 1,type=int,help = 'lag')
-# parser.add_argument('learning_rate',default = 1e-4,type=int,help = 'learning_rate')
-# parser.add_argument('batch_size',default = 256*5,type=int,help = 'batch_size')
-
-# args = parser.parse_args()
-# #-----------------------------------
+from utils.data_utils import get_iaga_data, get_input_data, get_omni_data, load_cached_data, get_wiemer_data
+from dataloader import (OMNIDataset, InputDataset, ShpericalHarmonicsDataset,
+                        SuperMAGIAGADataset)
 
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
-# hyperparameter_defaults = dict(future_length = 1, past_omni_length = 900,
-#                                 omni_resolution = 1, nmax = 25,lag = 1,
-#                                 learning_rate = 1e-04,batch_size = 256*8*2,
-#                                 l2reg=3e-3,epochs = 10000, dropout_prob=0.71,n_hidden=64,
-#                                 loss='MSE')
+wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True)
 
-
-hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
+config = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
-                                learning_rate = 5e-03, batch_size = 3400,
-                                l2reg=1e-3,epochs = 1000, dropout_prob=0.9,n_hidden=8,
-                                loss='MAE',model='NeuralRNNWiemer',
+                                learning_rate = 5e-03, batch_size = 256*5,
+                                l2reg=1e-3,epochs = 1000, dropout_prob=0.9,
+                                targets = ["dbe_nez", "dbn_nez"], n_hidden=8,
+                                loss='MAE', year=2013, model='NeuralRNNWiemer',
                                 wandb_logging=True)
-                                # learning_rate originally 1e-5
-md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
-        'NeuralRNNWiemer':NeuralRNNWiemer}
-hyperparameter_defaults = hyperparameter_best
 
-#----- Data loading also depends on the sweep parameters.
-#----- Hence this process will be repeated per training cycle.
-def train(config):
-    future_length = config["future_length"]
-    past_omni_length = config["past_omni_length"]
-    omni_resolution = config["omni_resolution"]
-    nmax = config["nmax"]
-    targets = ["dbe_nez", "dbn_nez"] #config.targets
-    lag = config["lag"]
-    learning_rate = config["learning_rate"]
-    batch_size = config["batch_size"]
-    l2reg=config["l2reg"]
-    max_epochs = config["epochs"]
-    n_hidden=config["n_hidden"]
-    dropout_prob=config["dropout_prob"]
-    loss = config["loss"]
-    NN_md = md[config["model"]]
-    
-    wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
-    if config["wandb_logging"]:
-        wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
-    else:
-        wandb_logger = None
+MODELS = {
+        'NeuralRNNWiemer_HidddenSuperMAG': NeuralRNNWiemer_HidddenSuperMAG,
+        'NeuralRNNWiemer': NeuralRNNWiemer
+    }
 
-    yearlist = list(np.arange(2013,2014).astype(int))
-    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    yearlist = list(np.arange(2013,2014).astype(int))
-    input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
-                                             indices_path="data_local/supermag_indices_2013.csv", 
+if (
+    not os.path.exists("cache/train_ds.p")
+    or not os.path.exists("cache/test_ds.p")
+    or not os.path.exists("cache/val_ds.p")
+):
+    year = config['year']
+    supermag_data = SuperMAGIAGADataset(*get_iaga_data(f"data_local/iaga/{year}/"))
+
+    yearlist = list([year])
+    omni_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
+                                             indices_path=f"data_local/supermag_indices_{year}.csv",
                                              year=yearlist))
-    yearlist = list(np.arange(2013,2014).astype(int))
-    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
-                                                        LENGTH=past_omni_length,LAG=lag,
-                                                        omni_path="data_local/omni/sw_data.h5",
-                                                        weimer_path="data_local/weimer/")
-    train_idx = np.asarray(train_idx)
-    val_idx = np.asarray(val_idx)
-    test_idx = np.asarray(test_idx)
-    wiemer_idx = np.asarray(wiemer_idx)
 
-    train_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,input_data,train_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=None,training_batch=True,nmax=nmax)
-    print("Train dataloader defined....")
-    val_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,input_data,val_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    print("Val dataloader defined....")
-    # test_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,test_idx,
-    #         f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #         past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #         zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    # print("Test dataloader defined....")
-    wiemer_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,input_data,wiemer_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    print("Weimer dataloader defined....")
+    # omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year="2013"))
 
-    #Save the scaler
-    scaler = train_ds.scaler
+    idx = list(range(len(supermag_data.dates)))
+    train_idx = idx[: int(len(idx) * 0.7)]
+    test_val_idx = idx[int(len(idx) * 0.7) :]
+    test_idx = test_val_idx[: len(test_val_idx) // 2]
+    val_idx = test_val_idx[len(test_val_idx) // 2 :]
+else:
+    train_idx = None
+    test_idx = None
+    val_idx = None
+    supermag_data = None
+    omni_data = None
 
-    wiemer_loader = data.DataLoader(
-        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=16
-    )
-    train_loader = data.DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True, num_workers=16
-    )
-    val_loader = data.DataLoader(
-        val_ds, batch_size=batch_size, shuffle=False, num_workers=16
-    )
-    # test_loader = data.DataLoader(
-    #     test_ds, batch_size=batch_size, shuffle=False, num_workers=12
-    # )
+train_ds, scaler = load_cached_data("cache/train_ds.p", train_idx, None, supermag_data, omni_data, config['targets'], config['past_omni_length'], config['future_length'])
+test_ds, _ = load_cached_data("cache/test_ds.p", test_idx, scaler, supermag_data, omni_data, config['targets'], config['past_omni_length'], config['future_length'])
+val_ds, _ = load_cached_data("cache/val_ds.p", val_idx, scaler, supermag_data, omni_data, config['targets'], config['past_omni_length'], config['future_length'])
 
-    plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
-    
-    targets_idx = [np.where(train_ds.supermag_features == target)[0][0] for target in targets]
+# load weimer data for debugging
+if os.path.exists("cache/wiemer_ds.p"):
+    wiemer_ds = pickle.load(open("cache/wiemer_ds.p", "rb"))
+else:
+    wiemer_ds = get_wiemer_data(omni_data, supermag_data, config['targets'], scaler, config['lag'], config['past_omni_length'], config['future_length'], wyear="2015")
+    pickle.dump(wiemer_ds, open("cache/wiemer_ds.p", "wb"))
 
-    # initialize model
-    model = NN_md(
-        past_omni_length,
-        future_length,
+wiemer_loader = data.DataLoader(
+    wiemer_ds, batch_size=config['batch_size'], shuffle=False, num_workers=8
+)
+train_loader = data.DataLoader(
+    train_ds, batch_size=config['batch_size'], shuffle=True, num_workers=8
+)
+val_loader = data.DataLoader(
+    val_ds, batch_size=config['batch_size'], shuffle=False, num_workers=8
+)
+plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
+
+targets_idx = [np.where(train_ds.supermag_features == target)[0][0] for target in config['targets']]
+
+# initialize model
+model = MODELS[config['model']](
+        config['past_omni_length'],
+        config['future_length'],
         train_ds.omni_features,
         train_ds.supermag_features,
-        omni_resolution,
-        nmax,
-        targets_idx,learning_rate = learning_rate,
-        l2reg=l2reg,
-        dropout_prob=dropout_prob,
-        n_hidden=n_hidden,
-        loss=loss
+        config['omni_resolution'],
+        config['nmax'],
+        targets_idx,
     )
-    model = model.double()
+model = model.double()
 
-    # add wiemer data to the model to debug
-    model.wiemer_data = wiemer_loader
-    # model.test_data = test_loader
-    model.scaler = scaler
+# add wiemer data to the model to debug
+model.wiemer_data = wiemer_loader
+model.scaler = scaler
 
-    # save the scaler to de-standarize prediction
-    # checkpoint_path = f"checkpoints_{int(learning_rate*1e5)}_{int(batch_size)}_{int(l2reg*1e6)}_{nmax}_{loss}"
-    checkpoint_path = wandb_run_name
-    if not os.path.isdir(checkpoint_path):
-        os.makedirs(checkpoint_path)
-    pickle.dump(scaler, open(f'{checkpoint_path}/scalers.p', "wb"))
+# save the scaler to de-standarize prediction
+pickle.dump(scaler, open('checkpoints/scalers.p', "wb"))
 
-    # wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True)
-    # wandb_logger.watch(model)
-
-    checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path)
-    if torch.cuda.is_available():
-        trainer = pl.Trainer(
-        devices=1,
-        accelerator="gpu",
-        check_val_every_n_epoch=1,
-        logger=wandb_logger,
-        max_epochs=max_epochs,
-        callbacks=[checkpoint_callback, EarlyStopping(monitor='val_MSE',patience = 100)]
-    )
-    else:
-        trainer = pl.Trainer(
-        check_val_every_n_epoch=1,
-        logger=wandb_logger,
-        callbacks=[checkpoint_callback, EarlyStopping(monitor='val_MSE',patience = 100)]
-    )
-    
-    trainer.fit(model, train_loader, val_loader)
-
-
-if __name__ == '__main__':
-    
-    config = hyperparameter_defaults
-    print(f'Starting a run with {config}')
-    train(config)
+checkpoint_callback = ModelCheckpoint(dirpath="checkpoints")
+trainer = pl.Trainer(
+    devices=-1,
+    accelerator="gpu",
+    check_val_every_n_epoch=5,
+    logger=wandb_logger,
+    callbacks=[checkpoint_callback, EarlyStopping(monitor='val_MSE')]
+)
+trainer.fit(model, train_loader, val_loader)
