@@ -36,7 +36,7 @@ output_folder = './processed_data'
 supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
 omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
-                                             indices_path="data_local/supermag_indices_2013.csv", 
+                                             indices_path="data_local/supermag_indices/", 
                                              year=yearlist))
 
 train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,

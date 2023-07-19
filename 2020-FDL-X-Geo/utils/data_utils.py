@@ -50,18 +50,24 @@ def get_omni_data(path=None, year="2016"):
 
 
 def get_input_data(omni_path=None, indices_path=None, year="2016"):
+    # Geomagnetic indices files must be named like `supermag_indices_{year}.csv`
     import pandas as pd
-    indices_df = pd.read_csv(indices_path, index_col="Date_UTC")
+    indices_to_use = ["SME", "SML", "SMU", "SMR"]
     if isinstance(year,str):
         omni_df = pd.read_hdf(omni_path, key=year)
+        indices_df = pd.read_csv(indices_path+f"supermag_indices_{year}.csv", index_col="Date_UTC")
     elif isinstance(year,list):
         omni_df = pd.concat([pd.read_hdf(omni_path, key=str(y)) for y in year])
+        indices_files = sorted(glob(indices_path+"supermag_indices_*.csv"))
+        indices_df = pd.concat([pd.read_csv(indices_file, index_col="Date_UTC") for indices_file in indices_files], axis=0)
     else:
         raise TypeError("year must be either a list of years, or a single year.")
     timestamps = omni_df.index
     omni_df.reset_index(inplace=True, drop=True)
     indices_df.reset_index(inplace=True, drop=True)
-    indices_df = indices_df[["SME", "SML", "SMU", "SMR"]]
+    indices_df = indices_df[indices_to_use]
+    print(indices_df, indices_df.info())
+    Break
     combined_df = pd.concat([omni_df, indices_df], axis=1)
     combined_df.index = timestamps
     # print(omni_df.info(), indices_df.info(), combined_df.info(), combined_df.head())
