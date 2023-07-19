@@ -71,7 +71,7 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True):
         dates = []
         data = []
         features = []
-        max_stations = get_iaga_max_stations(base=base, year)
+        max_stations = get_iaga_max_stations(base=base, yearlist=year)
         for y in year:
             dt,dat,feat = get_iaga_data(f"{base}{y}/",tiny=tiny,max_stations=max_stations,load_data=load_data)
             dates.append(dt)
