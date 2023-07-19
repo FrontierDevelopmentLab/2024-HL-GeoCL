@@ -61,7 +61,7 @@ class BaseModel(pl.LightningModule):
             self.lossfun = ldict[losskey]
         except:
             self.lossfun = MSE
-
+        
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -90,28 +90,31 @@ class BaseModel(pl.LightningModule):
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
 
-        self.log("train_MSE", loss, on_step=False, on_epoch=True)
+        self.log("train_MSE", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "train_r2",
             R2(future_supermag, predictions).mean(),
             on_step=False,
             on_epoch=True,
+            sync_dist=True
         )
 
-        self.log("train_dbe_MSE", MSE(future_supermag[..., [0]], predictions[..., [0]]).mean(), on_step=False, on_epoch=True)
+        self.log("train_dbe_MSE", MSE(future_supermag[..., [0]], predictions[..., [0]]).mean(), on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "train_dbe_r2",
             R2(future_supermag[..., [0]], predictions[..., [0]]).mean(),
             on_step=False,
             on_epoch=True,
+            sync_dist=True
         )
 
-        self.log("train_dbn_MSE", MSE(future_supermag[..., [1]], predictions[..., [1]]).mean(), on_step=False, on_epoch=True)
+        self.log("train_dbn_MSE", MSE(future_supermag[..., [1]], predictions[..., [1]]).mean(), on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "train_dbn_r2",
             R2(future_supermag[..., [1]], predictions[..., [1]]).mean(),
             on_step=False,
             on_epoch=True,
+            sync_dist=True
         )
 
 
@@ -127,7 +130,7 @@ class BaseModel(pl.LightningModule):
             (mlt, mcolat),
         ) = val_batch
         _, coeffs, predictions = self(past_omni, past_supermag, mlt, mcolat, past_dates, future_dates)
-
+        
         predictions[torch.isnan(predictions)] = 0
         future_supermag[torch.isnan(future_supermag)] = 0
         target_col = self.targets_idx
@@ -140,15 +143,16 @@ class BaseModel(pl.LightningModule):
 
         # loss = ((future_supermag - predictions) ** 2).mean()
         loss = self.lossfun(future_supermag,predictions)
-
+        
         self.log(
             "val_R2",
             R2(future_supermag, predictions).mean(),
             on_step=False,
             on_epoch=True,
-            prog_bar=True
+            prog_bar=True,
+            sync_dist=True
         )
-        self.log("val_MSE", MSE(future_supermag,predictions), on_step=False, on_epoch=True,prog_bar=True)
+        self.log("val_MSE", MSE(future_supermag,predictions), on_step=False, on_epoch=True,prog_bar=True, sync_dist=True)
 
         # if batch_idx == 0:
         #     # hack: need to find a callback way
@@ -201,90 +205,96 @@ class BaseModel(pl.LightningModule):
             #     on_epoch=True,
             # )
 
-        # if batch_idx == 0:
-        #     # hack: need to find a callback way
-        #     predictions = []
-        #     coeffs = []
-        #     targets = []
-        #     for (
-        #         past_omni,
-        #         past_supermag,
-        #         future_supermag,
-        #         past_dates,
-        #         future_dates,
-        #         (mlt, mcolat),
-        #     ) in self.wiemer_data:
-        #         past_omni = past_omni.to(device)
-        #         past_supermag = past_supermag.to(device)
-        #         mlt = mlt.to(device)
-        #         mcolat = mcolat.to(device)
-        #         past_dates = past_dates.to(device)
-        #         future_dates = future_dates.to(device)
+        if batch_idx == 0:
+            # hack: need to find a callback way
+            predictions = []
+            coeffs = []
+            targets = []
+            for (
+                past_omni,
+                past_supermag,
+                future_supermag,
+                past_dates,
+                future_dates,
+                (mlt, mcolat),
+            ) in self.wiemer_data:
+                past_omni = past_omni.to(device)
+                past_supermag = past_supermag.to(device)
+                mlt = mlt.to(device)
+                mcolat = mcolat.to(device)
+                past_dates = past_dates.to(device)
+                future_dates = future_dates.to(device)
 
-        #         _, _coeffs, pred = self(
-        #             past_omni, past_supermag, mlt, mcolat, past_dates, future_dates
-        #         )
+                _, _coeffs, pred = self(
+                    past_omni, past_supermag, mlt, mcolat, past_dates, future_dates
+                )
 
-        #         predictions.append(pred.to(device))
-        #         coeffs.append(_coeffs.to(device))
-        #         targets.append(future_supermag[..., target_col].to(device))
-        #     predictions = torch.cat(predictions).detach()
-        #     coeffs = torch.cat(coeffs).detach()
-        #     targets = torch.cat(targets).detach().squeeze(1)
+                predictions.append(pred.to(device))
+                coeffs.append(_coeffs.to(device))
+                targets.append(future_supermag[..., target_col].to(device))
+            predictions = torch.cat(predictions).detach()
+            coeffs = torch.cat(coeffs).detach()
+            targets = torch.cat(targets).detach().squeeze(1)
 
-        #     predictions[torch.isnan(predictions)] = 0
-        #     targets[torch.isnan(targets)] = 0
+            predictions[torch.isnan(predictions)] = 0
+            targets[torch.isnan(targets)] = 0
 
-        #     _mean, _std = self.scaler['supermag']
-        #     predictions = predictions*torch.Tensor(_std).to(device) + torch.Tensor(_mean).to(device)
-        #     targets = targets*torch.Tensor(_std).to(device) + torch.Tensor(_mean).to(device)
+            _mean, _std = self.scaler['supermag']
+            predictions = predictions*torch.Tensor(_std).to(device) + torch.Tensor(_mean).to(device)
+            targets = targets*torch.Tensor(_std).to(device) + torch.Tensor(_mean).to(device)
 
-        #     self.log(
-        #         "wiemer_R2",
-        #         R2(targets, predictions).mean(),
-        #         on_step=False,
-        #         on_epoch=True,
-        #     )
-        #     self.log(
-        #         "wiemer_MSE",
-        #         ((targets - predictions) ** 2).mean(),
-        #         on_step=False,
-        #         on_epoch=True,
-        #     )
+            self.log(
+                "wiemer_R2",
+                R2(targets, predictions).mean(),
+                on_step=False,
+                on_epoch=True,
+                sync_dist=True
+            )
+            self.log(
+                "wiemer_MSE",
+                ((targets - predictions) ** 2).mean(),
+                on_step=False,
+                on_epoch=True,
+                sync_dist=True
+            )
+            
+            if self.logger is not None:
 
-        #     fig, ax = plt.subplots()
+                fig, ax = plt.subplots()
 
-        #     ax.scatter(targets.cpu().numpy().ravel(), predictions.cpu().numpy().ravel())
-        #     self.logger.experiment.log(
-        #         {
-        #             "wiemer_scatter": [
-        #                 wandb.Image(get_img_from_fig(fig), caption="val_scatter")
-        #             ]
-        #         }
-        #     )
-        #     nice_idx = [0]
+                ax.scatter(targets.cpu().numpy().ravel(), predictions.cpu().numpy().ravel())
+                self.logger.experiment.log(
+                    {
+                        "wiemer_scatter": [
+                            wandb.Image(get_img_from_fig(fig), caption="val_scatter")
+                        ]
+                    }
+                )
+                nice_idx = [0]
 
-        #     # dbe_nez
-        #     pred_sphere = spherical_plot_forecasting(
-        #         self.nmax, coeffs[nice_idx][..., 0], predictions[nice_idx][..., 0].detach().cpu(),
-        #         targets[nice_idx][..., 0].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
-        #         _mean[0], _std[0]
-        #     )
-        #     self.logger.experiment.log(
-        #         {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
-        #     )
+                # dbe_nez
+                pred_sphere = spherical_plot_forecasting(
+                    self.nmax, coeffs[nice_idx][..., 0], predictions[nice_idx][..., 0].detach().cpu(),
+                    targets[nice_idx][..., 0].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
+                    _mean[0], _std[0]
+                )
 
-        #     # dbn_nez
-        #     pred_sphere = spherical_plot_forecasting(
-        #         self.nmax, coeffs[nice_idx][..., 1], predictions[nice_idx][..., 1].detach().cpu(),
-        #         targets[nice_idx][..., 1].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
-        #         _mean[1], _std[1]
-        #     )
-        #     self.logger.experiment.log(
-        #         {"dbn_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
-        #     )
+                self.logger.experiment.log(
+                    {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
+                )
 
-        #     plt.figure().clear()
-        #     plt.close()
-        #     plt.cla()
-        #     plt.clf()
+                # dbn_nez
+                pred_sphere = spherical_plot_forecasting(
+                    self.nmax, coeffs[nice_idx][..., 1], predictions[nice_idx][..., 1].detach().cpu(),
+                    targets[nice_idx][..., 1].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
+                    _mean[1], _std[1]
+                )
+                self.logger.experiment.log(
+                    {"dbn_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
+                )
+
+                plt.figure().clear()
+                plt.close()
+                plt.cla()
+                plt.clf()
+                
