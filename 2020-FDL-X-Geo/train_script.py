@@ -42,10 +42,10 @@ torch.set_default_dtype(torch.float64)  # this is important else it will overflo
 
 hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
-                                learning_rate = 5e-03,batch_size = 3500,
+                                learning_rate = 5e-03,batch_size = 2500,
                                 l2reg=1e-3,epochs = 1000, dropout_prob=0.3,n_hidden=8,
                                 loss='MAE',model='NeuralRNNWiemer',
-                                wandb_logging = True)
+                                is_logging_enabled = True)
                                 # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
@@ -70,9 +70,10 @@ def train(config):
     dropout_prob=config["dropout_prob"]
     loss = config["loss"]
     NN_md = md[config["model"]]
+    is_logging_enabled = config["is_logging_enabled"]
 
     wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
-    if config["wandb_logging"]:
+    if is_logging_enabled:
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
     else:
         wandb_logger = None
@@ -167,12 +168,12 @@ def train(config):
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
     pickle.dump(scaler, open(f'{checkpoint_path}/scalers.p', "wb"))
-
-    checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path)
+    checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path, monitor="val_MSE", save_top_k=5)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
         devices=1,
         accelerator="gpu",
+        #strategy='ddp_find_unused_parameters_true',
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         max_epochs=max_epochs,
