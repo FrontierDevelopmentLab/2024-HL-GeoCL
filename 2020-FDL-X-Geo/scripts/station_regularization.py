@@ -6,11 +6,8 @@ import matplotlib.pyplot as plt
 from glob import glob
 import re
 import tqdm
-import sys
-sys.path.append('2023-FDL-X-Geo/2020-FDL-X-Geo/')
-from utils.data_utils import get_iaga_max_stations
 
-base='/home/mikeheyns_outlook_com/2023-FDL-X-Geo/2020-FDL-X-Geo/data_local/iaga/' # path to SuperMAG data
+base='../data_local/iaga/' # path to SuperMAG data
 yearlist = list(np.arange(2010,2019).astype(int)) # years to compute scaling factors for
 
 # get all SuperMAG data files
@@ -18,7 +15,7 @@ files = [g for y in yearlist for g in sorted(glob(f"{base}{y}/supermag_iaga_[!ti
 
 # get master SuperMAG station coords and store in dict
 stn_coords = {}
-with open('supermag_stations.csv', 'r') as f:
+with open('../supermag_stations.csv', 'r') as f:
     for line in f.readlines()[1:]:
         line = line.split(',')
         stn_coords[line[0]]=(float(line[1]), float(line[2])) # (IAGA,GEOLON,GEOLAT)

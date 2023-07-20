@@ -32,8 +32,9 @@ future_length = 1
 nmax = 20
 num_workers = 16
 output_folder = './processed_data'
+stn_reg = False # run scripts/station_regularization.py first to get these files
 
-supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
+supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist,stn_reg=stn_reg))
 omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 
 train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
@@ -71,6 +72,7 @@ class PreprocessData():
         #     self.supermag_data[i] = supermag_data.data[index[0]:index[1],...]
         #shape (n_buckets,n_elements_in_bucket,n_stations,n_components)
         self.supermag_features = supermag_data.features
+        self.supermag_reg = supermag_data.reg
 
         # Generate the slices correspondong to each bucket
         self.sg_indices = idx
@@ -168,6 +170,7 @@ class PreprocessData():
        
         #self.features_list = process_map(self.process_data, [i for i in range(len(self.sg_indices))], max_workers = num_workers, chunksize = 256)
         self.sg_indices_dict = {}
+        
         for i in tqdm.trange(len(self.sg_indices), desc="Inital 'bucketizing'"):
             sg_ind = self.sg_indices[i]
             po = self.omni[sg_ind[0]:sg_ind[0]+self.past_omni_length,...]
@@ -182,6 +185,7 @@ class PreprocessData():
             past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
             del po
             future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+            future_supermag_reg = self.supermag_reg[sg_ind[1],...][None,:]
             future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
             sm_future = NamedAccess(future_supermag, self.supermag_features)
             _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
@@ -190,13 +194,14 @@ class PreprocessData():
             features_dict = {"past_omni": past_omni,
             "past_supermag": past_supermag,
             "future_supermag": future_supermag,
+            "future_supermag_reg": future_supermag_reg,
             "past_dates": past_dates,
             "future_dates": future_dates,
             "coords_radians": (np.deg2rad(_mlt), np.deg2rad(_mcolat))
             }
             self.sg_indices_dict[i] = features_dict
 
-    def process_data(self, i):
+    def process_data(self, i): #do we need this function?
         sg_ind = self.sg_indices[i]
         po = self.omni[sg_ind[0]:sg_ind[0]+self.past_omni_length,...]
         past_supermag = self.supermag_data[sg_ind[0],...][None,:]
@@ -210,6 +215,7 @@ class PreprocessData():
         past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
         del po
         future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+        future_supermag_reg = self.supermag_reg[sg_ind[1],...][None,:]
         future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
         sm_future = NamedAccess(future_supermag, self.supermag_features)
         _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
@@ -218,6 +224,7 @@ class PreprocessData():
         features_dict = {"past_omni": past_omni,
         "past_supermag": past_supermag,
         "future_supermag": future_supermag,
+        "future_supermag_reg": future_supermag_reg,
         "past_dates": past_dates,
         "future_dates": future_dates,
         "coords_radians": (np.deg2rad(_mlt), np.deg2rad(_mcolat))
