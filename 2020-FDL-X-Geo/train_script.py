@@ -71,7 +71,9 @@ def train(config):
     loss = config["loss"]
     NN_md = md[config["model"]]
     is_logging_enabled = config["is_logging_enabled"]
-    stn_reg = config["stn_reg"]
+    stn_reg = config["stn_reg"] 
+    
+    if stn_reg: preprocessed_path=preprocessed_path+'/regularized' #included to update path automatically but probably want a better way to do this
 
     wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
     if is_logging_enabled:

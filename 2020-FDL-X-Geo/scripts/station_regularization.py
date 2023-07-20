@@ -42,5 +42,5 @@ for i, f in enumerate(tqdm.tqdm(files)):
     dis=np.nanmean(np.sort(dis_array,axis=1)[:,:5],axis=1) # average distance of the 5 closest points
     lin_scaling=(np.pi*Re/dis)/nmax # linear scaling factor with SpH order relative to highest order nmax
     stn_scaling=np.nanmax(np.vstack([np.nanmin(np.vstack([lin_scaling,np.ones_like(dis)]),axis=0),np.ones_like(dis)*0.1]),axis=0) # generate floor and ceiling for scaling factor (relative to nmax)
-    dat_len = dat['data'].shape[0]*np.ones_like(dis) # include number of stations in data file
-    np.save(f.replace('.npz','_scaling.npy'),np.vstack([stn_scaling,dat_len])) # save scaling factor and number of stations to file
+    dat_len = dat['data'].shape[0]*np.ones_like(dis) # include length of data file to ensure reproducibility in terms of SuperMAG data features shape
+    np.save(f.replace('.npz','_scaling.npy'),np.vstack([stn_scaling,dat_len])) # save scaling factor and length of dataset to file

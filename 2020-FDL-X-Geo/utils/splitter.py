@@ -45,7 +45,7 @@ def weimerdatesgetter(base="../data_local/weimer/"):
 def generate_indices(base,year,LENGTH,LAG,omni_path="../data_local/omni/sw_data.h5",weimer_path="../data_local/weimer/"):
     print(f'loading from path {base} /')
 
-    dates, data, features = get_iaga_data_as_list(base,year,tiny=False,load_data=False)
+    dates, data, features, _ = get_iaga_data_as_list(base,year,tiny=False,load_data=False)
 
     df = pd.DataFrame()
     df['seconds'] = dates

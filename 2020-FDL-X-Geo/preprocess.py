@@ -31,8 +31,8 @@ targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20
 num_workers = 16
-output_folder = './processed_data'
-stn_reg = False # run scripts/station_regularization.py first to get these files
+output_folder = './processed_data/regularized/'
+stn_reg = True # run scripts/station_regularization.py first to get these files
 
 supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist,stn_reg=stn_reg))
 omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))

@@ -65,40 +65,40 @@ def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
     return max_stations
 
 def get_iaga_data_as_list(base,year,tiny=False,load_data=True,stn_reg=False):
+    reg=[]
     if isinstance(year,str):
         dates,data,features = get_iaga_data(f"{base}{year}/",tiny=tiny,load_data=load_data)
-        if stn_reg:
-            reg=get_iaga_reg(f"{base}{year}/")
-            return dates,data,features,reg
-        else:
-            return dates,data,features,np.ones_like(data)
+        if load_data:
+            if stn_reg:
+                reg=get_iaga_reg(f"{base}{year}/")
+            else:
+                reg=np.ones_like(data[:,:,0])
+                
+        return dates,data,features,reg
 
     elif isinstance(year,list):
         dates = []
         data = []
-        features = []
-        reg = []
         max_stations = get_iaga_max_stations(base=base, yearlist=year)
         for y in year:
-            dt,dat,feat = get_iaga_data(f"{base}{y}/",tiny=tiny,max_stations=max_stations,load_data=load_data)
+            dt,dat,features = get_iaga_data(f"{base}{y}/",tiny=tiny,max_stations=max_stations,load_data=load_data)
             dates.append(dt)
-            features.append(feat)
             if load_data:
                 data.append(dat)
                 if stn_reg: 
                     reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
                 else:
-                    reg.append(np.ones_like(dat))
+                    reg.append(np.ones_like(dat[:,:,0]))
         dates = np.concatenate(dates,axis=0)
 
         if load_data:
             data = np.concatenate(data,axis=0)
             reg = np.concatenate(reg,axis=0)
-        
+
         return dates,data,features,reg
     
     else:
-        raise TypeError("year must be either a list of years, or a single year.")
+        raise TypeError("Year must be either a list of years, or a single year (str).")
 
 
 def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
@@ -146,7 +146,7 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
         data = np.concatenate(data,axis=0)
     dates = np.concatenate(dates)
 
-    return dates, data, features
+    return dates, np.array(data), features
 
 def get_iaga_reg(base,max_stations=None):
 
@@ -179,7 +179,7 @@ def get_iaga_reg(base,max_stations=None):
         )
     sca_dat = np.concatenate(sca_dat,axis=0)
 
-    return sca_dat
+    return np.array(sca_dat)
 
 def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_data,weimer_years):
     """

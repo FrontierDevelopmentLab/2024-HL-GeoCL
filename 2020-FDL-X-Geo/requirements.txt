@@ -14,3 +14,4 @@ Pillow
 wandb
 celluloid
 pyproj
+tables
