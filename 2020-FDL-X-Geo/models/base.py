@@ -90,28 +90,31 @@ class BaseModel(pl.LightningModule):
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
 
-        self.log("train_MSE", loss, on_step=False, on_epoch=True)
+        self.log("train_MSE", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "train_r2",
             R2(future_supermag, predictions).mean(),
             on_step=False,
             on_epoch=True,
+            sync_dist=True
         )
 
-        self.log("train_dbe_MSE", MSE(future_supermag[..., [0]], predictions[..., [0]]).mean(), on_step=False, on_epoch=True)
+        self.log("train_dbe_MSE", MSE(future_supermag[..., [0]], predictions[..., [0]]).mean(), on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "train_dbe_r2",
             R2(future_supermag[..., [0]], predictions[..., [0]]).mean(),
             on_step=False,
             on_epoch=True,
+            sync_dist=True
         )
 
-        self.log("train_dbn_MSE", MSE(future_supermag[..., [1]], predictions[..., [1]]).mean(), on_step=False, on_epoch=True)
+        self.log("train_dbn_MSE", MSE(future_supermag[..., [1]], predictions[..., [1]]).mean(), on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "train_dbn_r2",
             R2(future_supermag[..., [1]], predictions[..., [1]]).mean(),
             on_step=False,
             on_epoch=True,
+            sync_dist=True
         )
 
 
@@ -146,9 +149,10 @@ class BaseModel(pl.LightningModule):
             R2(future_supermag, predictions).mean(),
             on_step=False,
             on_epoch=True,
-            prog_bar=True
+            prog_bar=True,
+            sync_dist=True
         )
-        self.log("val_MSE", MSE(future_supermag,predictions), on_step=False, on_epoch=True,prog_bar=True)
+        self.log("val_MSE", MSE(future_supermag,predictions), on_step=False, on_epoch=True,prog_bar=True, sync_dist=True)
 
         # if batch_idx == 0:
         #     # hack: need to find a callback way
@@ -244,47 +248,52 @@ class BaseModel(pl.LightningModule):
                 R2(targets, predictions).mean(),
                 on_step=False,
                 on_epoch=True,
+                sync_dist=True
             )
             self.log(
                 "wiemer_MSE",
                 ((targets - predictions) ** 2).mean(),
                 on_step=False,
                 on_epoch=True,
+                sync_dist=True
             )
+            
+            if self.logger is not None:
 
-            fig, ax = plt.subplots()
+                fig, ax = plt.subplots()
 
-            ax.scatter(targets.cpu().numpy().ravel(), predictions.cpu().numpy().ravel())
-            self.logger.experiment.log(
-                {
-                    "wiemer_scatter": [
-                        wandb.Image(get_img_from_fig(fig), caption="val_scatter")
-                    ]
-                }
-            )
-            nice_idx = [0]
+                ax.scatter(targets.cpu().numpy().ravel(), predictions.cpu().numpy().ravel())
+                self.logger.experiment.log(
+                    {
+                        "wiemer_scatter": [
+                            wandb.Image(get_img_from_fig(fig), caption="val_scatter")
+                        ]
+                    }
+                )
+                nice_idx = [0]
 
-            # dbe_nez
-            pred_sphere = spherical_plot_forecasting(
-                self.nmax, coeffs[nice_idx][..., 0], predictions[nice_idx][..., 0].detach().cpu(),
-                targets[nice_idx][..., 0].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
-                _mean[0], _std[0]
-            )
-            self.logger.experiment.log(
-                {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
-            )
+                # dbe_nez
+                pred_sphere = spherical_plot_forecasting(
+                    self.nmax, coeffs[nice_idx][..., 0], predictions[nice_idx][..., 0].detach().cpu(),
+                    targets[nice_idx][..., 0].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
+                    _mean[0], _std[0]
+                )
 
-            # dbn_nez
-            pred_sphere = spherical_plot_forecasting(
-                self.nmax, coeffs[nice_idx][..., 1], predictions[nice_idx][..., 1].detach().cpu(),
-                targets[nice_idx][..., 1].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
-                _mean[1], _std[1]
-            )
-            self.logger.experiment.log(
-                {"dbn_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
-            )
+                self.logger.experiment.log(
+                    {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
+                )
 
-            plt.figure().clear()
-            plt.close()
-            plt.cla()
-            plt.clf()
+                # dbn_nez
+                pred_sphere = spherical_plot_forecasting(
+                    self.nmax, coeffs[nice_idx][..., 1], predictions[nice_idx][..., 1].detach().cpu(),
+                    targets[nice_idx][..., 1].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
+                    _mean[1], _std[1]
+                )
+                self.logger.experiment.log(
+                    {"dbn_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
+                )
+
+                plt.figure().clear()
+                plt.close()
+                plt.cla()
+                plt.clf()

@@ -8,7 +8,7 @@ import tqdm
 from scipy.special import sph_harm
 from sklearn.preprocessing import StandardScaler
 from torch.utils import data
-
+import pickle
 from utils.helpers import dipole_tilt
 
 
@@ -305,7 +305,8 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             self.scaler["supermag"] = [target_mean, target_std]
 
             dt=self.dates[new_inds]
-            match =  np.argmin(np.abs(pd.to_datetime(dt.reshape(-1),unit='s').to_numpy().reshape(list(dt.shape))[...,None]-f107_data["dates"].reshape([1,1,-1])),axis=-1)
+            match =  np.argmin(np.abs(pd.to_datetime(dt.reshape(-1),unit='s').to_numpy().reshape(list(dt.shape))[...,None]\
+                                      -f107_data["dates"].reshape([1,1,-1])),axis=-1)
             f107_tmp = f107_data["f107"][match]
             new_omni=np.concatenate([self.omni[i,...] for i in new_inds],axis=0)
             target = np.concatenate([new_omni,dipole_tilt(dt).reshape([-1,1]),f107_tmp.reshape([-1,1])],axis=-1)
@@ -324,44 +325,67 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
 
 
         self._nbasis = nmax
+        
+        self.sg_indices_dict = {}
+        for i in tqdm.trange(len(self.sg_indices), desc="Inital 'bucketizing'"):
+            sg_ind = self.sg_indices[i]
+            po = self.omni[sg_ind[0]:sg_ind[0]+self.past_omni_length,...]
+            past_supermag = self.supermag_data[sg_ind[0],...][None,:]
+            past_dates = self.dates[sg_ind[0]:sg_ind[0]+self.past_omni_length]
+            dp = (dipole_tilt(self.dates[sg_ind[0]:sg_ind[0]+self.past_omni_length])-self.scaler["omni"][0][-2])/(self.scaler["omni"][0][-2])
+            tmp_dates = pd.to_datetime(past_dates.reshape(-1),unit='s').to_numpy().reshape([-1,1])
+
+            #Find the best matching f10.7 index along 2nd dimension
+            match = np.argmin(np.abs(tmp_dates-self.f107[1].reshape([1,-1])),axis=-1)
+            f107 = (self.f107[0][match]-self.scaler["omni"][0][-1])/(self.scaler["omni"][0][-1])
+            past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
+            del po
+            future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+            future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
+            sm_future = NamedAccess(future_supermag, self.supermag_features)
+            _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
+            _mcolat = 90.0 - sm_future["MAGLAT"]
+            
+            features_dict = {"past_omni": past_omni,
+            "past_supermag": past_supermag,
+            "future_supermag": future_supermag,
+            "past_dates": past_dates,
+            "future_dates": future_dates,
+            "coords_radians": (np.deg2rad(_mlt), np.deg2rad(_mcolat))
+            }
+            self.sg_indices_dict[i] = features_dict
+       
 
     def __len__(self):
 
         return int(len(self.sg_indices))
 
     def __getitem__(self, index):
-        """
-            The dataset should be of shape (n_buckets,n_points_per_bucket,...).  
-            If there are M possible indices per bucket 
-            (i.e., index = m gives → output = bucket[-1]), 
-            the size of dataset would be n_buckets*M. 
-            Any index k will be addressed as (k/M,k%M,...).
-             k/M will give which bucket is taken, while k%M will put index within the bucket. 
-        """
-        sg_ind = self.sg_indices[index]
-        po = self.omni[sg_ind[0]:sg_ind[0]+self.past_omni_length,...]
-        past_supermag = self.supermag_data[sg_ind[0],...][None,:]
-        past_dates = self.dates[sg_ind[0]:sg_ind[0]+self.past_omni_length]
-        dp = (dipole_tilt(self.dates[sg_ind[0]:sg_ind[0]+self.past_omni_length])-self.scaler["omni"][0][-2])/(self.scaler["omni"][0][-2])
-        tmp_dates = pd.to_datetime(past_dates.reshape(-1),unit='s').to_numpy().reshape([-1,1])
-        
-        #Find the best matching f10.7 index along 2nd dimension
-        match = np.argmin(np.abs(tmp_dates-self.f107[1].reshape([1,-1])),axis=-1)
-        f107 = (self.f107[0][match]-self.scaler["omni"][0][-1])/(self.scaler["omni"][0][-1])
-        past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
-        del po
-        future_supermag = self.supermag_data[sg_ind[1],...][None,:]
-        future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
-        sm_future = NamedAccess(future_supermag, self.supermag_features)
-
-        _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
-        _mcolat = 90.0 - sm_future["MAGLAT"]
-
-        return (
-            past_omni,
-            past_supermag,
-            future_supermag,
-            past_dates,
-            future_dates,
-            (np.deg2rad(_mlt), np.deg2rad(_mcolat)),
+        features_dict = self.sg_indices_dict[index]
+        return (features_dict["past_omni"],
+                features_dict["past_supermag"],
+                features_dict["future_supermag"],
+                features_dict["past_dates"],
+                features_dict["future_dates"],
+                features_dict["coords_radians"],
+        )
+    
+class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
+    def __init__(
+        self,
+        file_path
+    ):
+        self.features_dict = pickle.load(open(file_path, 'rb'))
+    
+    def __len__(self):
+        return int(len(self.features_dict))
+    
+    def __getitem__(self, index):
+        features_dict = self.features_dict[index]
+        return (features_dict["past_omni"],
+                features_dict["past_supermag"],
+                features_dict["future_supermag"],
+                features_dict["past_dates"],
+                features_dict["future_dates"],
+                features_dict["coords_radians"],
         )
