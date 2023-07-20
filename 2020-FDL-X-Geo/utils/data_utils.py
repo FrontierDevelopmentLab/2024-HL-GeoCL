@@ -48,7 +48,7 @@ def get_omni_data(path=None, year="2016"):
         raise TypeError("year must be either a list of years, or a single year.")
 
 
-def get_iaga_max_stations(base="data_local/iaga/",tiny=False, yearlist = list(np.arange(2010, 2019).astype(int))):
+def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
     if tiny:
         files = [g for y in yearlist for g in sorted(glob(f"{base}{y}/supermag_iaga_tiny*.npz"),key=lambda f: int(re.sub("\D", "", f)),) ]
     else:
@@ -78,7 +78,7 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True,stn_reg=False):
         data = []
         features = []
         reg = []
-        max_stations = get_iaga_max_stations(base=base)
+        max_stations = get_iaga_max_stations(base=base, yearlist=year)
         for y in year:
             dt,dat,feat = get_iaga_data(f"{base}{y}/",tiny=tiny,max_stations=max_stations,load_data=load_data)
             dates.append(dt)
