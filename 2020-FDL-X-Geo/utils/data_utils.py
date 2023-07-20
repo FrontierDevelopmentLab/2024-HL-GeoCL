@@ -66,12 +66,8 @@ def get_input_data(omni_path=None, indices_path=None, year="2016"):
     omni_df.reset_index(inplace=True, drop=True)
     indices_df.reset_index(inplace=True, drop=True)
     indices_df = indices_df[indices_to_use]
-    print(indices_df, indices_df.info())
-    Break
     combined_df = pd.concat([omni_df, indices_df], axis=1)
     combined_df.index = timestamps
-    # print(omni_df.info(), indices_df.info(), combined_df.info(), combined_df.head())
-    # Break
     del omni_df, indices_df
     return combined_df
 
