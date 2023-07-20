@@ -44,7 +44,7 @@ hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
                                 learning_rate = 5e-03,batch_size = 3500,
                                 l2reg=1e-3,epochs = 1000, dropout_prob=0.9,n_hidden=8,
-                                loss='MAE',model='NeuralRNNWiemer_HidddenSuperMAG',
+                                loss='MAE',model='NeuralRNNWiemer_HidddenSuperMAG', stn_reg = True,
                                 wandb_logging = True)
                                 # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
@@ -71,6 +71,7 @@ def train(config):
     dropout_prob=config["dropout_prob"]
     loss = config["loss"]
     NN_md = md[config["model"]]
+    stn_reg = config["stn_reg"]
 
     wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
     if config["wandb_logging"]:
@@ -79,11 +80,9 @@ def train(config):
         wandb_logger = None
 
     yearlist = list(np.arange(2013,2014).astype(int))
-    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    yearlist = list(np.arange(2013,2014).astype(int))
+    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist,stn_reg=stn_reg))
     omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 
-    yearlist = list(np.arange(2013,2014).astype(int))
     train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
                                                         LENGTH=past_omni_length,LAG=lag,
                                                         omni_path="data_local/omni/sw_data.h5",

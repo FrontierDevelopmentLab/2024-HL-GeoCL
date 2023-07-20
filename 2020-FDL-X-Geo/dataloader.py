@@ -46,11 +46,11 @@ def _float(tensor):
 
 
 class SuperMAGIAGADataset:
-    def __init__(self, dates, data, features):
+    def __init__(self, dates, data, features, reg):
         self.dates = dates
         self.data = data
         self.features = features
-
+        self.reg = reg
 
 class OMNIDataset:
     def __init__(self, data):
@@ -97,6 +97,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
 
         self.supermag_data = supermag_data.data[idx]
         self.supermag_features = supermag_data.features
+        self.supermag_reg = supermag_data.reg
 
         self.target_idx = []
         for target in targets:
@@ -200,6 +201,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
             self.omni[index - self.past_omni_length : index],
             self.supermag_data[index - self.past_supermag_length : index],
             future_supermag,
+            self.supermag_reg[index + self.lag : index + self.future_length + self.lag],
             self.dates[index - self.past_omni_length : index],
             self.dates[index + self.lag : index + self.future_length + self.lag],
             (np.deg2rad(_mlt), np.deg2rad(_mcolat)),
@@ -231,6 +233,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         #     self.supermag_data[i] = supermag_data.data[index[0]:index[1],...]
         #shape (n_buckets,n_elements_in_bucket,n_stations,n_components)
         self.supermag_features = supermag_data.features
+        self.supermag_reg = supermag_data.reg
 
         # Generate the slices correspondong to each bucket
         self.sg_indices = idx
@@ -351,6 +354,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
         del po
         future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+        future_supermag_reg = self.supermag_reg[sg_ind[1],...][None,:]
         future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
         sm_future = NamedAccess(future_supermag, self.supermag_features)
 
@@ -361,6 +365,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (np.deg2rad(_mlt), np.deg2rad(_mcolat)),

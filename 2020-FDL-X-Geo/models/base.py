@@ -38,17 +38,28 @@ def SumSE(a, b):
 def MAE(a, b):
     return (torch.abs(a-b)).mean()
 
-def MaxSqEr(true, pred):
-    return torch.sum(((true - pred)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(true,pred)
+def MaxSqEr(a, b):
+    return torch.sum(((a - b)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(a,b)
 
-def SqSqEr(true, pred):
-    return ((true-pred)**4).mean()
+def SqSqEr(a, b):
+    return ((a-b)**4).mean()
 
 def MAE_BH(a, b):
     return (torch.abs(a-b)).mean()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
 
-def CompErr(true,pred):
-    return ((true - pred)**2).mean(dim=(0,1)).sum()+torch.abs((true**2).sum(dim=-1) - (pred**2).sum(dim=-1)).mean()
+def CompErr(a,b):
+    return ((a - b)**2).mean(dim=(0,1)).sum()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
+
+def StnReg_Loss(stn_reg,lossfun,a,b):
+    '''Custom loss function to include sparsity regularization for the ground stations. Default regularization is 1, i.e., no change to loss function.
+    
+    Parameters:
+    stn_reg (array): associated regularization scaling factors for each station (same shape as a and b)
+    lossfun (function): loss function to be used for the model
+    a (tensor): target tensor
+    b (tensor): prediction tensor
+    '''   
+    return stn_reg*lossfun(a,b)
 
 class BaseModel(pl.LightningModule):
     def __init__(self,**kwargs):
@@ -71,6 +82,7 @@ class BaseModel(pl.LightningModule):
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (phi, theta),
@@ -84,8 +96,7 @@ class BaseModel(pl.LightningModule):
         future_supermag[torch.isnan(future_supermag)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
-        # loss = ((future_supermag - predictions) ** 2).mean()
-        loss = self.lossfun(future_supermag,predictions)
+        loss = StnReg_Loss(future_supermag_reg,self.lossfun,future_supermag,predictions)
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
@@ -122,6 +133,7 @@ class BaseModel(pl.LightningModule):
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (mlt, mcolat),
