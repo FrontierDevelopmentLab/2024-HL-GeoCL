@@ -58,7 +58,7 @@ def get_input_data(omni_path=None, indices_path=None, year="2016"):
         indices_df = pd.read_csv(indices_path+f"supermag_indices_{year}.csv", index_col="Date_UTC")
     elif isinstance(year,list):
         omni_df = pd.concat([pd.read_hdf(omni_path, key=str(y)) for y in year])
-        indices_files = sorted(glob(indices_path+"supermag_indices_*.csv"))
+        indices_files = sorted([indices_path+f"supermag_indices_{y}.csv" for y in year])
         indices_df = pd.concat([pd.read_csv(indices_file, index_col="Date_UTC") for indices_file in indices_files], axis=0)
     else:
         raise TypeError("year must be either a list of years, or a single year.")
