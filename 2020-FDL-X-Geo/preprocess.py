@@ -256,11 +256,6 @@ for year in yearlist:
     test_idx = np.asarray(test_idx)
     wiemer_idx = np.asarray(wiemer_idx)
     
-    train_idx = train_idx[:200]
-    val_idx = val_idx[:200]
-    test_idx = test_idx[:200]
-    wiemer_idx = wiemer_idx[:200]
-    
     train_ds = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
                 past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
