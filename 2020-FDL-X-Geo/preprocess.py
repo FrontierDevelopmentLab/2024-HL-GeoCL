@@ -26,15 +26,14 @@ import pickle
 # Preprocessing parameters
 past_omni_length = 120
 lag = 30
-yearlist = list(np.arange(2013,2014).astype(int))
+yearlist = list(np.arange(2013,2015).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20
 num_workers = 16
 output_folder = './processed_data/regularized/'
-stn_reg = True # run scripts/station_regularization.py first to get these files
 
-supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist,stn_reg=stn_reg))
+supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
 omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 
 train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
@@ -232,7 +231,7 @@ class PreprocessData():
         return features_dict
                                      
 if not os.path.exists(output_folder):
-    os.mkdir(output_folder)
+    os.makedirs(output_folder, exist_ok=True)
 
 train_ds = PreprocessData(supermag_data,omni_data,train_idx,
             f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,

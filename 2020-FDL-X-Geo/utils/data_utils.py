@@ -64,15 +64,12 @@ def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
     max_stations = max([len(s) for s in stations])
     return max_stations
 
-def get_iaga_data_as_list(base,year,tiny=False,load_data=True,stn_reg=False):
+def get_iaga_data_as_list(base,year,tiny=False,load_data=True):
     reg=[]
     if isinstance(year,str):
         dates,data,features = get_iaga_data(f"{base}{year}/",tiny=tiny,load_data=load_data)
         if load_data:
-            if stn_reg:
-                reg=get_iaga_reg(f"{base}{year}/")
-            else:
-                reg=np.ones_like(data[:,:,0])
+            reg=get_iaga_reg(f"{base}{year}/")
                 
         return dates,data,features,reg
 
@@ -85,10 +82,7 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True,stn_reg=False):
             dates.append(dt)
             if load_data:
                 data.append(dat)
-                if stn_reg: 
-                    reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
-                else:
-                    reg.append(np.ones_like(dat[:,:,0]))
+                reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
         dates = np.concatenate(dates,axis=0)
 
         if load_data:
