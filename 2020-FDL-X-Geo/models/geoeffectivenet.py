@@ -48,7 +48,7 @@ class NeuralRNNWiemer(BaseModel):
         [hidden] * levels
 
         self.omni_past_encoder = nn.GRU(
-            25, hidden, num_layers=1, bidirectional=False, batch_first=True
+            29, hidden, num_layers=1, bidirectional=False, batch_first=True
         )
 
         # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
@@ -119,6 +119,11 @@ class NeuralRNNWiemer(BaseModel):
 
         features.append(past_omni["clock_angle"])
         features.append(past_omni["temperature"])
+        
+        features.append(past_omni["SME"])
+        features.append(past_omni["SMU"])
+        features.append(past_omni["SML"])
+        features.append(past_omni["SMR"])
 
         # PI = 22.0/7.0
         # offset = (dt.datetime(2013,1,1) - dt.datetime(1970,1,1)).total_seconds()/(365*24*60*60)
