@@ -104,9 +104,9 @@ class BaseModel(pl.LightningModule):
         future_supermag_reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
         
         # Apply station regularization when stn_reg is True, otherwise apply no regularization (i.e. all ones)
-        tmp_reg=self.stn_reg*future_supermag_reg+(not(self.stn_reg))*torch.ones_like(future_supermag_reg)
+        reg=float(self.stn_reg)*future_supermag_reg+float(not(self.stn_reg))*torch.ones_like(future_supermag_reg)
         
-        loss= self.lossfun(future_supermag,predictions,tmp_reg*(future_supermag-predictions))
+        loss= self.lossfun(future_supermag,predictions,reg*(future_supermag-predictions))
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
