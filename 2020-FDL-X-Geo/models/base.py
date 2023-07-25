@@ -64,16 +64,6 @@ def CompErr(a,b,diff=None):
         diff = a-b
     return ((diff)**2).mean(dim=(0,1)).sum()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
 
-def StnReg_Loss(stn_reg,lossfun,a,b):
-    '''Custom loss function to include sparsity regularization for the ground stations. Default regularization is 1, i.e., no change to loss function.
-    
-    Parameters:
-    stn_reg (array): associated regularization scaling factors for each station (same shape as a and b)
-    lossfun (function): loss function to be used for the model
-    a (tensor): target tensor
-    b (tensor): prediction tensor
-    '''   
-    return lossfun(a,b,stn_reg*(a-b))
 
 class BaseModel(pl.LightningModule):
     def __init__(self,**kwargs):
@@ -113,10 +103,10 @@ class BaseModel(pl.LightningModule):
         future_supermag = future_supermag[..., target_col].squeeze(1)
         future_supermag_reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
         
-        if self.stn_reg:
-            loss = StnReg_Loss(future_supermag_reg,self.lossfun,future_supermag,predictions)
-        else:
-            loss = StnReg_Loss(torch.ones_like(future_supermag),self.lossfun,future_supermag,predictions)
+        # Apply station regularization when stn_reg is True, otherwise apply no regularization (i.e. all ones)
+        tmp_reg=self.stn_reg*future_supermag_reg+(not(self.stn_reg))*torch.ones_like(future_supermag_reg)
+        
+        loss= self.lossfun(future_supermag,predictions,tmp_reg*(future_supermag-predictions))
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
