@@ -25,7 +25,7 @@ def get_sequences(df, length, lag):
     
     if len(t) > 0:
         assert np.max((t-f)) == np.min((t-f)) == (length+lag)
-        
+
     return list(zip(f, t))
 
 def weimerdatesgetter(base="../data_local/weimer/"):

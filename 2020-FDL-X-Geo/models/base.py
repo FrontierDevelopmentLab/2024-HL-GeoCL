@@ -297,4 +297,3 @@ class BaseModel(pl.LightningModule):
                 plt.close()
                 plt.cla()
                 plt.clf()
-                

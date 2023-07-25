@@ -48,7 +48,6 @@ def get_omni_data(path=None, year="2016"):
     else:
         raise TypeError("year must be either a list of years, or a single year.")
 
-
 def get_input_data(omni_path=None, indices_path=None, year="2016"):
     # Geomagnetic indices files must be named like `supermag_indices_{year}.csv`
     import pandas as pd
@@ -72,7 +71,7 @@ def get_input_data(omni_path=None, indices_path=None, year="2016"):
     return combined_df
 
 
-def get_iaga_max_stations(base="data_local/iaga/",tiny=False, yearlist=list(np.arange(2010,2018+1).astype(int))):
+def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
     if tiny:
         files = [g for y in yearlist for g in sorted(glob(f"{base}{y}/supermag_iaga_tiny*.npz"),key=lambda f: int(re.sub("\D", "", f)),) ]
     else:
@@ -201,7 +200,8 @@ def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_dat
     else:
         raise TypeError("Weimer year must be either a list of years, or a single year.")
 
-def get_wiemer_data(omni_data, supermag_data, idx, targets, scaler, lag, past_omni_length, future_length, bucketed):
+
+def get_wiemer_data(omni_data, supermag_data, targets, scaler, lag, past_omni_length, future_length,wyear):
     """
         Function to load the OMNI and SuperMAG measurements corresponding to Weimer storm time.
         NOTE:::::!!This function actually load the data, and not just returns the indices.
@@ -222,24 +222,16 @@ def get_wiemer_data(omni_data, supermag_data, idx, targets, scaler, lag, past_om
             wstart = np.argmin(np.abs(weimer_times_unix[0] - supermag_data.dates)) - past_omni_length -lag - future_length +2
             wend = (np.argmin(np.abs(weimer_times_unix[-1] - supermag_data.dates)) + 1)
             weimerinds = np.arange(wstart, wend).astype(int)
-
-            if bucketed:
-                datasets[year] = ShpericalHarmonicsDatasetBucketized(supermag_data, omni_data, idx,
-                    f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                    past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-                    zero_supermag=False,scaler=None,training_batch=True)
-            else:
-                datasets[year] = (ShpericalHarmonicsDataset(
-                                                            supermag_data,
-                                                            omni_data,
-                                                            weimerinds,
-                                                            scaler=scaler,
-                                                            lag=lag,
-                                                            targets=targets,
-                                                            past_omni_length=past_omni_length,
-                                                            future_length=future_length,
-                                                            f107_dataset="data_local/f107.npz"
-                                                        ))
+            datasets[year] = (ShpericalHarmonicsDataset(
+                                                        supermag_data,
+                                                        omni_data,
+                                                        weimerinds,
+                                                        scaler=scaler,
+                                                        targets=targets,
+                                                        past_omni_length=past_omni_length,
+                                                        future_length=future_length,
+                                                        f107_dataset="data_local/f107.npz"
+                                                    ))
         return datasets
     else:
         raise TypeError("Weimer year must be either a list of years, or a single year.")
