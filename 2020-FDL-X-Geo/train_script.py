@@ -50,8 +50,9 @@ hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
 hyperparameter_defaults = hyperparameter_best
+yearlist = np.arange(2010, 2012)
 
-preprocessed_path = './processed_data'
+preprocessed_path = './processed_data_all_years'
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
 def train(config):
@@ -116,9 +117,9 @@ def train(config):
 
     #Save the scaler
     
-    train_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'train_data.p'))
-    val_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'val_data.p'))
-    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'wiemer_data.p'))
+    train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist)
+    val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist)
+    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist)
     
     scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
