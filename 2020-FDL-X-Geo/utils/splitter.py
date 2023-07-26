@@ -23,7 +23,8 @@ def get_sequences(df, length, lag):
     f = _df.groupby(['cluster']).apply(lambda x: x[:len(x)-length-lag]['index']).reset_index(drop=True).values.ravel()
     t = _df.groupby(['cluster']).apply(lambda x: x[length+lag:]['index']).reset_index(drop=True).values.ravel()
     
-    assert np.max((t-f)) == np.min((t-f)) == (length+lag)
+    if len(t) > 0:
+        assert np.max((t-f)) == np.min((t-f)) == (length+lag)
 
     return list(zip(f, t))
 
