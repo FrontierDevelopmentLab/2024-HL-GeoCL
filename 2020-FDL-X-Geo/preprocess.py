@@ -31,7 +31,7 @@ targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20
 num_workers = 16
-output_folder = './processed_data_base'
+output_folder = './processed_data_all_years'
 extra_input_features = ["SME", "SML", "SMU", "SMR"]
 
 class PreprocessData():
