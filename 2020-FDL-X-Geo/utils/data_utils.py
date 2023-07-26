@@ -46,6 +46,31 @@ def get_omni_data(path=None, year="2016"):
         return pd.concat([pd.read_hdf(path, key=str(y)) for y in year])
     else:
         raise TypeError("year must be either a list of years, or a single year.")
+        
+
+def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
+    # Geomagnetic indices files must be named like `supermag_indices_{year}.csv`
+    import pandas as pd
+    if isinstance(year,str):
+        omni_df = pd.read_hdf(omni_path, key=year)
+        indices_df = pd.read_csv(indices_path+f"supermag_indices_{year}.csv", index_col="Date_UTC")
+    elif isinstance(year,list):
+        omni_df = pd.concat([pd.read_hdf(omni_path, key=str(y)) for y in year])
+        indices_files = sorted([indices_path+f"supermag_indices_{y}.csv" for y in year])  # Loaded even if not used, but this doesn't take long
+        indices_df = pd.concat([pd.read_csv(indices_file, index_col="Date_UTC") for indices_file in indices_files], axis=0)
+    else:
+        raise TypeError("year must be either a list of years, or a single year.")
+    timestamps = omni_df.index
+    omni_df.reset_index(inplace=True, drop=True)
+    indices_df.reset_index(inplace=True, drop=True)
+    if len(indices_df.columns) == 0:
+        print("No geomagnetic indices specified. Only upstream data are being loaded.")
+    indices_df = indices_df[indices_to_use]
+    combined_df = pd.concat([omni_df, indices_df], axis=1)  # If no indices, concats an empty dataframe
+    combined_df.index = timestamps
+    del omni_df, indices_df
+    return combined_df
+
 
 
 def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
