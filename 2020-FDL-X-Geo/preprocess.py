@@ -32,7 +32,7 @@ future_length = 1
 nmax = 20
 num_workers = 16
 output_folder = './processed_data_base'
-
+extra_input_features = ["SME", "SML", "SMU", "SMR"]
 
 class PreprocessData():
     def __init__(self,
@@ -216,7 +216,8 @@ if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
     omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
     input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
-                                             indices_path="data_local/supermag_indices/", 
+                                             indices_path="data_local/supermag_indices/",
+                                             indices_to_use=extra_input_features,
                                              year=yearlist))
 
     train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
@@ -225,7 +226,7 @@ if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
                                                             weimer_path="data_local/weimer/")
     train_idx = np.asarray(train_idx)
 
-   train_ds_all_years = PreprocessData(supermag_data,input_data,train_idx,
+    train_ds_all_years = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
                 past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
                 zero_supermag=False,scaler=None,training_batch=True,nmax=nmax, num_workers=num_workers)
@@ -248,7 +249,8 @@ for year in yearlist:
     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=[year], max_stations=max_stations))
     omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=[year]))
     input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
-                                             indices_path="data_local/supermag_indices/", 
+                                             indices_path="data_local/supermag_indices/",
+                                             indices_to_use=extra_input_features,
                                              year=[year]))
 
     train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=[year],

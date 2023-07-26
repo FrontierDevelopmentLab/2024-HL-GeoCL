@@ -14,10 +14,9 @@ import h5py
 from glob import glob
 from astropy.time import Time
 import sys
-from wrapt_timeout_decorator import *
 
 sys.path.append('../')
-from dataloader import (OMNIDataset, ShpericalHarmonicsDataset, ShpericalHarmonicsDatasetBucketized,
+from dataloader import (OMNIDataset, ShpericalHarmonicsDataset,
                         SuperMAGIAGADataset)
 
 
@@ -47,28 +46,31 @@ def get_omni_data(path=None, year="2016"):
         return pd.concat([pd.read_hdf(path, key=str(y)) for y in year])
     else:
         raise TypeError("year must be either a list of years, or a single year.")
+        
 
-def get_input_data(omni_path=None, indices_path=None, year="2016"):
+def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
     # Geomagnetic indices files must be named like `supermag_indices_{year}.csv`
     import pandas as pd
-    indices_to_use = ["SME", "SML", "SMU", "SMR"]
     if isinstance(year,str):
         omni_df = pd.read_hdf(omni_path, key=year)
         indices_df = pd.read_csv(indices_path+f"supermag_indices_{year}.csv", index_col="Date_UTC")
     elif isinstance(year,list):
         omni_df = pd.concat([pd.read_hdf(omni_path, key=str(y)) for y in year])
-        indices_files = sorted([indices_path+f"supermag_indices_{y}.csv" for y in year])
+        indices_files = sorted([indices_path+f"supermag_indices_{y}.csv" for y in year])  # Loaded even if not used, but this doesn't take long
         indices_df = pd.concat([pd.read_csv(indices_file, index_col="Date_UTC") for indices_file in indices_files], axis=0)
     else:
         raise TypeError("year must be either a list of years, or a single year.")
     timestamps = omni_df.index
     omni_df.reset_index(inplace=True, drop=True)
     indices_df.reset_index(inplace=True, drop=True)
+    if len(indices_df.columns) == 0:
+        print("No geomagnetic indices specified. Only upstream data are being loaded.")
     indices_df = indices_df[indices_to_use]
-    combined_df = pd.concat([omni_df, indices_df], axis=1)
+    combined_df = pd.concat([omni_df, indices_df], axis=1)  # If no indices, concats an empty dataframe
     combined_df.index = timestamps
     del omni_df, indices_df
     return combined_df
+
 
 
 def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
@@ -110,13 +112,6 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True, max_stations=None
     else:
         raise TypeError("year must be either a list of years, or a single year.")
 
-@timeout(10)
-def load_file(f):
-    try:
-        x = np.load(f, allow_pickle=True)
-    except:
-        return None
-    return x
 
 def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
 
@@ -141,9 +136,7 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
 
     print("loading supermag iaga data...")
     for i, f in enumerate(tqdm.tqdm(files)):
-        x = load_file(f)
-        if x is None:
-            continue
+        x = np.load(f, allow_pickle=True)
         if load_data:
             data.append(x["data"])
         dates.append(x["dates"])
@@ -200,7 +193,6 @@ def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_dat
     else:
         raise TypeError("Weimer year must be either a list of years, or a single year.")
 
-
 def get_wiemer_data(omni_data, supermag_data, targets, scaler, lag, past_omni_length, future_length,wyear):
     """
         Function to load the OMNI and SuperMAG measurements corresponding to Weimer storm time.
@@ -237,29 +229,21 @@ def get_wiemer_data(omni_data, supermag_data, targets, scaler, lag, past_omni_le
         raise TypeError("Weimer year must be either a list of years, or a single year.")
 
 
-def load_cached_data(filename, idx, scaler, supermag_data, omni_data, targets, past_omni_length, future_length, lag, bucketed):
+def load_cached_data(filename, idx, scaler, supermag_data, omni_data, targets, past_omni_length, future_length):
     if os.path.exists(filename):
         data = pickle.load(open(filename, "rb"))
         return data, data.scaler
     else:
-        if bucketed:
-            data = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=None,training_batch=True)
-
-        else:
-            data = ShpericalHarmonicsDataset(
-                supermag_data,
-                omni_data,
-                idx,
-                scaler=scaler,
-                lag=lag,
-                targets=targets,
-                past_omni_length=past_omni_length,
-                future_length=future_length,
-                f107_dataset="data_local/f107.npz",
-            )
+        data = ShpericalHarmonicsDataset(
+            supermag_data,
+            omni_data,
+            idx,
+            scaler=scaler,
+            targets=targets,
+            past_omni_length=past_omni_length,
+            future_length=future_length,
+            f107_dataset="data_local/f107.npz",
+        )
         directorypath = '/'.join(filename.split('/')[:-1])
         if not os.path.isdir(directorypath):
             os.makedirs(directorypath)
