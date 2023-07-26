@@ -190,7 +190,7 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
 
         self.omni_resolution = omni_resolution
 
-        hidden = 8
+        hidden = kwargs.pop('n_hidden',8)
         dropout_prob = kwargs.pop('dropout', 0.5)
         levels = 2
         kernel_size = 24
