@@ -99,14 +99,16 @@ class BaseModel(pl.LightningModule):
 
         predictions[torch.isnan(predictions)] = 0
         future_supermag[torch.isnan(future_supermag)] = 0
+        future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
-        future_supermag_reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
+        reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
         
         # Apply station regularization when stn_reg is True, otherwise apply no regularization (i.e. all ones)
-        reg=float(self.stn_reg)*future_supermag_reg+float(not(self.stn_reg))*torch.ones_like(future_supermag_reg)
-        
-        loss= self.lossfun(future_supermag,predictions,reg*(future_supermag-predictions))
+        if self.stn_reg:
+            loss = self.lossfun(future_supermag,predictions,reg*(future_supermag-predictions))
+        else:
+            loss = self.lossfun(future_supermag,predictions,future_supermag-predictions)
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
