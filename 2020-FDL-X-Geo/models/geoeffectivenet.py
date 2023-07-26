@@ -192,8 +192,8 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
 
         self.omni_resolution = omni_resolution
 
-        hidden = kwargs.pop('n_hidden',8)
-        dropout_prob = kwargs.pop('dropout', 0.5)
+        hidden = 8 #kwargs.pop('n_hidden',16)
+        dropout_prob = kwargs.pop('dropout',0.5)
         levels = 2
         kernel_size = 24
         levels = levels
@@ -201,7 +201,7 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
         [hidden] * levels
 
         self.omni_past_encoder = nn.GRU(
-            29, hidden, num_layers=1, bidirectional=False, batch_first=True
+            25, hidden, num_layers=1, bidirectional=False, batch_first=True
         )
 
         # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
@@ -233,12 +233,6 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
         # add the wiemer2013 features
         bt = (past_omni["by"] ** 2 + past_omni["bz"] ** 2) ** 0.5
         v = (past_omni["vx"] ** 2 + past_omni["vy"] ** 2 + past_omni["vz"] ** 2) ** 0.5
-
-        features.append(past_omni["SME"])
-        features.append(past_omni["SMU"])
-        features.append(past_omni["SML"])
-        features.append(past_omni["SMR"])
-
 
         features.append(past_omni["bx"])
         features.append(past_omni["by"])
@@ -337,5 +331,5 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
             import pdb
             pdb.set_trace()
 
-        return basis, coeffs, predictions
+        return basis, coeffs, predictions 
     
