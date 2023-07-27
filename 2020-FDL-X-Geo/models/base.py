@@ -29,26 +29,41 @@ def get_img_from_fig(fig):
     return ToTensor()(image)
 
 
-def MSE(a, b):
-    return ((a-b)**2).mean()
+def MSE(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return ((diff)**2).mean()
 
-def SumSE(a, b):
-    return ((a-b)**2).sum()
+def SumSE(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return ((diff)**2).sum()
 
-def MAE(a, b):
-    return (torch.abs(a-b)).mean()
+def MAE(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return (torch.abs(diff)).mean()
 
-def MaxSqEr(true, pred):
-    return torch.sum(((true - pred)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(true,pred)
+def MaxSqEr(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return torch.sum(((a - diff)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(a,diff)
 
-def SqSqEr(true, pred):
-    return ((true-pred)**4).mean()
+def SqSqEr(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return ((diff)**4).mean()
 
-def MAE_BH(a, b):
-    return (torch.abs(a-b)).mean()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
+def MAE_BH(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return (torch.abs(diff)).mean()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
 
-def CompErr(true,pred):
-    return ((true - pred)**2).mean(dim=(0,1)).sum()+torch.abs((true**2).sum(dim=-1) - (pred**2).sum(dim=-1)).mean()
+def CompErr(a,b,diff=None):
+    if diff is None:
+        diff = a-b
+    return ((diff)**2).mean(dim=(0,1)).sum()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
+
 
 class BaseModel(pl.LightningModule):
     def __init__(self,**kwargs):
@@ -57,6 +72,7 @@ class BaseModel(pl.LightningModule):
         self.lr = kwargs.pop('learning_rate',1e-4)
         self.l2reg = kwargs.pop('l2reg',1e-4)
         losskey = kwargs.pop('loss',None)
+        self.stn_reg = kwargs.pop('stn_reg',False)
         try:
             self.lossfun = ldict[losskey]
         except:
@@ -71,6 +87,7 @@ class BaseModel(pl.LightningModule):
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (phi, theta),
@@ -82,10 +99,16 @@ class BaseModel(pl.LightningModule):
 
         predictions[torch.isnan(predictions)] = 0
         future_supermag[torch.isnan(future_supermag)] = 0
+        future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
-        # loss = ((future_supermag - predictions) ** 2).mean()
-        loss = self.lossfun(future_supermag,predictions)
+        reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
+        
+        # Apply station regularization when stn_reg is True, otherwise apply no regularization (i.e. all ones)
+        if self.stn_reg:
+            loss = self.lossfun(future_supermag,predictions,reg*(future_supermag-predictions))
+        else:
+            loss = self.lossfun(future_supermag,predictions,future_supermag-predictions)
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
@@ -125,6 +148,7 @@ class BaseModel(pl.LightningModule):
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (mlt, mcolat),
@@ -214,6 +238,7 @@ class BaseModel(pl.LightningModule):
                 past_omni,
                 past_supermag,
                 future_supermag,
+                future_supermag_reg,
                 past_dates,
                 future_dates,
                 (mlt, mcolat),
@@ -282,6 +307,11 @@ class BaseModel(pl.LightningModule):
                 self.logger.experiment.log(
                     {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
                 )
+                
+                plt.figure().clear()
+                plt.close()
+                plt.cla()
+                plt.clf()
 
                 # dbn_nez
                 pred_sphere = spherical_plot_forecasting(

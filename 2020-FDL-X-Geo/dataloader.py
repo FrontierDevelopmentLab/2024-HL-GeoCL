@@ -47,11 +47,11 @@ def _float(tensor):
 
 
 class SuperMAGIAGADataset:
-    def __init__(self, dates, data, features):
+    def __init__(self, dates, data, features, reg):
         self.dates = dates
         self.data = data
         self.features = features
-
+        self.reg = reg
 
 class OMNIDataset:
     def __init__(self, data):
@@ -103,6 +103,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
 
         self.supermag_data = supermag_data.data[idx]
         self.supermag_features = supermag_data.features
+        self.supermag_reg = supermag_data.reg
 
         self.target_idx = []
         for target in targets:
@@ -206,6 +207,7 @@ class ShpericalHarmonicsDataset(data.Dataset):
             self.omni[index - self.past_omni_length : index],
             self.supermag_data[index - self.past_supermag_length : index],
             future_supermag,
+            self.supermag_reg[index + self.lag : index + self.future_length + self.lag],
             self.dates[index - self.past_omni_length : index],
             self.dates[index + self.lag : index + self.future_length + self.lag],
             (np.deg2rad(_mlt), np.deg2rad(_mcolat)),
@@ -237,6 +239,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         #     self.supermag_data[i] = supermag_data.data[index[0]:index[1],...]
         #shape (n_buckets,n_elements_in_bucket,n_stations,n_components)
         self.supermag_features = supermag_data.features
+        self.supermag_reg = supermag_data.reg
 
         # Generate the slices correspondong to each bucket
         self.sg_indices = idx
@@ -333,6 +336,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         self._nbasis = nmax
         
         self.sg_indices_dict = {}
+        
         for i in tqdm.trange(len(self.sg_indices), desc="Inital 'bucketizing'"):
             sg_ind = self.sg_indices[i]
             po = self.omni[sg_ind[0]:sg_ind[0]+self.past_omni_length,...]
@@ -347,6 +351,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
             del po
             future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+            future_supermag_reg = self.supermag_reg[sg_ind[1],...][None,:]
             future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
             sm_future = NamedAccess(future_supermag, self.supermag_features)
             _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
@@ -355,6 +360,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             features_dict = {"past_omni": past_omni,
             "past_supermag": past_supermag,
             "future_supermag": future_supermag,
+            "future_supermag_reg": future_supermag_reg,
             "past_dates": past_dates,
             "future_dates": future_dates,
             "coords_radians": (np.deg2rad(_mlt), np.deg2rad(_mcolat))
@@ -371,6 +377,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
         return (features_dict["past_omni"],
                 features_dict["past_supermag"],
                 features_dict["future_supermag"],
+                features_dict["future_supermag_reg"],
                 features_dict["past_dates"],
                 features_dict["future_dates"],
                 features_dict["coords_radians"],
@@ -397,6 +404,7 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
         return (features_dict["past_omni"],
                 features_dict["past_supermag"],
                 features_dict["future_supermag"],
+                features_dict["future_supermag_reg"],
                 features_dict["past_dates"],
                 features_dict["future_dates"],
                 features_dict["coords_radians"],

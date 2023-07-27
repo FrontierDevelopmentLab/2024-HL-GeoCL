@@ -81,7 +81,7 @@ def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
     assert len(files) > 0
     stations = []
 
-    print("loading supermag iaga data...")
+    print("Loading SuperMAG IAGA data to determine maximum number of stations...")
     for i, f in enumerate(tqdm.tqdm(files)):
         x = np.load(f, allow_pickle=True)
         stations.append(x["stations"])
@@ -90,8 +90,14 @@ def get_iaga_max_stations(base="data_local/iaga/", yearlist=[2013], tiny=False):
     return max_stations
 
 def get_iaga_data_as_list(base,year,tiny=False,load_data=True, max_stations=None):
+    reg=[]
     if isinstance(year,str):
-        return get_iaga_data(f"{base}{year}/",tiny=tiny,load_data=load_data)
+        dates,data,features = get_iaga_data(f"{base}{year}/",tiny=tiny,load_data=load_data)
+        if load_data:
+            reg=get_iaga_reg(f"{base}{year}/")
+                
+        return dates,data,features,reg
+
     elif isinstance(year,list):
         dates = []
         data = []
@@ -99,18 +105,21 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True, max_stations=None
         if max_stations is None:
             max_stations = get_iaga_max_stations(base=base, yearlist=year)
         for y in year:
-            dt,dat,feat = get_iaga_data(f"{base}{y}/",tiny=tiny,max_stations=max_stations,load_data=load_data)
+            dt,dat,features = get_iaga_data(f"{base}{y}/",tiny=tiny,max_stations=max_stations,load_data=load_data)
             dates.append(dt)
-            features.append(feat)
             if load_data:
                 data.append(dat)
+                reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
         dates = np.concatenate(dates,axis=0)
 
         if load_data:
             data = np.concatenate(data,axis=0)
-        return dates,data,feat
+            reg = np.concatenate(reg,axis=0)
+
+        return dates,data,features,reg
+    
     else:
-        raise TypeError("year must be either a list of years, or a single year.")
+        raise TypeError("Year must be either a list of years, or a single year (str).")
 
 
 def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
@@ -134,7 +143,7 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
     stations = []
     # idx = []
 
-    print("loading supermag iaga data...")
+    print(f"Loading SuperMAG IAGA data: {path}")
     for i, f in enumerate(tqdm.tqdm(files)):
         x = np.load(f, allow_pickle=True)
         if load_data:
@@ -158,7 +167,40 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
         data = np.concatenate(data,axis=0)
     dates = np.concatenate(dates)
 
-    return dates, data, features
+    return dates, np.array(data), features
+
+def get_iaga_reg(base,max_stations=None):
+
+    import tqdm
+
+    files = sorted(
+        [f for f in glob(base + "supermag_iaga_[!tiny]*_scaling.npy")],
+        key=lambda f: int(re.sub("\D", "", f)),
+    )
+    assert len(files) > 0
+
+    sca_dat = []
+    stations_len =[]
+    print(f"Loading SuperMAG scaling data: {base}")
+    for i, f in enumerate(tqdm.tqdm(files)):
+        x = np.load(f, allow_pickle=True)
+        sca_all = np.expand_dims(np.tile(x[0,:],(int(x[1,0]),1)),axis=2)
+        sca_dat.append(sca_all)
+        stations_len.append(len(x[0,:]))
+
+    if max_stations is None:
+        max_stations = np.max(np.array(stations_len))
+    else:
+        max_stations = max_stations
+        
+    for i, d in enumerate(sca_dat):
+        sca_dat[i] = np.concatenate(
+            [d, np.zeros([d.shape[0], max_stations - d.shape[1], d.shape[2]]) * np.nan],
+            axis=1,
+        )
+    sca_dat = np.concatenate(sca_dat,axis=0)
+
+    return np.array(sca_dat)
 
 def get_weimer_data_indices(targets, lag, past_omni_length, future_length,sg_data,weimer_years):
     """

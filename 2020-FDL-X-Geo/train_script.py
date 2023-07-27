@@ -43,12 +43,11 @@ torch.set_default_dtype(torch.float64)  # this is important else it will overflo
 hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
                                 learning_rate = 5e-03,batch_size = 2500,
-                                l2reg=1e-3,epochs = 1000, dropout_prob=0.3,n_hidden=8,
-                                loss='MAE',model='NeuralRNNWiemer',
+                                l2reg=1e-3,epochs = 100, dropout_prob=0.3,n_hidden=8,
+                                loss='MAE',model='NeuralRNNWiemer',stn_reg=True,
                                 is_logging_enabled = True,
                                 extra_input_features = ["SME", "SML", "SMU", "SMR"],  # Make sure this is a subset of what you had in preprocess.py
                           )
-
                                 # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
@@ -56,6 +55,7 @@ hyperparameter_defaults = hyperparameter_best
 yearlist = np.arange(2013, 2014+1)
 
 preprocessed_path = './processed_data_all_years'
+
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
 def train(config):
@@ -75,9 +75,10 @@ def train(config):
     loss = config["loss"]
     NN_md = md[config["model"]]
     is_logging_enabled = config["is_logging_enabled"]
+    stn_reg = config["stn_reg"] 
     extra_input_features = config["extra_input_features"]
 
-    wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
+    wandb_run_name = f"RegularizationTest_20132014_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
     if is_logging_enabled:
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
     else:
@@ -85,7 +86,6 @@ def train(config):
 
     #yearlist = list(np.arange(2013,2014).astype(int))
     #supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    #yearlist = list(np.arange(2013,2014).astype(int))
     #omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
 
     #yearlist = list(np.arange(2013,2014).astype(int))
@@ -160,7 +160,8 @@ def train(config):
         l2reg=l2reg,
         dropout_prob=dropout_prob,
         n_hidden=n_hidden,
-        loss=loss
+        loss=loss,
+        stn_reg=stn_reg
     )
     model = model.double()
 
