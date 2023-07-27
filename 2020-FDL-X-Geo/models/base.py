@@ -307,6 +307,11 @@ class BaseModel(pl.LightningModule):
                 self.logger.experiment.log(
                     {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
                 )
+                
+                plt.figure().clear()
+                plt.close()
+                plt.cla()
+                plt.clf()
 
                 # dbn_nez
                 pred_sphere = spherical_plot_forecasting(
