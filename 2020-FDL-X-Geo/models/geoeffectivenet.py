@@ -30,16 +30,20 @@ class NeuralRNNWiemer(BaseModel):
         supermag_features,
         omni_resolution,
         nmax,
-        targets_idx,**kwargs
+        targets_idx,
+        extra_input_features,
+        **kwargs
     ):
         super(NeuralRNNWiemer, self).__init__(**kwargs)
 
         # idx of targets in dataset
         self.targets_idx = targets_idx
+        
+        self.extra_input_features = extra_input_features
 
         self.omni_resolution = omni_resolution
 
-        hidden = kwargs.pop('n_hidden',16)
+        hidden = kwargs.pop('n_hidden',8)
         dropout_prob = kwargs.pop('dropout',0.5)
         levels = 2
         kernel_size = 24
@@ -48,8 +52,7 @@ class NeuralRNNWiemer(BaseModel):
         [hidden] * levels
 
         self.omni_past_encoder = nn.GRU(
-            25, hidden, num_layers=1, bidirectional=False, batch_first=True
-        )
+            input_size=25+len(extra_input_features), hidden_size=hidden, num_layers=1, bidirectional=False, batch_first=True)
 
         # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
 
@@ -119,6 +122,10 @@ class NeuralRNNWiemer(BaseModel):
 
         features.append(past_omni["clock_angle"])
         features.append(past_omni["temperature"])
+        
+        # Add things like geomagnetic indices to the input feature list
+        for extra_feature in self.extra_input_features:
+            features.append(past_omni[extra_feature])
 
         # PI = 22.0/7.0
         # offset = (dt.datetime(2013,1,1) - dt.datetime(1970,1,1)).total_seconds()/(365*24*60*60)
@@ -166,7 +173,7 @@ class NeuralRNNWiemer(BaseModel):
 
         return basis, coeffs, predictions
 
- 
+
 class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
     def __init__(
         self,
@@ -185,7 +192,7 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
 
         self.omni_resolution = omni_resolution
 
-        hidden = 8 #kwargs.pop('n_hidden',16)
+        hidden = kwargs.pop('n_hidden',8)
         dropout_prob = kwargs.pop('dropout',0.5)
         levels = 2
         kernel_size = 24
@@ -324,4 +331,5 @@ class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
             import pdb
             pdb.set_trace()
 
-        return basis, coeffs, predictions       
+        return basis, coeffs, predictions 
+    

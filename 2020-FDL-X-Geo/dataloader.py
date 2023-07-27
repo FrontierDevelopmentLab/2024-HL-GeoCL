@@ -56,8 +56,13 @@ class SuperMAGIAGADataset:
 class OMNIDataset:
     def __init__(self, data):
         self.data = data
+        
 
-
+class InputDataset:
+    def __init__(self, data):
+        self.data = data        
+        
+        
 def basis_matrix(nmax, theta, phi):
     from scipy.special import sph_harm
 
