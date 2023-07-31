@@ -37,27 +37,27 @@ CLOSEST_AIA_INDICES = [np.argmin(np.abs(TIMES_AIA[IND_193][None,...]-times[...,N
 # This should be consistent with Generate_central_mask_CH.py
 NPIX = 17
 
-# #====LOAD HMI DATA
-# # HMI time is in TAI, not UTC. So convert it first.
-# def stringchange(string):
-#     new_string = string.replace('_TAI', 'Z')
-#     new_string = new_string.replace('_','T')
-#     new_string = new_string.replace('.','-')
-#     new_string = new_string.replace('Z', '.00')
-#     return new_string
-# def convert_hmi_time_utc(time_hmi):
-#     t_obs_new = [stringchange(string) for string in time_hmi]
-#     t =  Time(t_obs_new, format='isot', scale='tai')
-#     t_obs_new=pd.to_datetime(t.utc.value,utc=True)
-#     return t_obs_new
+#====LOAD HMI DATA
+# HMI time is in TAI, not UTC. So convert it first.
+def stringchange(string):
+    new_string = string.replace('_TAI', 'Z')
+    new_string = new_string.replace('_','T')
+    new_string = new_string.replace('.','-')
+    new_string = new_string.replace('Z', '.00')
+    return new_string
+def convert_hmi_time_utc(time_hmi):
+    t_obs_new = [stringchange(string) for string in time_hmi]
+    t =  Time(t_obs_new, format='isot', scale='tai')
+    t_obs_new=pd.to_datetime(t.utc.value,utc=True)
+    return t_obs_new
 
-# #Load HMI data from v2_small
-# HMIPATHS = sorted(glob("/home/jupyter/Vishal/sdoml/sdomlv2_hmi_small.zarr/2010/*"))
-# #Get B components list
-# BCOMP = [v.split('/')[-1] for v in HMIPATHS]
-# # Get time stamps of all passbands, and find the nearest index to 193
-# TIMES_HMI = [convert_hmi_time_utc(zarr.open(v).attrs['T_OBS']) for v in HMIPATHS]
-# CLOSEST_HMI_INDICES = [np.argmin(np.abs(TIMES_AIA[IND_193][None,...]-times[...,None]),axis=0) for times in TIMES_HMI]
+#Load HMI data from v2_small
+HMIPATHS = sorted(glob("/home/jupyter/Vishal/sdoml/sdomlv2_hmi_small.zarr/2010/*"))
+#Get B components list
+BCOMP = [v.split('/')[-1] for v in HMIPATHS]
+# Get time stamps of all passbands, and find the nearest index to 193
+TIMES_HMI = [convert_hmi_time_utc(zarr.open(v).attrs['T_OBS']) for v in HMIPATHS]
+CLOSEST_HMI_INDICES = [np.argmin(np.abs(TIMES_AIA[IND_193][None,...]-times[...,None]),axis=0) for times in TIMES_HMI]
 
 SAVEPATH = "/home/jupyter/Vishal/sdoml_features/"
 if not os.path.isdir(SAVEPATH):
@@ -65,18 +65,18 @@ if not os.path.isdir(SAVEPATH):
     
 np.save(f"{SAVEPATH}timestamps.npy",TIMES_AIA[IND_193])
 
-# #==== Subsample and get AIA dataset. 
-# for ind,path in enumerate(tqdm(AIAPATHS)):
-#     files = zarr.open(path)
-#     inds_aia = CLOSEST_AIA_INDICES[ind]
-#     files = np.asarray(files)[inds_aia,:,:]
-#     files = files[:,:,256-NPIX:256+NPIX]*ch_mask
-#     np.save(f"{SAVEPATH}masked_{PASSBANDS[ind]}.npy",files)
+#==== Subsample and get AIA dataset. 
+for ind,path in enumerate(tqdm(AIAPATHS)):
+    files = zarr.open(path)
+    inds_aia = CLOSEST_AIA_INDICES[ind]
+    files = np.asarray(files)[inds_aia,:,:]
+    files = files[:,:,256-NPIX:256+NPIX]*ch_mask
+    np.save(f"{SAVEPATH}masked_{PASSBANDS[ind]}.npy",files)
     
-# #==== Subsample and get HMI dataset. 
-# for ind,path in enumerate(tqdm(HMIPATHS)):
-#     files = zarr.open(path)
-#     inds_hmi = CLOSEST_HMI_INDICES[ind]
-#     files = np.asarray(files)[inds_hmi,:,:]
-#     files = files[:,:,256-NPIX:256+NPIX]*ch_mask
-#     np.save(f"{SAVEPATH}masked_{BCOMP[ind]}.npy",files)
+#==== Subsample and get HMI dataset. 
+for ind,path in enumerate(tqdm(HMIPATHS)):
+    files = zarr.open(path)
+    inds_hmi = CLOSEST_HMI_INDICES[ind]
+    files = np.asarray(files)[inds_hmi,:,:]
+    files = files[:,:,256-NPIX:256+NPIX]*ch_mask
+    np.save(f"{SAVEPATH}masked_{BCOMP[ind]}.npy",files)
