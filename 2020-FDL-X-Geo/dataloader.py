@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils import data
 import pickle
 from utils.helpers import dipole_tilt
+import os
 
 
 class NamedAccess:
@@ -373,15 +374,32 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
 class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
     def __init__(
         self,
-        file_path
+        path,
+        category,
+        yearlist
     ):
-        self.features_dict = pickle.load(open(file_path, 'rb'))
+        self.features_list = []
+        for year in yearlist:
+            feature_list_year = pickle.load(open(os.path.join(path, f'{category}_data_{year}.p'), 'rb'))
+            self.features_list.extend(feature_list_year)
+        self.category = category
+        
     
     def __len__(self):
-        return int(len(self.features_dict))
+        return int(len(self.features_list))
     
     def __getitem__(self, index):
-        features_dict = self.features_dict[index]
+        features_dict = self.features_list[index]
+        if self.category == "train_with_weights":
+            return (features_dict["past_omni"],
+                    features_dict["past_supermag"],
+                    features_dict["future_supermag"],
+                    features_dict["past_dates"],
+                    features_dict["future_dates"],
+                    features_dict["coords_radians"],
+                    features_dict["weight_dbe"],
+                    features_dict["weight_dbn"]
+            )
         return (features_dict["past_omni"],
                 features_dict["past_supermag"],
                 features_dict["future_supermag"],

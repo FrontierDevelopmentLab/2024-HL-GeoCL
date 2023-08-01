@@ -42,20 +42,21 @@ torch.set_default_dtype(torch.float64)  # this is important else it will overflo
 
 hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
-                                learning_rate = 5e-03,batch_size = 2500,
+                                learning_rate = 5e-03,batch_size = 3500,
                                 l2reg=1e-3,epochs = 1000, dropout_prob=0.3,n_hidden=8,
                                 loss='MAE',model='NeuralRNNWiemer',
-                                is_logging_enabled = True)
+                                is_logging_enabled = True, category = "train_with_weights")
                                 # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
 hyperparameter_defaults = hyperparameter_best
+yearlist = np.arange(2013, 2015)
 
-preprocessed_path = './processed_data'
+
+preprocessed_path = './preprocessed_data_base'
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
 def train(config):
-    print(config)
     future_length = config["future_length"]
     past_omni_length = config["past_omni_length"]
     omni_resolution = config["omni_resolution"]
@@ -71,8 +72,9 @@ def train(config):
     loss = config["loss"]
     NN_md = md[config["model"]]
     is_logging_enabled = config["is_logging_enabled"]
+    category = config["category"]
 
-    wandb_run_name = f"CorrectTestNorm_FULL_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
+    wandb_run_name = f"Imbalanced_Regression_2013_2014_new_scale"
     if is_logging_enabled:
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
     else:
@@ -116,9 +118,12 @@ def train(config):
 
     #Save the scaler
     
-    train_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'train_data.p'))
-    val_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'val_data.p'))
-    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(os.path.join(preprocessed_path, 'wiemer_data.p'))
+    if category == "train_with_weights":
+        train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train_with_weights', yearlist)
+    else:
+        train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist)
+    val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist)
+    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist)
     
     scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
@@ -153,7 +158,8 @@ def train(config):
         l2reg=l2reg,
         dropout_prob=dropout_prob,
         n_hidden=n_hidden,
-        loss=loss
+        loss=loss,
+        category=category
     )
     model = model.double()
 
