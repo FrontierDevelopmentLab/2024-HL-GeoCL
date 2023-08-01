@@ -14,33 +14,13 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from models.geoeffectivenet import *
 from models.spherical_harmonics import SphericalHarmonics
-from utils.data_utils import get_iaga_data, get_omni_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list
+from utils.data_utils import get_iaga_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list
 from utils.splitter import generate_indices
-from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
-# #-----------------------------------
-# import argparse
-# parser = argparse.ArgumentParser(description = 'GeoeffectiveNET hyperparameter tuning!!!')
-# parser.add_argument('future_length',default = 1 ,type=int,help = 'future_length')
-# parser.add_argument('past_omni_length',default = 600 ,type=int,help = 'past_omni_length')
-# parser.add_argument('omni_resolution',default = 10,type=int,help = 'omni_resolution')
-# parser.add_argument('nmax',default = 20,type=int,help = 'nmax modes')
-# parser.add_argument('lag',default = 1,type=int,help = 'lag')
-# parser.add_argument('learning_rate',default = 1e-4,type=int,help = 'learning_rate')
-# parser.add_argument('batch_size',default = 256*5,type=int,help = 'batch_size')
-
-# args = parser.parse_args()
-# #-----------------------------------
+from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
 
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
-# hyperparameter_defaults = dict(future_length = 1, past_omni_length = 900,
-#                                 omni_resolution = 1, nmax = 25,lag = 1,
-#                                 learning_rate = 1e-04,batch_size = 256*8*2,
-#                                 l2reg=3e-3,epochs = 10000, dropout_prob=0.71,n_hidden=64,
-#                                 loss='MSE')
-
-
-hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
+hyperparameter_defaults = dict(future_length = 1, past_omni_length = 120,
                                 omni_resolution = 1, nmax = 20,lag = 30,
                                 learning_rate = 5e-03,batch_size = 2500,
                                 l2reg=1e-3,epochs = 100, dropout_prob=0.3,n_hidden=8,
@@ -49,9 +29,10 @@ hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
                                 extra_input_features = ["SME", "SML", "SMU", "SMR"],  # Make sure this is a subset of what you had in preprocess.py
                           )
                                 # learning_rate originally 1e-5
+  
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
-hyperparameter_defaults = hyperparameter_best
+
 yearlist = np.arange(2013, 2014+1)
 
 preprocessed_path = './processed_data_all_years'
@@ -83,44 +64,7 @@ def train(config):
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
     else:
         wandb_logger = None
-
-    #yearlist = list(np.arange(2013,2014).astype(int))
-    #supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    #omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
-
-    #yearlist = list(np.arange(2013,2014).astype(int))
-    #train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
-    #                                                   LENGTH=past_omni_length,LAG=lag,
-    #                                                    omni_path="data_local/omni/sw_data.h5",
-    #                                                    weimer_path="data_local/weimer/")
-    #train_idx = np.asarray(train_idx)
-    #val_idx = np.asarray(val_idx)
-    #test_idx = np.asarray(test_idx)
-    #wiemer_idx = np.asarray(wiemer_idx)
-
-    #train_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,train_idx,
-    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #        zero_supermag=False,scaler=None,training_batch=True,nmax=nmax)
-    #print("Train dataloader defined....")
-    #val_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,val_idx,
-    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #        zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    #print("Val dataloader defined....")
-    # test_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,test_idx,
-    #         f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #         past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #         zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    # print("Test dataloader defined....")
-    #wiemer_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,wiemer_idx,
-    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #        zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    #print("Weimer dataloader defined....")
-
-    #Save the scaler
-    
+        
     train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist)
     val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist)
     wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist)
@@ -136,10 +80,7 @@ def train(config):
     val_loader = data.DataLoader(
         val_ds, batch_size=batch_size, shuffle=False, num_workers=32
     )
-    # test_loader = data.DataLoader(
-    #     test_ds, batch_size=batch_size, shuffle=False, num_workers=12
-    # )
-
+    
     plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
     supermag_features = pickle.load(open(os.path.join(preprocessed_path, 'supermag_features.p'), 'rb'))
     omni_features = pickle.load(open(os.path.join(preprocessed_path, 'omni_features.p'), 'rb'))
@@ -179,9 +120,9 @@ def train(config):
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path, monitor="val_MSE", save_top_k=5)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
-        devices=1,
+        devices=2,
         accelerator="gpu",
-        #strategy='ddp_find_unused_parameters_true',
+        strategy='ddp_find_unused_parameters_true',
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         max_epochs=max_epochs,

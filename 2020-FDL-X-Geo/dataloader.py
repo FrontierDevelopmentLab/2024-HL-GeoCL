@@ -53,11 +53,6 @@ class SuperMAGIAGADataset:
         self.features = features
         self.reg = reg
 
-class OMNIDataset:
-    def __init__(self, data):
-        self.data = data
-        
-
 class InputDataset:
     def __init__(self, data):
         self.data = data        
