@@ -38,6 +38,9 @@ def SumSE(a, b):
 def MAE(a, b):
     return (torch.abs(a-b)).mean()
 
+def weighted_MAE(a, b, weight=1):
+    return (torch.abs(a-b)*weight).mean()
+
 def MaxSqEr(true, pred):
     return torch.sum(((true - pred)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(true,pred)
 
@@ -54,11 +57,16 @@ class BaseModel(pl.LightningModule):
     def __init__(self,**kwargs):
         super().__init__()
         ldict = {'MSE':MSE,'MAE':MAE,'SumSE':SumSE,'MaxSqEr':MaxSqEr,'SqSqEr':SqSqEr,'CompErr':CompErr,'MAE_BH':MAE_BH}
+        ldict_weighted = {'MAE': weighted_MAE}
         self.lr = kwargs.pop('learning_rate',1e-4)
         self.l2reg = kwargs.pop('l2reg',1e-4)
         losskey = kwargs.pop('loss',None)
+        self.category = kwargs.pop('category', None)
         try:
-            self.lossfun = ldict[losskey]
+            if self.category == "train_with_weights":
+                self.lossfun = ldict_weighted[losskey]
+            else:
+                self.lossfun = ldict[losskey]
         except:
             self.lossfun = MSE
         
@@ -67,25 +75,40 @@ class BaseModel(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def training_step(self, training_batch, batch_idx):
-        (
-            past_omni,
-            past_supermag,
-            future_supermag,
-            past_dates,
-            future_dates,
-            (phi, theta),
-        ) = training_batch
+        if self.category == "train_with_weights":
+            (
+                past_omni,
+                past_supermag,
+                future_supermag,
+                past_dates,
+                future_dates,
+                (phi, theta),
+                weight_dbe,
+                weight_dbn
+            ) = training_batch
+        else:
+            (
+                past_omni,
+                past_supermag,
+                future_supermag,
+                past_dates,
+                future_dates,
+                (phi, theta),
+            ) = training_batch
 
         _, coeffs, predictions = self(
             past_omni, past_supermag, phi, theta, past_dates, future_dates
         )
-
+        
         predictions[torch.isnan(predictions)] = 0
         future_supermag[torch.isnan(future_supermag)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
         # loss = ((future_supermag - predictions) ** 2).mean()
-        loss = self.lossfun(future_supermag,predictions)
+        if self.category == "train_with_weights":
+            loss = self.lossfun(future_supermag, predictions, torch.stack((weight_dbe, weight_dbn), dim = -1))
+        else:
+            loss = self.lossfun(future_supermag,predictions)
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)

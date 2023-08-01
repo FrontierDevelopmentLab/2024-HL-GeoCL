@@ -382,6 +382,7 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
         for year in yearlist:
             feature_list_year = pickle.load(open(os.path.join(path, f'{category}_data_{year}.p'), 'rb'))
             self.features_list.extend(feature_list_year)
+        self.category = category
         
     
     def __len__(self):
@@ -389,6 +390,16 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
     
     def __getitem__(self, index):
         features_dict = self.features_list[index]
+        if self.category == "train_with_weights":
+            return (features_dict["past_omni"],
+                    features_dict["past_supermag"],
+                    features_dict["future_supermag"],
+                    features_dict["past_dates"],
+                    features_dict["future_dates"],
+                    features_dict["coords_radians"],
+                    features_dict["weight_dbe"],
+                    features_dict["weight_dbn"]
+            )
         return (features_dict["past_omni"],
                 features_dict["past_supermag"],
                 features_dict["future_supermag"],
