@@ -36,6 +36,8 @@ TIMES_AIA = [pd.to_datetime(zarr.open(v).attrs['T_OBS']) for v in AIAPATHS]
 CLOSEST_AIA_INDICES = [np.argmin(np.abs(TIMES_AIA[IND_193][None,...]-times[...,None]),axis=0) for times in TIMES_AIA]
 # This should be consistent with Generate_central_mask_CH.py
 NPIX = 17
+SORTED_INDICES_AIA_193 = np.argsort(TIMES_AIA[IND_193])
+
 
 #====LOAD HMI DATA
 # HMI time is in TAI, not UTC. So convert it first.
@@ -63,7 +65,8 @@ SAVEPATH = "/home/jupyter/Vishal/sdoml_features/"
 if not os.path.isdir(SAVEPATH):
     os.makedirs(SAVEPATH)
     
-np.save(f"{SAVEPATH}timestamps.npy",TIMES_AIA[IND_193])
+times_aia_save = np.asarray([v.to_numpy() for v in TIMES_AIA[IND_193]])[SORTED_INDICES_AIA_193]
+np.save(f"{SAVEPATH}timestamps.npy",times_aia_save)
 
 #==== Subsample and get AIA dataset. 
 for ind,path in enumerate(tqdm(AIAPATHS)):
@@ -71,6 +74,7 @@ for ind,path in enumerate(tqdm(AIAPATHS)):
     inds_aia = CLOSEST_AIA_INDICES[ind]
     files = np.asarray(files)[inds_aia,:,:]
     files = files[:,:,256-NPIX:256+NPIX]*ch_mask
+    files = files[SORTED_INDICES_AIA_193]
     np.save(f"{SAVEPATH}masked_{PASSBANDS[ind]}.npy",files)
     
 #==== Subsample and get HMI dataset. 
@@ -79,4 +83,5 @@ for ind,path in enumerate(tqdm(HMIPATHS)):
     inds_hmi = CLOSEST_HMI_INDICES[ind]
     files = np.asarray(files)[inds_hmi,:,:]
     files = files[:,:,256-NPIX:256+NPIX]*ch_mask
+    files = files[SORTED_INDICES_AIA_193]
     np.save(f"{SAVEPATH}masked_{BCOMP[ind]}.npy",files)
