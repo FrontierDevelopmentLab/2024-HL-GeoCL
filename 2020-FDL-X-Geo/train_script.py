@@ -20,10 +20,9 @@ from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, 
 from experiment import Experiment
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
-  
+
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
-
 
 config_path = 'experiment.yaml'
 
@@ -63,6 +62,8 @@ def train(config):
         train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist, station_regularization)
     val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist, station_regularization)
     wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist, False)
+
+    scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
     wiemer_loader = data.DataLoader(
         wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=4

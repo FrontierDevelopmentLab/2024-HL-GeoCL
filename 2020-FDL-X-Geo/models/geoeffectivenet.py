@@ -152,5 +152,5 @@ class NeuralRNNWiemer(BaseModel):
         if torch.isnan(coeffs).all():
             import pdb
             pdb.set_trace()
-
+            
         return basis, coeffs, predictions
