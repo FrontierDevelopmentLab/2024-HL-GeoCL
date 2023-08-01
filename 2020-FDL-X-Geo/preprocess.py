@@ -15,9 +15,9 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from models.geoeffectivenet import *
 from models.spherical_harmonics import SphericalHarmonics
-from utils.data_utils import get_iaga_data, get_omni_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list, get_iaga_max_stations, get_input_data
+from utils.data_utils import get_iaga_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list, get_iaga_max_stations, get_input_data
 from utils.splitter import generate_indices
-from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, InputDataset
+from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, InputDataset
 from tqdm.contrib.concurrent import process_map
 from utils.helpers import dipole_tilt
 import tqdm
@@ -208,7 +208,6 @@ if not os.path.exists(output_folder):
 if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
 
     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
     input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
                                              indices_path="data_local/supermag_indices/",
                                              indices_to_use=extra_input_features,
@@ -241,7 +240,6 @@ max_stations = get_iaga_max_stations(base="data_local/iaga/",yearlist=yearlist)
     
 for year in yearlist:
     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=[year], max_stations=max_stations))
-    omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=[year]))
     input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
                                              indices_path="data_local/supermag_indices/",
                                              indices_to_use=extra_input_features,

@@ -38,16 +38,6 @@ def persist_to_file(file_name):
     return decorator
 
 
-def get_omni_data(path=None, year="2016"):
-    import pandas as pd
-    if isinstance(year,str):
-        return pd.read_hdf(path, key=year)
-    elif isinstance(year,list):
-        return pd.concat([pd.read_hdf(path, key=str(y)) for y in year])
-    else:
-        raise TypeError("year must be either a list of years, or a single year.")
-        
-
 def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
     # Geomagnetic indices files must be named like `supermag_indices_{year}.csv`
     import pandas as pd
