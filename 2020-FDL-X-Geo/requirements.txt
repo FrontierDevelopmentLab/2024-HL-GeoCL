@@ -13,3 +13,5 @@ h5py
 Pillow
 wandb
 celluloid
+pyproj
+tables

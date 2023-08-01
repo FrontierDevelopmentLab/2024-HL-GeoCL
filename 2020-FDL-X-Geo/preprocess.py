@@ -26,7 +26,7 @@ import pickle
 # Preprocessing parameters
 past_omni_length = 120
 lag = 30
-yearlist = list(np.arange(2012,2013).astype(int))
+yearlist = list(np.arange(2013,2015).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20
@@ -57,6 +57,7 @@ class PreprocessData():
         self.supermag_data = supermag_data.data
         
         self.supermag_features = supermag_data.features
+        self.supermag_reg = supermag_data.reg
 
         # Generate the slices correspondong to each bucket
         self.sg_indices = idx
@@ -125,6 +126,7 @@ class PreprocessData():
             past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
             del po
             future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+            future_supermag_reg = self.supermag_reg[sg_ind[1],...][None,:]
             future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
             sm_future = NamedAccess(future_supermag, self.supermag_features)
             _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
@@ -133,6 +135,7 @@ class PreprocessData():
             features_dict = {"past_omni": past_omni,
             "past_supermag": past_supermag,
             "future_supermag": future_supermag,
+            "future_supermag_reg": future_supermag_reg,
             "past_dates": past_dates,
             "future_dates": future_dates,
             "coords_radians": (np.deg2rad(_mlt), np.deg2rad(_mcolat))
@@ -188,6 +191,7 @@ class PreprocessData():
         past_omni = np.concatenate([po,dp.reshape(po.shape[0],1),f107.reshape(po.shape[0],1)],axis=-1)
         del po
         future_supermag = self.supermag_data[sg_ind[1],...][None,:]
+        future_supermag_reg = self.supermag_reg[sg_ind[1],...][None,:]
         future_dates = np.array([self.dates[sg_ind[1]]])[None,:]
         sm_future = NamedAccess(future_supermag, self.supermag_features)
         _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
@@ -196,6 +200,7 @@ class PreprocessData():
         features_dict = {"past_omni": past_omni,
         "past_supermag": past_supermag,
         "future_supermag": future_supermag,
+        "future_supermag_reg": future_supermag_reg,
         "past_dates": past_dates,
         "future_dates": future_dates,
         "coords_radians": (np.deg2rad(_mlt), np.deg2rad(_mcolat))
@@ -203,7 +208,7 @@ class PreprocessData():
         return features_dict
                                      
 if not os.path.exists(output_folder):
-    os.mkdir(output_folder)
+    os.makedirs(output_folder, exist_ok=True)
 
 if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
 
