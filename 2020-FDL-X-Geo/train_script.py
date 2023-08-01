@@ -17,44 +17,14 @@ from models.spherical_harmonics import SphericalHarmonics
 from utils.data_utils import get_iaga_data, get_omni_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list
 from utils.splitter import generate_indices
 from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
-# #-----------------------------------
-# import argparse
-# parser = argparse.ArgumentParser(description = 'GeoeffectiveNET hyperparameter tuning!!!')
-# parser.add_argument('future_length',default = 1 ,type=int,help = 'future_length')
-# parser.add_argument('past_omni_length',default = 600 ,type=int,help = 'past_omni_length')
-# parser.add_argument('omni_resolution',default = 10,type=int,help = 'omni_resolution')
-# parser.add_argument('nmax',default = 20,type=int,help = 'nmax modes')
-# parser.add_argument('lag',default = 1,type=int,help = 'lag')
-# parser.add_argument('learning_rate',default = 1e-4,type=int,help = 'learning_rate')
-# parser.add_argument('batch_size',default = 256*5,type=int,help = 'batch_size')
-
-# args = parser.parse_args()
-# #-----------------------------------
-
+from experiment import Experiment
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
-# hyperparameter_defaults = dict(future_length = 1, past_omni_length = 900,
-#                                 omni_resolution = 1, nmax = 25,lag = 1,
-#                                 learning_rate = 1e-04,batch_size = 256*8*2,
-#                                 l2reg=3e-3,epochs = 10000, dropout_prob=0.71,n_hidden=64,
-#                                 loss='MSE')
 
-
-hyperparameter_best = dict(future_length = 1, past_omni_length = 120,
-                                omni_resolution = 1, nmax = 20,lag = 30,
-                                learning_rate = 5e-03,batch_size = 2500,
-                                l2reg=1e-3,epochs = 100, dropout_prob=0.3,n_hidden=8,
-                                loss='MAE',model='NeuralRNNWiemer',stn_reg=True,
-                                is_logging_enabled = True,
-                                extra_input_features = ["SME", "SML", "SMU", "SMR"],  # Make sure this is a subset of what you had in preprocess.py
-                          )
-                                # learning_rate originally 1e-5
 md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
         'NeuralRNNWiemer':NeuralRNNWiemer}
-hyperparameter_defaults = hyperparameter_best
-yearlist = np.arange(2013, 2014+1)
 
-preprocessed_path = './processed_data_all_years'
+config_path = 'experiment.yaml'
 
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
@@ -65,7 +35,6 @@ def train(config):
     omni_resolution = config["omni_resolution"]
     nmax = config["nmax"]
     targets = ["dbe_nez", "dbn_nez"] #config.targets
-    lag = config["lag"]
     learning_rate = config["learning_rate"]
     batch_size = config["batch_size"]
     l2reg=config["l2reg"]
@@ -75,66 +44,31 @@ def train(config):
     loss = config["loss"]
     NN_md = md[config["model"]]
     is_logging_enabled = config["is_logging_enabled"]
-    stn_reg = config["stn_reg"] 
+    yearlist = config["yearlist"]  
+    wandb_run_name = config["wandb_run_name"]
+    preprocessed_path = config["preprocessed_data_path"]
     extra_input_features = config["extra_input_features"]
-
-    wandb_run_name = f"RegularizationTest_20132014_{config['model']}_{loss}_{past_omni_length}_{nmax}_{n_hidden}_{learning_rate*1e6}_{l2reg*1e6}"
+    station_regularization = config["station_regularization"]
+    
     if is_logging_enabled:
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
     else:
-        wandb_logger = None
-
-    #yearlist = list(np.arange(2013,2014).astype(int))
-    #supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    #omni_data = OMNIDataset(get_omni_data("data_local/omni/sw_data.h5", year=yearlist))
-
-    #yearlist = list(np.arange(2013,2014).astype(int))
-    #train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
-    #                                                   LENGTH=past_omni_length,LAG=lag,
-    #                                                    omni_path="data_local/omni/sw_data.h5",
-    #                                                    weimer_path="data_local/weimer/")
-    #train_idx = np.asarray(train_idx)
-    #val_idx = np.asarray(val_idx)
-    #test_idx = np.asarray(test_idx)
-    #wiemer_idx = np.asarray(wiemer_idx)
-
-    #train_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,train_idx,
-    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #        zero_supermag=False,scaler=None,training_batch=True,nmax=nmax)
-    #print("Train dataloader defined....")
-    #val_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,val_idx,
-    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #        zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    #print("Val dataloader defined....")
-    # test_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,test_idx,
-    #         f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #         past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #         zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    # print("Test dataloader defined....")
-    #wiemer_ds = ShpericalHarmonicsDatasetBucketized(supermag_data,omni_data,wiemer_idx,
-    #        f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-    #        past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-    #        zero_supermag=False,scaler=train_ds.scaler,training_batch=False,nmax=nmax)
-    #print("Weimer dataloader defined....")
-
-    #Save the scaler
-    
-    train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist)
-    val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist)
-    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist)
+        wandb_logger = False
+  
+    train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist, station_regularization)
+    val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist, station_regularization)
+    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist, False)
     
     scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
     wiemer_loader = data.DataLoader(
-        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=32
+        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=4
     )
     train_loader = data.DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True, num_workers=32
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=4
     )
     val_loader = data.DataLoader(
-        val_ds, batch_size=batch_size, shuffle=False, num_workers=32
+        val_ds, batch_size=batch_size, shuffle=False, num_workers=4
     )
     # test_loader = data.DataLoader(
     #     test_ds, batch_size=batch_size, shuffle=False, num_workers=12
@@ -154,24 +88,21 @@ def train(config):
         supermag_features,
         omni_resolution,
         nmax,
-        targets_idx,
-        extra_input_features,
-        learning_rate = learning_rate,
+        targets_idx,learning_rate = learning_rate,
         l2reg=l2reg,
         dropout_prob=dropout_prob,
         n_hidden=n_hidden,
         loss=loss,
-        stn_reg=stn_reg
+        extra_input_features=extra_input_features,
+        stn_reg=station_regularization
     )
     model = model.double()
 
     # add wiemer data to the model to debug
     model.wiemer_data = wiemer_loader
-    # model.test_data = test_loader
+    
     model.scaler = scaler
 
-    # save the scaler to de-standarize prediction
-    # checkpoint_path = f"checkpoints_{int(learning_rate*1e5)}_{int(batch_size)}_{int(l2reg*1e6)}_{nmax}_{loss}"
     checkpoint_path = wandb_run_name
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
@@ -198,8 +129,7 @@ def train(config):
 
 
 if __name__ == '__main__':
-    
-    config = hyperparameter_defaults
+    experiment = Experiment(config_path)
+    config = experiment.config
     print(f'Starting a run with {config}')
     train(config)
-    

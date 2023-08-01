@@ -174,6 +174,8 @@ class NeuralRNNWiemer(BaseModel):
         return basis, coeffs, predictions
 
 
+
+
 class NeuralRNNWiemer_HidddenSuperMAG(BaseModel):
     def __init__(
         self,

@@ -83,15 +83,27 @@ class BaseModel(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def training_step(self, training_batch, batch_idx):
-        (
-            past_omni,
-            past_supermag,
-            future_supermag,
-            future_supermag_reg,
-            past_dates,
-            future_dates,
-            (phi, theta),
-        ) = training_batch
+        if self.stn_reg:
+            (
+                past_omni,
+                past_supermag,
+                future_supermag,
+                future_supermag_reg,
+                past_dates,
+                future_dates,
+                (phi, theta),
+            ) = training_batch
+            future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
+            reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
+        else:
+            (
+                past_omni,
+                past_supermag,
+                future_supermag,
+                past_dates,
+                future_dates,
+                (phi, theta),
+            ) = training_batch
 
         _, coeffs, predictions = self(
             past_omni, past_supermag, phi, theta, past_dates, future_dates
@@ -99,10 +111,8 @@ class BaseModel(pl.LightningModule):
 
         predictions[torch.isnan(predictions)] = 0
         future_supermag[torch.isnan(future_supermag)] = 0
-        future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
-        reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
         
         # Apply station regularization when stn_reg is True, otherwise apply no regularization (i.e. all ones)
         if self.stn_reg:
@@ -144,11 +154,21 @@ class BaseModel(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        (
+        if self.stn_reg:
+            (
+                past_omni,
+                past_supermag,
+                future_supermag,
+                future_supermag_reg,
+                past_dates,
+                future_dates,
+                (mlt, mcolat),
+            ) = val_batch
+        else:
+            (
             past_omni,
             past_supermag,
             future_supermag,
-            future_supermag_reg,
             past_dates,
             future_dates,
             (mlt, mcolat),
@@ -238,7 +258,6 @@ class BaseModel(pl.LightningModule):
                 past_omni,
                 past_supermag,
                 future_supermag,
-                future_supermag_reg,
                 past_dates,
                 future_dates,
                 (mlt, mcolat),
