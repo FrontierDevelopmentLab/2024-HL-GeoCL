@@ -140,8 +140,6 @@ def get_iaga_data(path, tiny=False, load_data=True,max_stations=None):
         if load_data:
             data.append(x["data"])
         dates.append(x["dates"])
-        # print(np.datetime64(datetime.utcfromtimestamp(dates[-1][0])))
-        #idx.extend(data[-1].shape[0] * [i])
         features = x["features"]
         stations.append(x["stations"])
 

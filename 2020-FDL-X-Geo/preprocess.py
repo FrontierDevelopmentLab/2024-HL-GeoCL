@@ -26,7 +26,7 @@ import pickle
 # Preprocessing parameters
 past_omni_length = 120
 lag = 30
-yearlist = list(np.arange(2016,2019).astype(int))
+yearlist = list(np.arange(2012,2013).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20
@@ -79,11 +79,6 @@ class PreprocessData():
         self.f107path = f107_dataset
         f107_data = np.load(f107_dataset)
         
-        # Vectorized operation: pd datetime needs 1D array, and give unit as 's'
-        # tmp_dates = pd.to_datetime(self.dates.reshape(-1),unit='s').to_numpy().reshape(list(self.dates.shape))
-        # #Find the best matching f10.7 index along 3rd dimension
-        # match = np.argmin(np.abs(np.expand_dims(tmp_dates,axis=-1)-f107_data["dates"].reshape([1,1,-1])),axis=-1)
-        # del tmp_dates
         self.f107 = [f107_data["f107"],f107_data["dates"]]
         # of shape (n_buckets, n_points_per_buckets)
 
@@ -113,8 +108,7 @@ class PreprocessData():
             self.compute_scaler(f107_data)
         self._nbasis = nmax
        
-        #self.features_list = process_map(self.process_data, [i for i in range(len(self.sg_indices))], max_workers = num_workers, chunksize = 256)
-        
+    
     def compute_features(self):
         self.sg_indices_list = []
         for i in tqdm.trange(len(self.sg_indices), desc="Inital 'bucketizing'"):
@@ -260,7 +254,6 @@ for year in yearlist:
     train_idx = np.asarray(train_idx)
     val_idx = np.asarray(val_idx)
     test_idx = np.asarray(test_idx)
-    wiemer_idx = np.asarray(wiemer_idx)
     
     train_ds = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
@@ -281,13 +274,15 @@ for year in yearlist:
 
     with open(os.path.join(output_folder, f'val_data_{year}.p'), 'wb') as f:
         pickle.dump(val_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
-
-    wiemer_ds = PreprocessData(supermag_data,input_data,wiemer_idx,
-            f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
     
-    wiemer_ds.compute_features()
+    if wiemer_idx is not None:
+        wiemer_idx = np.asarray(wiemer_idx)
+        wiemer_ds = PreprocessData(supermag_data,input_data,wiemer_idx,
+                f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+                zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
 
-    with open(os.path.join(output_folder, f'wiemer_data_{year}.p'), 'wb') as f:
-        pickle.dump(wiemer_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
+        wiemer_ds.compute_features()
+
+        with open(os.path.join(output_folder, f'wiemer_data_{year}.p'), 'wb') as f:
+            pickle.dump(wiemer_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)

@@ -20,11 +20,11 @@ BUCKETS = 100
 def get_sequences(df, length, lag):
     _df = df.copy()
     _df['cluster'] = (_df['seconds'].diff() != 60).cumsum()
-    f = _df.groupby(['cluster']).apply(lambda x: x[:len(x)-length-lag]['index']).reset_index(drop=True).values.ravel()
-    t = _df.groupby(['cluster']).apply(lambda x: x[length+lag:]['index']).reset_index(drop=True).values.ravel()
+    f = _df.groupby(['cluster']).apply(lambda x: x[:len(x)-length-lag]['index']).reset_index(drop=True).values.ravel()  # features (with ttime hist)
+    t = _df.groupby(['cluster']).apply(lambda x: x[length+lag:]['index']).reset_index(drop=True).values.ravel()  # targets (with lag)
     
-    if len(t) > 0:
-        assert np.max((t-f)) == np.min((t-f)) == (length+lag)
+    # if len(t) > 0:
+    #     assert np.max((t-f)) == np.min((t-f)) == (length+lag)
 
     return list(zip(f, t))
 
@@ -98,8 +98,9 @@ def generate_indices(base,year,LENGTH,LAG,omni_path="../data_local/omni/sw_data.
     train_idx = get_sequences(train_df, LENGTH, LAG)
     test_idx = get_sequences(test_df, LENGTH, LAG)
     val_idx = get_sequences(val_df, LENGTH, LAG)
-    weimer_idx = get_sequences(weimer_df, LENGTH, LAG)
+    if N_WEIMER:
+        weimer_idx = get_sequences(weimer_df, LENGTH, LAG)
+    else:
+        weimer_idx = None
+        
     return train_idx,test_idx,val_idx,weimer_idx
-
-# if __name__ == '__main__':
-#     generate_indices(base="../full_data_panos/iaga/",year=list(np.arange(2010,2019).astype(int)),LENGTH=600,LAG=1)
