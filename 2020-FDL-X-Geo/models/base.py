@@ -29,11 +29,12 @@ def get_img_from_fig(fig):
     return ToTensor()(image)
 
 
-def MSE(a, b):
-    return ((a-b)**2).mean()
 
 def SumSE(a, b):
     return ((a-b)**2).sum()
+
+def MSE(a, b):
+    return ((a-b)**2).mean()
 
 def MAE(a, b):
     return (torch.abs(a-b)).mean()
@@ -53,6 +54,7 @@ def MAE_BH(a, b):
 def CompErr(true,pred):
     return ((true - pred)**2).mean(dim=(0,1)).sum()+torch.abs((true**2).sum(dim=-1) - (pred**2).sum(dim=-1)).mean()
 
+
 class BaseModel(pl.LightningModule):
     def __init__(self,**kwargs):
         super().__init__()
@@ -61,9 +63,11 @@ class BaseModel(pl.LightningModule):
         self.lr = kwargs.pop('learning_rate',1e-4)
         self.l2reg = kwargs.pop('l2reg',1e-4)
         losskey = kwargs.pop('loss',None)
-        self.category = kwargs.pop('category', None)
+        self.weighted_regression = kwargs.pop('weighted_regression', None)
+        self.stn_reg = kwargs.pop('stn_reg',False)
+
         try:
-            if self.category == "train_with_weights":
+            if self.weighted_regression:
                 self.lossfun = ldict_weighted[losskey]
             else:
                 self.lossfun = ldict[losskey]
@@ -75,26 +79,17 @@ class BaseModel(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def training_step(self, training_batch, batch_idx):
-        if self.category == "train_with_weights":
-            (
-                past_omni,
-                past_supermag,
-                future_supermag,
-                past_dates,
-                future_dates,
-                (phi, theta),
-                weight_dbe,
-                weight_dbn
-            ) = training_batch
-        else:
-            (
-                past_omni,
-                past_supermag,
-                future_supermag,
-                past_dates,
-                future_dates,
-                (phi, theta),
-            ) = training_batch
+        (
+            past_omni,
+            past_supermag,
+            future_supermag,
+            future_supermag_reg,
+            past_dates,
+            future_dates,
+            (phi, theta),
+            weight_dbe,
+            weight_dbn
+        ) = training_batch
 
         _, coeffs, predictions = self(
             past_omni, past_supermag, phi, theta, past_dates, future_dates
@@ -104,9 +99,15 @@ class BaseModel(pl.LightningModule):
         future_supermag[torch.isnan(future_supermag)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
-        # loss = ((future_supermag - predictions) ** 2).mean()
-        if self.category == "train_with_weights":
+        
+        if self.weighted_regression and self.stn_reg:
+            imbalanced_regression_loss = self.lossfun(future_supermag, predictions, torch.stack((weight_dbe, weight_dbn), dim = -1))
+            stn_reg_loss = self.lossfun(future_supermag, predictions, future_supermag_reg)
+            loss = (imbalanced_regression_loss + stn_reg_loss) / 2
+        elif self.weighted_regression:
             loss = self.lossfun(future_supermag, predictions, torch.stack((weight_dbe, weight_dbn), dim = -1))
+        elif self.stn_reg:
+            loss = self.lossfun(future_supermag, predictions, future_supermag_reg)
         else:
             loss = self.lossfun(future_supermag,predictions)
 
@@ -144,13 +145,18 @@ class BaseModel(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
+        import pdb
+        pdb.set_trace()
         (
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (mlt, mcolat),
+            weight_dbe,
+            weight_dbn
         ) = val_batch
         _, coeffs, predictions = self(past_omni, past_supermag, mlt, mcolat, past_dates, future_dates)
         
@@ -176,57 +182,6 @@ class BaseModel(pl.LightningModule):
             sync_dist=True
         )
         self.log("val_MSE", MSE(future_supermag,predictions), on_step=False, on_epoch=True,prog_bar=True, sync_dist=True)
-
-        # if batch_idx == 0:
-        #     # hack: need to find a callback way
-        #     predictions = []
-        #     coeffs = []
-        #     targets = []
-            # for (
-            #     past_omni,
-            #     past_supermag,
-            #     future_supermag,
-            #     past_dates,
-            #     future_dates,
-            #     (mlt, mcolat),
-            # ) in self.test_data:
-            #     past_omni = past_omni.to(device)
-            #     past_supermag = past_supermag.to(device)
-            #     mlt = mlt.to(device)
-            #     mcolat = mcolat.to(device)
-            #     past_dates = past_dates.to(device)
-            #     future_dates = future_dates.to(device)
-
-            #     _, _coeffs, pred = self(
-            #         past_omni, past_supermag, mlt, mcolat, past_dates, future_dates
-            #     )
-
-            #     predictions.append(pred.to(device))
-            #     coeffs.append(_coeffs.to(device))
-            #     targets.append(future_supermag[..., target_col].to(device))
-            # predictions = torch.cat(predictions).detach()
-            # coeffs = torch.cat(coeffs).detach()
-            # targets = torch.cat(targets).detach().squeeze(1)
-
-            # predictions[torch.isnan(predictions)] = 0
-            # targets[torch.isnan(targets)] = 0
-
-            # _mean, _std = self.scaler['supermag']
-            # predictions = predictions*torch.Tensor(_std).to(device) + torch.Tensor(_mean).to(device)
-            # targets = targets*torch.Tensor(_std).to(device) + torch.Tensor(_mean).to(device)
-
-            # self.log(
-            #     "test_R2",
-            #     R2(targets, predictions).mean(),
-            #     on_step=False,
-            #     on_epoch=True,
-            # )
-            # self.log(
-            #     "test_MSE",
-            #     ((targets - predictions) ** 2).mean(),
-            #     on_step=False,
-            #     on_epoch=True,
-            # )
 
         if batch_idx == 0:
             # hack: need to find a callback way
@@ -305,6 +260,11 @@ class BaseModel(pl.LightningModule):
                 self.logger.experiment.log(
                     {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
                 )
+                
+                plt.figure().clear()
+                plt.close()
+                plt.cla()
+                plt.clf()
 
                 # dbn_nez
                 pred_sphere = spherical_plot_forecasting(
