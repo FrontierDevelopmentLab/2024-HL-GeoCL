@@ -14,9 +14,9 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from models.geoeffectivenet import *
 from models.spherical_harmonics import SphericalHarmonics
-from utils.data_utils import get_iaga_data, get_omni_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list
+from utils.data_utils import get_iaga_data, load_cached_data,get_wiemer_data,get_iaga_data_as_list
 from utils.splitter import generate_indices
-from dataloader import OMNIDataset, ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
+from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
 from experiment import Experiment
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
@@ -70,10 +70,7 @@ def train(config):
     val_loader = data.DataLoader(
         val_ds, batch_size=batch_size, shuffle=False, num_workers=4
     )
-    # test_loader = data.DataLoader(
-    #     test_ds, batch_size=batch_size, shuffle=False, num_workers=12
-    # )
-
+    
     plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
     supermag_features = pickle.load(open(os.path.join(preprocessed_path, 'supermag_features.p'), 'rb'))
     omni_features = pickle.load(open(os.path.join(preprocessed_path, 'omni_features.p'), 'rb'))
@@ -110,9 +107,9 @@ def train(config):
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path, monitor="val_MSE", save_top_k=5)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
-        devices=1,
+        devices=2,
         accelerator="gpu",
-        #strategy='ddp_find_unused_parameters_true',
+        strategy='ddp_find_unused_parameters_true',
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         max_epochs=max_epochs,
