@@ -10,7 +10,7 @@ from matplotlib import cycler
 from sklearn.metrics import r2_score
 from torchvision.transforms import ToTensor
 
-from utils.helpers import basis_matrix
+from dataloader import basis_matrix
 import matplotlib.colors
 
 #---------------- Torch device
@@ -65,69 +65,62 @@ def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, m
         }
     )
 
-    shape_spherical = (45, 360)
-    grid_phi_spherical = (
+    shape_spherical = (45, 180) #colat, lon
+    _phi_spherical = (
         (np.arange(shape_spherical[0]) + 0.5) / shape_spherical[0] * np.pi / 4
     )  # colat
-    grid_phi_spherical = grid_phi_spherical.reshape(shape_spherical[0], 1) @ np.ones(
-        (1, shape_spherical[1]), dtype=np.float64
-    )
-    grid_theta_spherical = (
+    _theta_spherical = (
         (np.arange(shape_spherical[1]) + 0.5) / shape_spherical[1] * 2.0 * np.pi
-    )  # longitude
-    grid_theta_spherical = np.ones(
-        (shape_spherical[0], 1), dtype=np.float64
-    ) @ grid_theta_spherical.reshape(1, shape_spherical[1])
+    )  # lon
 
+    grid_theta_spherical,grid_phi_spherical = np.meshgrid(_theta_spherical,_phi_spherical)
+    
     basis_grid = basis_matrix(
         nmax,
-        grid_theta_spherical.ravel().reshape(-1),
-        grid_phi_spherical.ravel().reshape(-1),
+        grid_theta_spherical,
+        grid_phi_spherical,
     )
     basis_grid = torch.Tensor(basis_grid).double().squeeze(0).to(device)
 
     cm.get_cmap("viridis")
 
-    grid_predictions = (
-        torch.einsum("bj,ij->bi", coeffs, basis_grid).detach().cpu().numpy()
-    )
-
     grid_predictions = (basis_grid@coeffs.T).detach().cpu().numpy()
-    grid_predictions = grid_predictions.reshape(-1, *grid_theta_spherical.shape)
-
-    i = 0
+    grid_predictions = grid_predictions.reshape(-1, *_theta_spherical.shape)
+    
 
     cmap='PuOr_r'
 
-    maxval = 200
-    minval = -200
+    maxval = 300
+    minval = -300
     norm = SqueezedNorm(vmin=minval, vmax=maxval, mid=0, s1=2, s2=2)
 
-    fig, ax = plt.subplots(ncols=3, subplot_kw={"projection": "polar"})
+    fig, ax = plt.subplots(ncols=4, subplot_kw={"projection": "polar"})
 
     ax[0].set_theta_offset(-np.pi/2)
     c = ax[0].scatter(mlt, mcolat, c=target, cmap=cmap, norm=norm)
-    cb = fig.colorbar(c, shrink=0.5)
-    cb.set_label('DB', fontsize=15)
     ax[0].set_title("Target")
 
     ax[1].set_theta_offset(-np.pi/2)
     c = ax[1].scatter(mlt, mcolat, c=predictions, cmap=cmap, norm=norm)
-    cb = fig.colorbar(c, shrink=0.5)
-    cb.set_label('DB', fontsize=15)
     ax[1].set_title("Predictions")
 
+    ax[2].set_theta_offset(-np.pi/2)
     ax[2].pcolormesh(
         grid_theta_spherical,
         grid_phi_spherical,
-        grid_predictions[i]*std + mean, # un-standardize
+        grid_predictions*std + mean, # un-standardize
         cmap=cmap,
         shading="auto",
         norm=norm
     )
-    ax[2].set_title("Prediction (sph)")
-    ax[2].set_theta_offset(-np.pi / 2)
+    ax[2].set_title("Prediction (SpH)")
+    ax[2].scatter(mlt, mcolat, c=predictions, cmap=cmap, norm=norm,s=20,edgecolors='k')
 
+    ax[3].set_axis_off()
+    cb = fig.colorbar(c, ax=ax[3], shrink=0.2,location='left')
+    cb.set_label('dB [nT]', fontsize=14,labelpad=-70)
+    
+    plt.subplots_adjust(wspace=0.4)
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
     buf.seek(0)
