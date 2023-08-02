@@ -234,6 +234,8 @@ class BaseModel(pl.LightningModule):
             predictions = []
             coeffs = []
             targets = []
+            mlt_all = []
+            mcolat_all = []
             for (
                 past_omni,
                 past_supermag,
@@ -257,9 +259,13 @@ class BaseModel(pl.LightningModule):
                 predictions.append(pred.to(device))
                 coeffs.append(_coeffs.to(device))
                 targets.append(future_supermag[..., target_col].to(device))
+                mlt_all.append(mlt.to(device))
+                mcolat_all.append(mcolat.to(device))
             predictions = torch.cat(predictions).detach()
             coeffs = torch.cat(coeffs).detach()
             targets = torch.cat(targets).detach().squeeze(1)
+            mlt_all = torch.cat(mlt_all).detach().squeeze(1)
+            mcolat_all = torch.cat(mcolat_all).detach().squeeze(1)
 
             predictions[torch.isnan(predictions)] = 0
             targets[torch.isnan(targets)] = 0
@@ -296,34 +302,30 @@ class BaseModel(pl.LightningModule):
                     }
                 )
                 nice_idx = [0]
+                
+                plt.close()
 
                 # dbe_nez
                 pred_sphere = spherical_plot_forecasting(
-                    self.nmax, coeffs[nice_idx][..., 0], predictions[nice_idx][..., 0].detach().cpu(),
-                    targets[nice_idx][..., 0].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
+                    self.nmax, coeffs[nice_idx][..., 0].squeeze(0), predictions[nice_idx][..., 0].squeeze(0).detach().cpu(),
+                    targets[nice_idx][..., 0].squeeze(0).detach().cpu(), mlt_all[nice_idx].squeeze().detach().cpu(), mcolat_all[nice_idx].squeeze().detach().cpu(),
                     _mean[0], _std[0]
                 )
-
+               
                 self.logger.experiment.log(
                     {"dbe_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
                 )
                 
-                plt.figure().clear()
                 plt.close()
-                plt.cla()
-                plt.clf()
 
                 # dbn_nez
                 pred_sphere = spherical_plot_forecasting(
                     self.nmax, coeffs[nice_idx][..., 1], predictions[nice_idx][..., 1].detach().cpu(),
-                    targets[nice_idx][..., 1].detach().cpu(), mlt[nice_idx].detach().cpu(), mcolat[nice_idx].detach().cpu(),
+                    targets[nice_idx][..., 1].detach().cpu(), mlt_all[nice_idx].detach().cpu(), mcolat_all[nice_idx].detach().cpu(),
                     _mean[1], _std[1]
                 )
                 self.logger.experiment.log(
                     {"dbn_nez": [wandb.Image(pred_sphere, caption="pred_sphere")]}
                 )
 
-                plt.figure().clear()
                 plt.close()
-                plt.cla()
-                plt.clf()
