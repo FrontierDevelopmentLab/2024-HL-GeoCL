@@ -384,12 +384,15 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
         path,
         category,
         yearlist,
+        weighted_regression,
         station_regularization
     ):
         self.features_list = []
         for year in yearlist:
             feature_list_year = pickle.load(open(os.path.join(path, f'{category}_data_{year}.p'), 'rb'))
             self.features_list.extend(feature_list_year)
+        self.category = category
+        self.weighted_regression = weighted_regression
         self.station_regularization = station_regularization
         
     
@@ -398,20 +401,27 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
     
     def __getitem__(self, index):
         features_dict = self.features_list[index]
-        if self.station_regularization:
-            return (features_dict["past_omni"],
-                    features_dict["past_supermag"],
-                    features_dict["future_supermag"],
-                    features_dict["future_supermag_reg"],
-                    features_dict["past_dates"],
-                    features_dict["future_dates"],
-                    features_dict["coords_radians"],
-            )
-        else:
-            return (features_dict["past_omni"],
-                    features_dict["past_supermag"],
-                    features_dict["future_supermag"],
-                    features_dict["past_dates"],
-                    features_dict["future_dates"],
-                    features_dict["coords_radians"],
+        
+        weight_dbe = 1
+        weight_dbn = 1
+        future_supermag_reg = 1
+        
+        if self.station_regularization and "future_supermag_reg" in features_dict:
+            future_supermag_reg = torch.tensor(features_dict["future_supermag_reg"]).squeeze(0)
+            future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
+            future_supermag_reg = torch.cat((future_supermag_reg,future_supermag_reg),-1)
+        
+        if self.weighted_regression and "weight_dbe" in features_dict:
+            weight_dbe = features_dict["weight_dbe"]
+            weight_dbn = features_dict["weight_dbn"]
+        
+        return (features_dict["past_omni"],
+                features_dict["past_supermag"],
+                features_dict["future_supermag"],
+                future_supermag_reg,
+                features_dict["past_dates"],
+                features_dict["future_dates"],
+                features_dict["coords_radians"],
+                weight_dbe,
+                weight_dbn
             )

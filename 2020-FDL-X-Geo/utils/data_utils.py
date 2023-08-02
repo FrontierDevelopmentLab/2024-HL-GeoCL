@@ -16,7 +16,7 @@ from astropy.time import Time
 import sys
 
 sys.path.append('../')
-from dataloader import (OMNIDataset, ShpericalHarmonicsDataset,
+from dataloader import (InputDataset, ShpericalHarmonicsDataset,
                         SuperMAGIAGADataset)
 
 

@@ -29,52 +29,50 @@ def get_img_from_fig(fig):
     return ToTensor()(image)
 
 
-def MSE(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return ((diff)**2).mean()
 
-def SumSE(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return ((diff)**2).sum()
+def SumSE(a, b):
+    return ((a-b)**2).sum()
 
-def MAE(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return (torch.abs(diff)).mean()
+def MSE(a, b):
+    return ((a-b)**2).mean()
 
-def MaxSqEr(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return torch.sum(((a - diff)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(a,diff)
+def MAE(a, b):
+    return (torch.abs(a-b)).mean()
 
-def SqSqEr(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return ((diff)**4).mean()
+def weighted_MAE(a, b, weight=1):
+    return (torch.abs(a-b)*weight).mean()
 
-def MAE_BH(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return (torch.abs(diff)).mean()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
+def MaxSqEr(true, pred):
+    return torch.sum(((true - pred)**2).mean(dim=(0,1)),dim=-1)[0]+MSE(true,pred)
 
-def CompErr(a,b,diff=None):
-    if diff is None:
-        diff = a-b
-    return ((diff)**2).mean(dim=(0,1)).sum()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
+def SqSqEr(true, pred):
+    return ((true-pred)**4).mean()
+
+def MAE_BH(a, b):
+    return (torch.abs(a-b)).mean()+torch.abs((a**2).sum(dim=-1) - (b**2).sum(dim=-1)).mean()
+
+def CompErr(true,pred):
+    return ((true - pred)**2).mean(dim=(0,1)).sum()+torch.abs((true**2).sum(dim=-1) - (pred**2).sum(dim=-1)).mean()
 
 
 class BaseModel(pl.LightningModule):
     def __init__(self,**kwargs):
         super().__init__()
         ldict = {'MSE':MSE,'MAE':MAE,'SumSE':SumSE,'MaxSqEr':MaxSqEr,'SqSqEr':SqSqEr,'CompErr':CompErr,'MAE_BH':MAE_BH}
+        ldict_weighted = {'MAE': weighted_MAE}
         self.lr = kwargs.pop('learning_rate',1e-4)
         self.l2reg = kwargs.pop('l2reg',1e-4)
         losskey = kwargs.pop('loss',None)
+        self.weighted_regression = kwargs.pop('weighted_regression', None)
         self.stn_reg = kwargs.pop('stn_reg',False)
+        self.imbalanced_regression_weight = kwargs.pop('imbalanced_regression_weight')
+        self.station_regularization_weight = kwargs.pop('station_regularization_weight')
+
         try:
-            self.lossfun = ldict[losskey]
+            if self.weighted_regression:
+                self.lossfun = ldict_weighted[losskey]
+            else:
+                self.lossfun = ldict[losskey]
         except:
             self.lossfun = MSE
         
@@ -83,42 +81,42 @@ class BaseModel(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def training_step(self, training_batch, batch_idx):
-        if self.stn_reg:
-            (
-                past_omni,
-                past_supermag,
-                future_supermag,
-                future_supermag_reg,
-                past_dates,
-                future_dates,
-                (phi, theta),
-            ) = training_batch
-            future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
-            reg=torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
-        else:
-            (
-                past_omni,
-                past_supermag,
-                future_supermag,
-                past_dates,
-                future_dates,
-                (phi, theta),
-            ) = training_batch
+        (
+            past_omni,
+            past_supermag,
+            future_supermag,
+            future_supermag_reg,
+            past_dates,
+            future_dates,
+            (phi, theta),
+            weight_dbe,
+            weight_dbn
+        ) = training_batch
 
         _, coeffs, predictions = self(
             past_omni, past_supermag, phi, theta, past_dates, future_dates
         )
-
+        
         predictions[torch.isnan(predictions)] = 0
         future_supermag[torch.isnan(future_supermag)] = 0
         target_col = self.targets_idx
         future_supermag = future_supermag[..., target_col].squeeze(1)
         
-        # Apply station regularization when stn_reg is True, otherwise apply no regularization (i.e. all ones)
-        if self.stn_reg:
-            loss = self.lossfun(future_supermag,predictions,reg*(future_supermag-predictions))
+        if self.weighted_regression and self.stn_reg:
+            imbalanced_regression_loss = self.lossfun(future_supermag, predictions, 
+                                                      torch.stack((weight_dbe, weight_dbn), dim = -1))
+            stn_reg_loss = self.lossfun(future_supermag, predictions, future_supermag_reg)
+            loss = self.imbalanced_regression_weight * imbalanced_regression_loss 
+            + self.station_regularization_weight * stn_reg_loss
+                
+        elif self.weighted_regression:
+            loss = self.lossfun(future_supermag, predictions, torch.stack((weight_dbe, weight_dbn), dim = -1))
+            
+        elif self.stn_reg:
+            loss = self.lossfun(future_supermag, predictions, future_supermag_reg)
+            
         else:
-            loss = self.lossfun(future_supermag,predictions,future_supermag-predictions)
+            loss = self.lossfun(future_supermag,predictions)
 
         # sparsity L2
         loss += self.l2reg * torch.norm(coeffs, p=2)
@@ -154,24 +152,16 @@ class BaseModel(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        if self.stn_reg:
-            (
-                past_omni,
-                past_supermag,
-                future_supermag,
-                future_supermag_reg,
-                past_dates,
-                future_dates,
-                (mlt, mcolat),
-            ) = val_batch
-        else:
-            (
+        (
             past_omni,
             past_supermag,
             future_supermag,
+            future_supermag_reg,
             past_dates,
             future_dates,
             (mlt, mcolat),
+            weight_dbe,
+            weight_dbn
         ) = val_batch
         _, coeffs, predictions = self(past_omni, past_supermag, mlt, mcolat, past_dates, future_dates)
         
@@ -209,9 +199,12 @@ class BaseModel(pl.LightningModule):
                 past_omni,
                 past_supermag,
                 future_supermag,
+                future_supermag_reg,
                 past_dates,
                 future_dates,
                 (mlt, mcolat),
+                weight_dbe,
+                weight_dbn
             ) in self.wiemer_data:
                 past_omni = past_omni.to(device)
                 past_supermag = past_supermag.to(device)

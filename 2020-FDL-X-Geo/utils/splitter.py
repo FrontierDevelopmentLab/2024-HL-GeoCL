@@ -12,7 +12,7 @@ import h5py
 import sys
 
 sys.path.append('../')
-from utils.data_utils import get_iaga_data_as_list, get_omni_data
+from utils.data_utils import get_iaga_data_as_list, get_input_data
 
 BUCKETS = 100
 
@@ -91,7 +91,7 @@ def generate_indices(base,year,LENGTH,LAG,omni_path="../data_local/omni/sw_data.
     # test if it maches omni
     for year in pd.unique(df['dates'].dt.year):
         print(f'testing {year}')
-        omni = get_omni_data(omni_path, year=f'{year}')
+        omni = get_input_data(omni_path, year=f'{year}')
         assert len(df.loc[df['dates'].dt.year==year]) == len(omni)
     print('testing done')
 
