@@ -16,29 +16,6 @@ def ind2nm(ind):
     return n, m
 
 
-## Superceded by the function in dataloader.py
-# def basis_matrix(nmax, theta, phi):
-#     """Generate spherical harmonic basis on a grid.
-
-#     Args:
-#         nmax (int): Maximum number of modes (angular number l)
-#         theta (numpy array): 1D array of longitude
-#         phi (numpy array): 1D array of colatitude
-
-#     Returns:
-#         numpy array: 2D array of shape (l, (l+1)*2). For each l, we have 2*l+1 modes.
-#     """
-#     # theta is longitude, phi is colat
-#     assert len(theta) == len(phi)
-#     nbasis = (nmax + 1) * (nmax + 1) * 2  # 2 for real and imag components of Y_mn
-#     basis = np.zeros(shape=(len(theta), nbasis), dtype=np.float64)
-#     for n in range(nmax + 1):
-#         for m in range(-n, n + 1):
-#             y_mn = sph_harm(m, n, theta, phi)
-#             basis[:, 2 * nm2ind(n, m)] = y_mn.real.ravel()
-#             basis[:, 2 * nm2ind(n, m) + 1] = y_mn.imag.ravel()
-#     return basis
-
 
 """ function for computing subsolar point """
 
