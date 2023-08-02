@@ -65,6 +65,8 @@ class BaseModel(pl.LightningModule):
         losskey = kwargs.pop('loss',None)
         self.weighted_regression = kwargs.pop('weighted_regression', None)
         self.stn_reg = kwargs.pop('stn_reg',False)
+        self.imbalanced_regression_weight = kwargs.pop('imbalanced_regression_weight')
+        self.station_regularization_weight = kwargs.pop('station_regularization_weight')
 
         try:
             if self.weighted_regression:
@@ -101,13 +103,18 @@ class BaseModel(pl.LightningModule):
         future_supermag = future_supermag[..., target_col].squeeze(1)
         
         if self.weighted_regression and self.stn_reg:
-            imbalanced_regression_loss = self.lossfun(future_supermag, predictions, torch.stack((weight_dbe, weight_dbn), dim = -1))
+            imbalanced_regression_loss = self.lossfun(future_supermag, predictions, 
+                                                      torch.stack((weight_dbe, weight_dbn), dim = -1))
             stn_reg_loss = self.lossfun(future_supermag, predictions, future_supermag_reg)
-            loss = (imbalanced_regression_loss + stn_reg_loss) / 2
+            loss = self.imbalanced_regression_weight * imbalanced_regression_loss 
+            + self.station_regularization_weight * stn_reg_loss
+                
         elif self.weighted_regression:
             loss = self.lossfun(future_supermag, predictions, torch.stack((weight_dbe, weight_dbn), dim = -1))
+            
         elif self.stn_reg:
             loss = self.lossfun(future_supermag, predictions, future_supermag_reg)
+            
         else:
             loss = self.lossfun(future_supermag,predictions)
 
@@ -145,8 +152,6 @@ class BaseModel(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        import pdb
-        pdb.set_trace()
         (
             past_omni,
             past_supermag,
@@ -192,9 +197,12 @@ class BaseModel(pl.LightningModule):
                 past_omni,
                 past_supermag,
                 future_supermag,
+                future_supermag_reg,
                 past_dates,
                 future_dates,
                 (mlt, mcolat),
+                weight_dbe,
+                weight_dbn
             ) in self.wiemer_data:
                 past_omni = past_omni.to(device)
                 past_supermag = past_supermag.to(device)

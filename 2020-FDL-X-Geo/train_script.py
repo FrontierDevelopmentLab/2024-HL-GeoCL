@@ -21,8 +21,7 @@ from experiment import Experiment
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
 
-md = {'NeuralRNNWiemer_HidddenSuperMAG':NeuralRNNWiemer_HidddenSuperMAG,
-        'NeuralRNNWiemer':NeuralRNNWiemer}
+md = {'NeuralRNNWiemer':NeuralRNNWiemer}
 
 config_path = 'experiment.yaml'
 
@@ -49,6 +48,9 @@ def train(config):
     preprocessed_path = config["preprocessed_data_path"]
     extra_input_features = config["extra_input_features"]
     station_regularization = config["station_regularization"]
+    station_regularization_weight = config["station_regularization_weight"]
+    imbalanced_regression_weight = config["imbalanced_regression_weight"]
+    
 
     wandb_run_name = f"Imbalanced_Regression_2013_2014_new_scale"
     if is_logging_enabled:
@@ -57,22 +59,22 @@ def train(config):
         wandb_logger = False
     
     if weighted_regression:
-        train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train_with_weights', yearlist, station_regularization)
+        train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train_with_weights', yearlist, weighted_regression, station_regularization)
     else:
-        train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist, station_regularization)
-    val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist, station_regularization)
-    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist, False)
+        train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist, weighted_regression, station_regularization)
+    val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist, False, False)
+    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist, False, False)
 
     scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
     wiemer_loader = data.DataLoader(
-        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=4
+        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=0
     )
     train_loader = data.DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True, num_workers=4
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=0
     )
     val_loader = data.DataLoader(
-        val_ds, batch_size=batch_size, shuffle=False, num_workers=4
+        val_ds, batch_size=batch_size, shuffle=False, num_workers=0
     )
     
     plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
@@ -96,7 +98,9 @@ def train(config):
         loss=loss,
         weighted_regression=weighted_regression,
         extra_input_features=extra_input_features,
-        stn_reg=station_regularization
+        stn_reg=station_regularization,
+        station_regularization_weight = station_regularization_weight,
+        imbalanced_regression_weight = imbalanced_regression_weight
     )
     model = model.double()
 
@@ -112,9 +116,9 @@ def train(config):
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path, monitor="val_MSE", save_top_k=5)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
-        devices=2,
+        devices=1,
         accelerator="gpu",
-        strategy='ddp_find_unused_parameters_true',
+        #strategy='ddp_find_unused_parameters_true',
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         max_epochs=max_epochs,

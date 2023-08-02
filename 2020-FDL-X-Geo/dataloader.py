@@ -384,6 +384,7 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
         path,
         category,
         yearlist,
+        weighted_regression,
         station_regularization
     ):
         self.features_list = []
@@ -391,6 +392,7 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
             feature_list_year = pickle.load(open(os.path.join(path, f'{category}_data_{year}.p'), 'rb'))
             self.features_list.extend(feature_list_year)
         self.category = category
+        self.weighted_regression = weighted_regression
         self.station_regularization = station_regularization
         
     
@@ -404,11 +406,12 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
         weight_dbn = 1
         future_supermag_reg = 1
         
-        if "future_supermag_reg" in features_dict:
-            future_supermag_reg = features_dict["future_supermag_reg"]
-            future_supermag_reg = torch.cat((future_supermag_reg.squeeze(1),future_supermag_reg.squeeze(1)),2)
+        if self.station_regularization and "future_supermag_reg" in features_dict:
+            future_supermag_reg = torch.tensor(features_dict["future_supermag_reg"]).squeeze(0)
+            future_supermag_reg[torch.isnan(future_supermag_reg)] = 0
+            future_supermag_reg = torch.cat((future_supermag_reg,future_supermag_reg),-1)
         
-        if "weight_dbe" in features_dict:
+        if self.weighted_regression and "weight_dbe" in features_dict:
             weight_dbe = features_dict["weight_dbe"]
             weight_dbn = features_dict["weight_dbn"]
         
