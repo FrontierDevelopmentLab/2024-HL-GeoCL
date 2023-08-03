@@ -1,0 +1,16 @@
+name: "Check"
+on:
+  pull_request:
+  push:
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Nix
+      uses: cachix/install-nix-action@v18
+    - name: Checkout source
+      uses: actions/checkout@v2.5.0
+    - name: Poetry install
+      run: nix develop --command poetry install
+    - name: Lint
+      run: nix develop --command poetry run scripts/lint.sh
