@@ -13,4 +13,4 @@ jobs:
     - name: Poetry install
       run: nix develop --command poetry install
     - name: Lint
-      run: nix develop --command poetry run scripts/lint.sh
+      run: nix develop --command poetry run ./.github/scripts/lint.sh
