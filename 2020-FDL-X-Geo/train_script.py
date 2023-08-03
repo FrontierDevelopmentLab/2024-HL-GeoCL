@@ -28,7 +28,6 @@ config_path = 'experiment.yaml'
 #----- Data loading also depends on the sweep parameters.
 #----- Hence this process will be repeated per training cycle.
 def train(config):
-    future_length = config["future_length"]
     past_omni_length = config["past_omni_length"]
     omni_resolution = config["omni_resolution"]
     nmax = config["nmax"]
@@ -86,7 +85,6 @@ def train(config):
     # initialize model
     model = NN_md(
         past_omni_length,
-        future_length,
         omni_features,
         supermag_features,
         omni_resolution,
