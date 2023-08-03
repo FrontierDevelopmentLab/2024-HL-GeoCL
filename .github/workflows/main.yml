@@ -12,6 +12,7 @@ jobs:
       uses: cachix/install-nix-action@v22
       with:
         nix_path: nixpkgs=channel:nixos-unstable
+    - run: nix-build -a checks.x86_64-linux
     - name: Poetry install
       run: nix develop --command poetry install
     - name: Lint
