@@ -1,7 +1,7 @@
-future_length: 1
-
+# Number of timesteps in input data's time history
 past_omni_length: 120
 
+# Measurement cadence in minutes of the input dataset
 omni_resolution: 1
 
 # Maximum spherical harmonics order

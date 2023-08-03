@@ -25,7 +25,6 @@ class NeuralRNNWiemer(BaseModel):
     def __init__(
         self,
         past_omni_length,
-        future_length,
         omni_features,
         supermag_features,
         omni_resolution,
@@ -69,7 +68,6 @@ class NeuralRNNWiemer(BaseModel):
 
         self.omni_features = omni_features
         self.supermag_features = supermag_features
-        self.future_length = future_length
 
     def forward(
         self, past_omni, past_supermag, mlt, mcolat, dates, future_dates, **kargs

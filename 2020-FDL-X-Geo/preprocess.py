@@ -26,9 +26,8 @@ import pickle
 # Preprocessing parameters
 past_omni_length = 120
 lag = 30
-yearlist = list(np.arange(2013,2015).astype(int))
+yearlist = list(np.arange(2013,2014).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
-future_length = 1
 nmax = 20
 num_workers = 16
 output_folder = './processed_data_all_years'
@@ -43,7 +42,6 @@ class PreprocessData():
         targets="dbn_nez",
         past_omni_length=120,
         past_supermag_length=10,
-        future_length=10,
         lag=0,
         zero_omni=False,
         zero_supermag=False,
@@ -93,7 +91,6 @@ class PreprocessData():
         self.window_length = past_omni_length+lag-1
         self.past_omni_length = past_omni_length
         self.past_supermag_length = past_supermag_length
-        self.future_length = future_length
         self.lag = lag
 
         if scaler is not None:
@@ -226,7 +223,7 @@ if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
 
     train_ds_all_years = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+                past_supermag_length=1,lag=lag,zero_omni=False,
                 zero_supermag=False,scaler=None,training_batch=True,nmax=nmax, num_workers=num_workers)
 
     scaler = train_ds_all_years.scaler
@@ -260,7 +257,7 @@ for year in yearlist:
     
     train_ds = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+                past_supermag_length=1,lag=lag,zero_omni=False,
                 zero_supermag=False,scaler=scaler,training_batch=True,nmax=nmax, num_workers=num_workers)
     
     train_ds.compute_features()
@@ -270,7 +267,7 @@ for year in yearlist:
 
     val_ds = PreprocessData(supermag_data,input_data,val_idx,
             f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-            past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+            past_supermag_length=1,lag=lag,zero_omni=False,
             zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
     
     val_ds.compute_features()
@@ -282,7 +279,7 @@ for year in yearlist:
         wiemer_idx = np.asarray(wiemer_idx)
         wiemer_ds = PreprocessData(supermag_data,input_data,wiemer_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+                past_supermag_length=1,lag=lag,zero_omni=False,
                 zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
 
         wiemer_ds.compute_features()
