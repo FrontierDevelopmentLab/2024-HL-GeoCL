@@ -22,4 +22,4 @@ jobs:
         pip install black isort flake8
     - name: Analysing the code
       run: |
-        ./.github/scripts/lint.sh
+        . ./.github/scripts/lint.sh
