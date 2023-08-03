@@ -69,7 +69,7 @@ class BaseModel(pl.LightningModule):
         self.station_regularization_weight = kwargs.pop('station_regularization_weight')
 
         try:
-            if self.weighted_regression:
+            if self.weighted_regression or self.stn_reg:
                 self.lossfun = ldict_weighted[losskey]
             else:
                 self.lossfun = ldict[losskey]
