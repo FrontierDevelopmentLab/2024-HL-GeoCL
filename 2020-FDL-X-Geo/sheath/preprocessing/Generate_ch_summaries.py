@@ -10,8 +10,8 @@ from tqdm import tqdm
 
 """
     To pull the data, perform:
-    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr ../sheath_data/sdoml_data/
-    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr ../sheath_data/sdoml_data/
+    gsutil -m cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr ../sheath_data/sdoml_data/
+    gsutil -m cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr ../sheath_data/sdoml_data/
     
     And you will need opencv, zarr, dask, skimage for runnign this code.
     
@@ -22,7 +22,7 @@ sdomlsmall = zarr.open("../sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/"
 times_193 = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
 
 # Load CH Mask
-MASKPATH = "/home/jupyter/Vishal/sdoml_features/"
+MASKPATH = "../sheath_data/"
 ch_mask = np.load(f"{MASKPATH}ch_mask.npy")
 
 #Load SDOML data from v2_small
