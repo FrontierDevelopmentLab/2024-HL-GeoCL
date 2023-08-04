@@ -10,15 +10,15 @@ from tqdm import tqdm
 
 """
     To pull the data, perform:
-    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr .
-    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr .
+    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr ../sheath_data/sdoml_data/
+    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr ../sheath_data/sdoml_data/
     
     And you will need opencv, zarr, dask, skimage for runnign this code.
     
     CONSISTENCY of NPIX expected with Generate_central_mask_CH.py
 """
 
-sdomlsmall = zarr.open("/home/jupyter/Vishal/sdoml/sdomlv2_small.zarr/2010/193A/")
+sdomlsmall = zarr.open("../sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/")
 times_193 = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
 
 # Load CH Mask
@@ -26,7 +26,7 @@ MASKPATH = "/home/jupyter/Vishal/sdoml_features/"
 ch_mask = np.load(f"{MASKPATH}ch_mask.npy")
 
 #Load SDOML data from v2_small
-AIAPATHS = sorted(glob("/home/jupyter/Vishal/sdoml/sdomlv2_small.zarr/2010/*"))
+AIAPATHS = sorted(glob("../sheath_data/sdoml_data/sdomlv2_small.zarr/2010/*"))
 #Get passbands list
 PASSBANDS = [v.split('/')[-1] for v in AIAPATHS]
 #193 used for segmentation, so find its index.
@@ -54,14 +54,14 @@ def convert_hmi_time_utc(time_hmi):
     return t_obs_new
 
 #Load HMI data from v2_small
-HMIPATHS = sorted(glob("/home/jupyter/Vishal/sdoml/sdomlv2_hmi_small.zarr/2010/*"))
+HMIPATHS = sorted(glob("../sheath_data/sdoml_data/sdomlv2_hmi_small.zarr/2010/*"))
 #Get B components list
 BCOMP = [v.split('/')[-1] for v in HMIPATHS]
 # Get time stamps of all passbands, and find the nearest index to 193
 TIMES_HMI = [convert_hmi_time_utc(zarr.open(v).attrs['T_OBS']) for v in HMIPATHS]
 CLOSEST_HMI_INDICES = [np.argmin(np.abs(TIMES_AIA[IND_193][None,...]-times[...,None]),axis=0) for times in TIMES_HMI]
 
-SAVEPATH = "/home/jupyter/Vishal/sdoml_features/"
+SAVEPATH = "../sheath_data/"
 if not os.path.isdir(SAVEPATH):
     os.makedirs(SAVEPATH)
     

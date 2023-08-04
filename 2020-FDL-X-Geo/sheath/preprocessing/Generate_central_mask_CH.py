@@ -9,14 +9,14 @@ import os
 
 """
     To pull the data, perform:
-    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr .
-    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr .
+    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr ../sheath_data/sdoml_data/
+    gsutil cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr ../sheath_data/sdoml_data/
     
     And you will need opencv, zarr, dask, skimage for runnign this code.
 """
 
 # Load AIA 193 A data
-sdomlsmall = zarr.open("/home/jupyter/Vishal/sdoml/sdomlv2_small.zarr/2010/193A/")
+sdomlsmall = zarr.open("../sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/")
 NPIX = 17
 
 # Generate mask to get only the disc. I don't care about the limb
@@ -82,7 +82,7 @@ pool.close()
 mask[np.isnan(mask)] = 0.0
 ch = ch*(mask[:,256-NPIX:256+NPIX][None,...])
 
-SAVEPATH = "/home/jupyter/Vishal/sdoml_features/"
+SAVEPATH = "../sheath_data/"
 if not os.path.isdir(SAVEPATH):
     os.makedirs(SAVEPATH)
 np.save(f"{SAVEPATH}ch_mask.npy",ch)
