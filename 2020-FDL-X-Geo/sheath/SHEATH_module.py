@@ -1,33 +1,18 @@
+"""
+ In this script we define functions and modules of sheath which will perform the preprocessing for SHEATH.
+"""
 import torch
 import torch.nn as nn
 from torch.utils import data
 from tqdm import tqdm
 import numpy as np
-
-
-
-def _float(tensor):
-    return torch.Tensor(tensor.astype(np.float32)).float()
-
-
-class Data(data.Dataset):
-    def __init__(self,features,target):
-        torch.manual_seed(0)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.features = _float(features).to(device)
-        self.target = _float(target).to(device)
-        self.device = device
-        self.nout = target.shape[-1]
-        self.height = features.shape[1]
-        self.width = features.shape[2]
-        self.n_passbands= features.shape[3]
-    def __len__(self):
-        return self.features.shape[0]
-    def __getitem__(self,index):
-        return self.features[index],self.target[index]
-
+from utils.torch_utils import _float
 
 class HSENN(nn.Module):
+    """
+        This is the Neural network-based pytorch model which will perform inference given a 
+        processed dataset. 
+    """
     def __init__(self,**kwargs):
         super(HSENN,self).__init__()
         n_passbands = kwargs.pop('n_passbands',None)
@@ -66,3 +51,36 @@ class HSENN(nn.Module):
         # Call the model and do forward pass.
         logits = self.linear(self.model(aiadata.permute(0,3,1,2)))
         return logits
+    
+    def predict(self,aiadata,**kwargs):
+        with torch.no_grad():
+            logits = self.linear(self.model(aiadata.permute(0,3,1,2)))
+        return logits.detach().cpu().numpy()
+    
+
+class SHEATH:
+    """
+        This is the main SHEATH module. This will take in the model, the data, and the preprocesser 
+        to perform inferences. 
+    """
+    def __init__(self, preprocessor, model, solarwind_param_list, scaler_y = None):
+        """
+            Preprocess is a function which will be called to preprocess aia and hmi data.
+            Model will perform inferences.
+        """
+        self.preprocessor = preprocessor
+        self.model = model
+        self.solarwind_param_list = solarwind_param_list #List of solar wind parameters
+        self.scaler_y = scaler_y
+    def predict(self,inputdatacube):
+        # Expect a numpy array with various solar wind parameters here.
+        model_output = model.predict(inputdatacube)
+        if self.scaler_y is not None:
+            model_output = self.scaler_y.inverse_transform(model_output)
+        solar_wind = pd.DataFrame.from_dict({param: model_output[:,i] for i, param in enumerate(self.solarwind_param_list)})
+        return solar_wind
+        
+    
+    
+        
+    

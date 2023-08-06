@@ -6,16 +6,24 @@ from astropy.constants import iau2012 as const
 import astropy.units as u
 from sklearn.preprocessing import MinMaxScaler
 from pickle import dump, load
+import os
+import torch
+import torch.nn as nn
+from torch.utils import data
+from tqdm import tqdm
 
-from SHEATH_model import *
+from SHEATH_module import HSENN
+from utils.dataloader_torch import Data
 
 
 # Hyperparameters and other setup info
-DATAPATH = "sheath_data/"
+DATAPATH = "/home/jupyter/Vishal/sdoml_features/"
 batch_size = 100
 lr = 1e-4
-num_epochs = 1000
+num_epochs = 10
 loss_fn = nn.MSELoss()
+if not os.path.isdir("logs/"):
+    os.makedirs("logs/")
 
 
 def backtrace_radial(vel):
@@ -48,6 +56,11 @@ if __name__ == "__main__":
            'BY, nT (GSM)', 'BZ, nT (GSM)', 'Speed, km/s', 'Proton Density, n/cc',
            'Proton Temperature, K']]
     output_data = omni_data.values[:,1:]
+    # Save sw variable list
+    dump(['Field magnitude average, nT', 'BX, nT (GSE, GSM)',
+           'BY, nT (GSM)', 'BZ, nT (GSM)', 'Speed, km/s', 'Proton Density, n/cc',
+           'Proton Temperature, K'],open("logs/sw_variables.pickle","wb"))
+    
 
     # For each "backtraced" index, we now find the nearest AIA/SDO image. This will be our dataset now.
 
@@ -62,10 +75,13 @@ if __name__ == "__main__":
     print("Scaling data...")
     scaler_y = MinMaxScaler()
     output_data = scaler_y.fit_transform(output_data)
-    dump(scaler_y, open('target_scaler.scaler', 'wb'))
+    # Save scaler y
+    dump(scaler_y, open('logs/scaler_y.scaler', 'wb'))
 
-    Xmin,Xrange = np.nanmin(input_data,axis=(0,1,2)),np.ptp(input_data,axis=(0,1,2))
+    Xmin,Xrange = np.nanmean(input_data,axis=(0,1,2)),np.nanstd(input_data,axis=(0,1,2))
+    dump({"mean":Xmin,"stddev":Xrange}, open('logs/scaler_aia.scaler', 'wb'))
     input_data = (input_data - Xmin[None,...])/Xrange[None,...]
+    
 
     idx = np.arange(input_data.shape[0])
     np.random.seed(2796)
@@ -85,6 +101,9 @@ if __name__ == "__main__":
     HSE_model = HSENN(n_passbands = train_set.n_passbands,height = train_set.height,
                       width = train_set.width,n_out = train_set.nout)
     HSE_model = HSE_model.to(train_set.device).float()
+    model_hyperparams = {"n_passbands" : train_set.n_passbands, "height" : train_set.height,
+                      "width" : train_set.width, "n_out" : train_set.nout}
+    dump(model_hyperparams, open('logs/model_hyperparams.scaler', 'wb'))
     # print(HSE_model)
     optimizer = torch.optim.Adam(HSE_model.parameters(),lr=lr)
 
@@ -125,7 +144,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig("train_test_loss.png")
 
-    torch.save(HSE_model.state_dict(), "SHEATH.ckpt")
+    torch.save(HSE_model.state_dict(), "logs/SHEATH.ckpt")
     
     with torch.no_grad():
         preds = []
