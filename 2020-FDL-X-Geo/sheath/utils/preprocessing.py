@@ -66,17 +66,15 @@ class Preprocessor_CH:
         n_size = self.n_size
         npix = self.npix
         mask = get_mask(n_size = n_size)[:,int(n_size//2)-npix:int(n_size//2)+npix]
-        import pdb; pdb.set_trace()
-        
         if self.ch_mask:
-            segmentation = subsample_and_segment(aia_data[ind_193,:,int(n_size//2)-npix:int(n_size//2)+npix], mask,
+            segmentation = subsample_and_segment(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix], mask,
                                                  region = ['CH'], ncomp = 3)
             segmentation = segmentation["CH"]
         else:
-            segmentation = np.ones_like(aia_data[ind_193,:,int(n_size//2)-npix:int(n_size//2)+npix])
-
-        aia_data = aia_data[:,:,int(n_size//2)-npix:int(n_size//2)+npix]*(segmentation[None,...])
-        hmi_data = hmi_data[:,:,int(n_size//2)-npix:int(n_size//2)+npix]*(segmentation[None,...])
+            segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
+    
+        aia_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])*(segmentation[None,...])
+        hmi_data = np.asarray([hmi_data[comp][:,int(n_size//2)-npix:int(n_size//2)+npix] for comp in hmi_data.keys()])*(segmentation[None,...])
         # The input data should be of the form [512,34,12]
         in_data = np.concatenate([aia_data,hmi_data]).transpose([1,2,0])[None,...]
         if self.scaler_aia is not None:

@@ -7,6 +7,7 @@ from torch.utils import data
 from tqdm import tqdm
 import numpy as np
 from utils.torch_utils import _float
+import pandas as pd
 
 class HSENN(nn.Module):
     """
@@ -74,7 +75,7 @@ class SHEATH:
         self.scaler_y = scaler_y
     def predict(self,inputdatacube):
         # Expect a numpy array with various solar wind parameters here.
-        model_output = model.predict(inputdatacube)
+        model_output = self.model.predict(inputdatacube)
         if self.scaler_y is not None:
             model_output = self.scaler_y.inverse_transform(model_output)
         solar_wind = pd.DataFrame.from_dict({param: model_output[:,i] for i, param in enumerate(self.solarwind_param_list)})

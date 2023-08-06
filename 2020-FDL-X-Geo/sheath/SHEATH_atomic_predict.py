@@ -86,6 +86,7 @@ class AtomicSamurai:
               This function takens in the AIA and HMI timestamps and the corresponding indices to perform inference.
               This calls the cloudfetcher object to get the data, apply the preprocessing, and pass in the array to sheat module.
         """
+        print(f"Performing inference for AIA time: {aia_timestamp}, HMI time: {hmi_timestamp}")
         aia_data = self.cloudfetcher_object.load_aia_image(aia_timestamp,aia_idx)
         hmi_data = self.cloudfetcher_object.load_hmi_image(hmi_timestamp,hmi_idx)
         input_datacube = self.sheathmodule_object.preprocessor.preprocess(aia_data,hmi_data,
