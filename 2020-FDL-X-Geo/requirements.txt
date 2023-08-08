@@ -16,3 +16,5 @@ celluloid
 pyproj
 tables
 astropy
+zarr
+
