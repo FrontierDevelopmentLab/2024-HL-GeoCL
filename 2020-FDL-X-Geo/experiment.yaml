@@ -5,19 +5,25 @@ past_omni_length: 120
 omni_resolution: 1
 
 # Maximum spherical harmonics order
-nmax: 20
+nmax: 40
 
 # Learning rate for training
 learning_rate: 0.005
 
 # Batch size for training
-batch_size: 3500
+batch_size: 500
 
 #L2 regularization coefficient
 l2reg: 0.001
 
 # Maximum number of epochs
 epochs: 1000
+
+# Number of dataloader workers
+num_workers: 32
+
+# Number of GPU devices
+num_devices: 2
 
 # Dropout probability for the model
 dropout_prob: 0.3
@@ -32,19 +38,19 @@ loss: "MAE"
 model: 'NeuralRNNWiemer'
 
 # Flag to enable logging 
-is_logging_enabled: false
+is_logging_enabled: true
 
 # Start limit of the years
 yearlist_begin: 2013
 
 # End limit of the years(This year is not included)
-yearlist_end: 2014
+yearlist_end: 2015
 
 # Checkpoint folder name and experiment name in wandb
-wandb_run_name: "Experiment"
+wandb_run_name: "Station_regularization"
 
 # Path to the preprocessed data
-preprocessed_data_path: "./preprocessed_data_base"
+preprocessed_data_path: "./processed_data_stn_reg"
 
 # Input Geomagnetic Indices. Can be a subset of ["SME", "SML", "SMU", "SMR"]
 extra_input_features: []
@@ -53,7 +59,7 @@ extra_input_features: []
 station_regularization: true
 
 # Flag to enable weighted regression for imbalance correction
-weighted_regression: true
+weighted_regression: false
 
 # The weight associated with the loss function for station regularization
 # Used only when both weighted regression and station regularization are enabled
