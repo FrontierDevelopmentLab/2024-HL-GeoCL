@@ -28,7 +28,6 @@ past_omni_length = 120
 lag = 30
 yearlist = list(np.arange(2013,2014).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
-nmax = 20
 num_workers = 16
 output_folder = './processed_data_all_years'
 extra_input_features = ["SME", "SML", "SMU", "SMR"]
@@ -47,7 +46,6 @@ class PreprocessData():
         zero_supermag=False,
         scaler=None,
         training_batch=True,
-        nmax=20,
         inference=False,
         num_workers = 4,
         category = 'train'):
@@ -103,9 +101,7 @@ class PreprocessData():
                 target_mean, target_std = scaler["supermag"]
                 self.supermag_data[...,self.target_idx] = (self.supermag_data[...,self.target_idx]-target_mean)/target_std
         else:
-            self.compute_scaler(f107_data)
-        self._nbasis = nmax
-       
+            self.compute_scaler(f107_data)       
     
     def compute_features(self):
         self.sg_indices_list = []
@@ -224,7 +220,7 @@ if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
     train_ds_all_years = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
                 past_supermag_length=1,lag=lag,zero_omni=False,
-                zero_supermag=False,scaler=None,training_batch=True,nmax=nmax, num_workers=num_workers)
+                zero_supermag=False,scaler=None,training_batch=True, num_workers=num_workers)
 
     scaler = train_ds_all_years.scaler
     with open(os.path.join(output_folder, f'supermag_features.p'), 'wb') as f:
@@ -258,7 +254,7 @@ for year in yearlist:
     train_ds = PreprocessData(supermag_data,input_data,train_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
                 past_supermag_length=1,lag=lag,zero_omni=False,
-                zero_supermag=False,scaler=scaler,training_batch=True,nmax=nmax, num_workers=num_workers)
+                zero_supermag=False,scaler=scaler,training_batch=True, num_workers=num_workers)
     
     train_ds.compute_features()
 
@@ -268,7 +264,7 @@ for year in yearlist:
     val_ds = PreprocessData(supermag_data,input_data,val_idx,
             f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
             past_supermag_length=1,lag=lag,zero_omni=False,
-            zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
+            zero_supermag=False,scaler=scaler,training_batch=False, num_workers=num_workers)
     
     val_ds.compute_features()
 
@@ -280,7 +276,7 @@ for year in yearlist:
         wiemer_ds = PreprocessData(supermag_data,input_data,wiemer_idx,
                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
                 past_supermag_length=1,lag=lag,zero_omni=False,
-                zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
+                zero_supermag=False,scaler=scaler,training_batch=False, num_workers=num_workers)
 
         wiemer_ds.compute_features()
 

@@ -49,9 +49,9 @@ def train(config):
     station_regularization = config["station_regularization"]
     station_regularization_weight = config["station_regularization_weight"]
     imbalanced_regression_weight = config["imbalanced_regression_weight"]
+    num_workers = config["num_workers"]
+    num_devices = config["num_devices"]
     
-
-    wandb_run_name = f"Imbalanced_Regression_2013_2014_new_scale"
     if is_logging_enabled:
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
     else:
@@ -67,13 +67,13 @@ def train(config):
     scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
     wiemer_loader = data.DataLoader(
-        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=0
+        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
     train_loader = data.DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True, num_workers=0
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
     val_loader = data.DataLoader(
-        val_ds, batch_size=batch_size, shuffle=False, num_workers=0
+        val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
     
     plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
@@ -114,9 +114,9 @@ def train(config):
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_path, monitor="val_MSE", save_top_k=5)
     if torch.cuda.is_available():
         trainer = pl.Trainer(
-        devices=1,
+        devices=num_devices,
         accelerator="gpu",
-        #strategy='ddp_find_unused_parameters_true',
+        strategy='ddp_find_unused_parameters_true',
         check_val_every_n_epoch=1,
         logger=wandb_logger,
         max_epochs=max_epochs,
