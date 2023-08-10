@@ -51,6 +51,7 @@ def train(config):
     imbalanced_regression_weight = config["imbalanced_regression_weight"]
     num_workers = config["num_workers"]
     num_devices = config["num_devices"]
+    stn_reg_dmp = config["stn_reg_dmp"]
     
     if is_logging_enabled:
         wandb_logger = WandbLogger(project="geoeffectivenet", log_model=True, name=wandb_run_name)
@@ -98,7 +99,8 @@ def train(config):
         extra_input_features=extra_input_features,
         stn_reg=station_regularization,
         station_regularization_weight = station_regularization_weight,
-        imbalanced_regression_weight = imbalanced_regression_weight
+        imbalanced_regression_weight = imbalanced_regression_weight,
+        stn_reg_dmp = stn_reg_dmp
     )
     model = model.double()
 
