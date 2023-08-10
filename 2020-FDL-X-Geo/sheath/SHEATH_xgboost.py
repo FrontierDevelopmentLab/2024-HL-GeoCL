@@ -22,7 +22,7 @@ from utils.dataloader_torch import Data
 # Hyperparameters and other setup info
 DATAPATH = "sheath_data/"
 param = {'max_depth': 3, 'learning_rate': 1e-3, 'objective': 'reg:squarederror', 'nthread': -1, 'eval_metric': 'rmse'}  # Hyperparameters in xgb notation
-num_rounds = 10000
+num_rounds = 20000
 early_stopping_rounds=40
 
 
@@ -50,29 +50,46 @@ def moving_average(array, window_size=3):
 
 if __name__ == "__main__":
     
+    print("Loading CH-segmented data")
     timestamps_sun = np.load(f"{DATAPATH}timestamps.npy",allow_pickle=True)
-    masks = np.load(f"{DATAPATH}ch_mask.npy")
-    ch_net_areas = np.array([np.sum(image) for image in masks])  # Calculate the total area of open-field-line regions    
+    ch_masks = np.load(f"{DATAPATH}ch_mask.npy")
+    ch_net_areas = np.array([np.sum(image) for image in ch_masks])  # Calculate the total area of open-field-line regions    
     
     # Calculate the net flux per measurement per passband
-    in_dataset = np.asarray([np.load(v) for v in sorted(glob(f"{DATAPATH}masked*.npy"))]).transpose([1,2,3,0])
-    ch_net_fluxes = np.zeros((in_dataset.shape[0],in_dataset.shape[3]))
-    for measurement in range(in_dataset.shape[0]):
-        for passband in range(in_dataset.shape[3]):
-            ch_net_fluxes[measurement, passband] = np.sum(in_dataset[measurement, :, :, passband])
+    ch_dataset = np.asarray([np.load(v) for v in sorted(glob(f"{DATAPATH}masked*.npy"))]).transpose([1,2,3,0])
+    ch_net_fluxes = np.zeros((ch_dataset.shape[0],ch_dataset.shape[3]))
+    for measurement in range(ch_dataset.shape[0]):
+        for passband in range(ch_dataset.shape[3]):
+            ch_net_fluxes[measurement, passband] = np.sum(ch_dataset[measurement, :, :, passband])
             
-    input_data = np.append(ch_net_fluxes, ch_net_areas.reshape((len(ch_net_areas),1)), axis=1)
+    ch_data = np.append(ch_net_fluxes, ch_net_areas.reshape((len(ch_net_areas),1)), axis=1)
+
+    print("Loading AR-segmented data")
+    ar_masks = np.load(f"{DATAPATH}ar_mask.npy")
+    ar_net_areas = np.array([np.sum(image) for image in ar_masks])  # Calculate the total area of open-field-line regions    
+    
+    # Calculate the net flux per measurement per passband
+    ar_dataset = np.asarray([np.load(v) for v in sorted(glob(f"{DATAPATH}ar_masked*.npy"))]).transpose([1,2,3,0])
+    ar_net_fluxes = np.zeros((ar_dataset.shape[0],ar_dataset.shape[3]))
+    for measurement in range(ar_dataset.shape[0]):
+        for passband in range(ar_dataset.shape[3]):
+            ar_net_fluxes[measurement, passband] = np.sum(ar_dataset[measurement, :, :, passband])
+            
+    ar_data = np.append(ar_net_fluxes, ar_net_areas.reshape((len(ar_net_areas),1)), axis=1)
+    input_data = np.append(ch_data, ar_data, axis=1)
+    
      
+        
     # Load and process target data
     omni_data = pd.read_hdf(f"{DATAPATH}omni_preprocess.h5",key="omni")
     # omni_data["Proton Temperature, K"] = np.log10(omni_data["Proton Temperature, K"])
     omni_data = omni_data.dropna(axis="rows")
     
-    # print(omni_data.shape)
+    print(omni_data.shape)
     # for feature in omni_data.columns[1:]:
     #     omni_data[feature] = moving_average(omni_data[feature].values, window_size=90//5)
-    # omni_data = omni_data.iloc[::18]
-    # print(omni_data.shape)
+    omni_data = omni_data.iloc[::18]
+    print(omni_data.shape)
 
     aia_dates_omni = get_backtrace_date(omni_data.values[:,5],omni_data.values[:,0])
 
@@ -112,7 +129,7 @@ if __name__ == "__main__":
     
     scaler_X = StandardScaler()
     input_data = scaler_X.fit_transform(input_data)
-    dump(scaler_X, open('logs/scaler_y.scaler', 'wb'))
+    dump(scaler_X, open('logs/scaler_X.scaler', 'wb'))
 
     idx = np.arange(input_data.shape[0])
     np.random.seed(2796)
@@ -138,7 +155,7 @@ if __name__ == "__main__":
     print(np.shape(predictions))
     
     fig,axes = plt.subplots(4,2,figsize=(12,10))
-    end_timestep = 476
+    end_timestep = 58
     axes = axes.ravel()
     predictions = scaler_y.inverse_transform(predictions)
     target_data = scaler_y.inverse_transform(target_data)
