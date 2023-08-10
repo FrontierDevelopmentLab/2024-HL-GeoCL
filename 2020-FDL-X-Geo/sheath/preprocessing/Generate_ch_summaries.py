@@ -18,15 +18,15 @@ from tqdm import tqdm
     CONSISTENCY of NPIX expected with Generate_central_mask_CH.py
 """
 
-sdomlsmall = zarr.open("../sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/")
+sdomlsmall = zarr.open("sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/")
 times_193 = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
 
 # Load CH Mask
-MASKPATH = "../sheath_data/"
+MASKPATH = "sheath_data/"
 ch_mask = np.load(f"{MASKPATH}ch_mask.npy")
 
 #Load SDOML data from v2_small
-AIAPATHS = sorted(glob("../sheath_data/sdoml_data/sdomlv2_small.zarr/2010/*"))
+AIAPATHS = sorted(glob("sheath_data/sdoml_data/sdomlv2_small.zarr/2010/*"))
 #Get passbands list
 PASSBANDS = [v.split('/')[-1] for v in AIAPATHS]
 #193 used for segmentation, so find its index.
@@ -61,7 +61,7 @@ BCOMP = [v.split('/')[-1] for v in HMIPATHS]
 TIMES_HMI = [convert_hmi_time_utc(zarr.open(v).attrs['T_OBS']) for v in HMIPATHS]
 CLOSEST_HMI_INDICES = [np.argmin(np.abs(TIMES_AIA[IND_193][None,...]-times[...,None]),axis=0) for times in TIMES_HMI]
 
-SAVEPATH = "../sheath_data/"
+SAVEPATH = "sheath_data/"
 if not os.path.isdir(SAVEPATH):
     os.makedirs(SAVEPATH)
     
