@@ -12,7 +12,7 @@ import h5py
 import sys
 
 sys.path.append('../')
-from utils.data_utils import get_iaga_data_as_list, get_omni_data
+from utils.data_utils import get_iaga_data_as_list, get_input_data
 
 BUCKETS = 100
 
