@@ -75,6 +75,7 @@ def Get_CH(og):
 
 
 sdomlarr = list(np.log10(sdomlsmall[:,:,256-NPIX:256+NPIX]))
+
 import multiprocessing as mp
 
 pool = mp.Pool(processes=mp.cpu_count())

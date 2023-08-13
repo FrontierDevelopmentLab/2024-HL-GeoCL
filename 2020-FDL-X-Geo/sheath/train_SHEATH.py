@@ -4,7 +4,8 @@ import pandas as pd
 from glob import glob
 from astropy.constants import iau2012 as const
 import astropy.units as u
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.metrics import mean_squared_error
 from pickle import dump, load
 import os
 import torch
@@ -17,10 +18,10 @@ from utils.dataloader_torch import Data
 
 
 # Hyperparameters and other setup info
-DATAPATH = "/home/jupyter/Vishal/sdoml_features/"
+DATAPATH = "sheath_data/"
 batch_size = 100
-lr = 1e-4
-num_epochs = 10
+lr = 1e-3
+num_epochs = 250 
 loss_fn = nn.MSELoss()
 if not os.path.isdir("logs/"):
     os.makedirs("logs/")
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     in_dataset = np.asarray([np.load(v) for v in sorted(glob(f"{DATAPATH}masked*.npy"))]).transpose([1,2,3,0])
 
     omni_data = pd.read_hdf(f"{DATAPATH}omni_preprocess.h5",key="omni")
-    omni_data["Proton Temperature, K"] = np.log10(omni_data["Proton Temperature, K"])
+    # omni_data["Proton Temperature, K"] = np.log10(omni_data["Proton Temperature, K"])
     omni_data = omni_data.dropna(axis="rows")
 
     aia_dates_omni = get_backtrace_date(omni_data.values[:,5],omni_data.values[:,0])
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     dump(['Field magnitude average, nT', 'BX, nT (GSE, GSM)',
            'BY, nT (GSM)', 'BZ, nT (GSM)', 'Speed, km/s', 'Proton Density, n/cc',
            'Proton Temperature, K'],open("logs/sw_variables.pickle","wb"))
-    
+
 
     # For each "backtraced" index, we now find the nearest AIA/SDO image. This will be our dataset now.
 
@@ -74,14 +75,13 @@ if __name__ == "__main__":
     # Dumb preprocessing: Normalizing everything all at once
     print("Scaling data...")
     scaler_y = MinMaxScaler()
-    output_data = scaler_y.fit_transform(output_data)
+    target_data = scaler_y.fit_transform(output_data)
     # Save scaler y
     dump(scaler_y, open('logs/scaler_y.scaler', 'wb'))
 
-    Xmin,Xrange = np.nanmean(input_data,axis=(0,1,2)),np.nanstd(input_data,axis=(0,1,2))
-    dump({"mean":Xmin,"stddev":Xrange}, open('logs/scaler_aia.scaler', 'wb'))
-    input_data = (input_data - Xmin[None,...])/Xrange[None,...]
-    
+    scaler_X = StandardScaler()
+    input_data = scaler_X.fit_transform(input_data.reshape(-1, input_data.shape[-1])).reshape(input_data.shape)
+    dump(scaler_X, open('logs/scaler_X.scaler', 'wb'))
 
     idx = np.arange(input_data.shape[0])
     np.random.seed(2796)
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     test_idx = idx[int(len(idx)*0.85):]
 
     print("Splitting and loading datasets...")
-    train_set = Data(input_data[train_idx],output_data[train_idx])
-    test_set = Data(input_data[test_idx],output_data[test_idx])
+    train_set = Data(input_data[train_idx],target_data[train_idx])
+    test_set = Data(input_data[test_idx],target_data[test_idx])
 
     training_loader = data.DataLoader(train_set,batch_size=batch_size,shuffle=True)
     test_loader = data.DataLoader(test_set,batch_size=test_set.features.shape[0],shuffle=True)
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     plt.savefig("train_test_loss.png")
 
     torch.save(HSE_model.state_dict(), "logs/SHEATH.ckpt")
-    
+
     with torch.no_grad():
         preds = []
         for features,target in test_loader:

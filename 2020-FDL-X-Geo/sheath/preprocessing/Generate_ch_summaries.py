@@ -17,13 +17,12 @@ from tqdm import tqdm
     
     CONSISTENCY of NPIX expected with Generate_central_mask_CH.py
 """
-
 sdomlsmall = zarr.open("sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/")
 times_193 = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
 
 # Load CH Mask
 MASKPATH = "sheath_data/"
-ch_mask = np.load(f"{MASKPATH}ch_mask.npy")
+ch_mask = np.load(f"{MASKPATH}ar_mask.npy")
 
 #Load SDOML data from v2_small
 AIAPATHS = sorted(glob("sheath_data/sdoml_data/sdomlv2_small.zarr/2010/*"))
@@ -75,7 +74,7 @@ for ind,path in enumerate(tqdm(AIAPATHS)):
     files = np.asarray(files)[inds_aia,:,:]
     files = files[:,:,256-NPIX:256+NPIX]*ch_mask
     files = files[SORTED_INDICES_AIA_193]
-    np.save(f"{SAVEPATH}masked_{PASSBANDS[ind]}.npy",files)
+    np.save(f"{SAVEPATH}ar_masked_{PASSBANDS[ind]}.npy",files)
     
 #==== Subsample and get HMI dataset. 
 for ind,path in enumerate(tqdm(HMIPATHS)):
@@ -84,4 +83,4 @@ for ind,path in enumerate(tqdm(HMIPATHS)):
     files = np.asarray(files)[inds_hmi,:,:]
     files = files[:,:,256-NPIX:256+NPIX]*ch_mask
     files = files[SORTED_INDICES_AIA_193]
-    np.save(f"{SAVEPATH}masked_{BCOMP[ind]}.npy",files)
+    np.save(f"{SAVEPATH}ar_masked_{BCOMP[ind]}.npy",files)

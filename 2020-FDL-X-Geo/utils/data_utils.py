@@ -50,14 +50,25 @@ def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
         indices_df = pd.concat([pd.read_csv(indices_file, index_col="Date_UTC") for indices_file in indices_files], axis=0)
     else:
         raise TypeError("year must be either a list of years, or a single year.")
-    timestamps = omni_df.index
+    indices_timestamps = pd.to_datetime(indices_df.index)
+    omni_timestamps = omni_df.index
+    # print(type(timestamps[0]), type(indices_df.index[0]))
+    # print("a")
+    # indices_df = pd.concat([indices_df.loc[time] for time in timestamps.values],axis=0)
+    # print(indices_df.info(), indices_df)
+    # Break
     omni_df.reset_index(inplace=True, drop=True)
     indices_df.reset_index(inplace=True, drop=True)
     if len(indices_df.columns) == 0:
         print("No geomagnetic indices specified. Only upstream data are being loaded.")
     indices_df = indices_df[indices_to_use]
+    print(indices_timestamps, omni_timestamps)
     combined_df = pd.concat([omni_df, indices_df], axis=1)  # If no indices, concats an empty dataframe
-    combined_df.index = timestamps
+    combined_df.index = indices_timestamps
+    print(combined_df.index, type(combined_df.index[0]), type(omni_timestamps[0]))
+    combined_df = combined_df.loc[omni_timestamps]
+    print(combined_df.info())
+    Break
     del omni_df, indices_df
     return combined_df
 
@@ -99,14 +110,14 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True, max_stations=None
             dates.append(dt)
             if load_data:
                 data.append(dat)
-                reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
+                #reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
         dates = np.concatenate(dates,axis=0)
 
         if load_data:
             data = np.concatenate(data,axis=0)
-            reg = np.concatenate(reg,axis=0)
+            #reg = np.concatenate(reg,axis=0)
 
-        return dates,data,features,reg
+        return dates,data,features,#reg
     
     else:
         raise TypeError("Year must be either a list of years, or a single year (str).")
