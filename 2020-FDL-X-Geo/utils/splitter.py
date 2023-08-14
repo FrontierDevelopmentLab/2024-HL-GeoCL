@@ -20,7 +20,7 @@ BUCKETS = 100
 def get_sequences(df, length, lag):
     _df = df.copy()
     _df['cluster'] = (_df['seconds'].diff() != 60).cumsum()
-    f = _df.groupby(['cluster']).apply(lambda x: x[:len(x)-length-lag]['index']).reset_index(drop=True).values.ravel()  # features (with ttime hist)
+    f = _df.groupby(['cluster']).apply(lambda x: x[:len(x)-length-lag]['index']).reset_index(drop=True).values.ravel()  # features (with time hist)
     t = _df.groupby(['cluster']).apply(lambda x: x[length+lag:]['index']).reset_index(drop=True).values.ravel()  # targets (with lag)
     
     # if len(t) > 0:
@@ -91,7 +91,8 @@ def generate_indices(base,year,LENGTH,LAG,omni_path="../data_local/omni/sw_data.
     # test if it maches omni
     for year in pd.unique(df['dates'].dt.year):
         print(f'testing {year}')
-        omni = get_omni_data(omni_path, year=f'{year}')
+        omni = get_input_data(omni_path, year=f'{year}', indices_path="data_local/supermag_indices/",
+                                             indices_to_use=[])
         assert len(df.loc[df['dates'].dt.year==year]) == len(omni)
     print('testing done')
 
