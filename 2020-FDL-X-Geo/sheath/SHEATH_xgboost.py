@@ -76,9 +76,7 @@ if __name__ == "__main__":
             
     ar_data = np.append(ar_net_fluxes, ar_net_areas.reshape((len(ar_net_areas),1)), axis=1)
     input_data = np.append(ch_data, ar_data, axis=1)
-    
-     
-        
+            
     # Load and process target data
     omni_data = pd.read_hdf(f"{DATAPATH}omni_preprocess.h5",key="omni")
     # a = pd.read_hdf("../data_local/omni/sw_data.h5", key="2010")
@@ -180,12 +178,16 @@ if __name__ == "__main__":
     predictions['ygse'] = np.zeros(len(predictions))
     predictions['zgse'] = np.zeros(len(predictions))
     predictions['clock_angle'] = np.arctan(predictions['by']/predictions['bz'])
+    predictions['density'] = predictions['number_density'] * 1e6 * 1.6726e-27  # Assuming Hydrogen solar wind
     predictions['psw'] = (predictions['vx']*1000)**2 * predictions['number_density'] * 1e6 * 1.6726e-27  # Ram pressure in radial, Hydrogen solar wind
     
     predictions.drop(columns=['number_density'], inplace=True)
     predictions.sort_values(by='Time', inplace=True)
     predictions.set_index("Time", inplace=True, drop=True)
     predictions.index = predictions.index.floor(freq="min")
+    
+    # Ensure columns are in the right order
+    predictions = predictions[["bx", "by", "bz", "vx", "vy", "vz", "density", "psw", "temperature", "xgse", "ygse", "zgse", "clock_angle"]]
     
     predictions.to_hdf("../data_local/omni/sheath_sw_data.h5", key="2010")
     
