@@ -107,14 +107,14 @@ def get_iaga_data_as_list(base,year,tiny=False,load_data=True, max_stations=None
             dates.append(dt)
             if load_data:
                 data.append(dat)
-                #reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
+                reg.append(get_iaga_reg(f"{base}{y}/",max_stations=max_stations))
         dates = np.concatenate(dates,axis=0)
 
         if load_data:
             data = np.concatenate(data,axis=0)
-            #reg = np.concatenate(reg,axis=0)
+            reg = np.concatenate(reg,axis=0)
 
-        return dates,data,features,#reg
+        return dates,data,features,reg
     
     else:
         raise TypeError("Year must be either a list of years, or a single year (str).")

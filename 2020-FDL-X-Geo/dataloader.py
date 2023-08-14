@@ -47,11 +47,11 @@ def _float(tensor):
 
 
 class SuperMAGIAGADataset:
-    def __init__(self, dates, data, features):
+    def __init__(self, dates, data, features, reg):
         self.dates = dates
         self.data = data
         self.features = features
-        #self.reg = reg
+        self.reg = reg
 
 class InputDataset:
     def __init__(self, data):
