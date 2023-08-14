@@ -3,13 +3,15 @@ from sklearn.mixture import GaussianMixture as GMM
 import cv2
 import sys
 from utils.torch_utils import _float
+import xgboost as xgb
+import matplotlib.pyplot as plt
+
 
 def get_mask(n_size = 512.0):
     # Generate mask to get only the disc. I don't care about the limb
     # Define solar disc
     center = np.array([256,256])
     radius = (695700.0/725.0)/(0.6*(4096/n_size)) #very approximate
-    print(f"Solar disc radius : {radius}")
     xg = np.arange(0,n_size)
     xgrid,ygrid = np.meshgrid(xg,xg)
     distance = ((xgrid-center[0])**2+(ygrid-center[1])**2).astype(int)
@@ -81,3 +83,60 @@ class Preprocessor_CH:
             in_data = self.scaler_aia.transform(in_data)
         # Should return a torch tensor of form [None,512,34,channel]
         return _float(in_data)
+    
+    
+class Preprocessor_CH_xgb:
+    def __init__(self, npix = 17, n_size = 512, ch_mask = True, scaler_aia = None):
+        self.ch_mask = ch_mask
+        self.scaler_aia = scaler_aia
+        self.npix = npix
+        self.n_size = n_size
+        
+    def preprocess(self, aia_data, hmi_data, aia_wavelengths, hmi_components):
+        ind_193 = aia_wavelengths.index('193A')
+        n_size = self.n_size
+        npix = self.npix
+        mask = get_mask(n_size = n_size)[:,int(n_size//2)-npix:int(n_size//2)+npix]
+        if self.ch_mask:
+            ch_segmentation = subsample_and_segment(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix], mask,
+                                                 region = ['CH'], ncomp = 3)
+            ch_segmentation = ch_segmentation["CH"]
+            ar_segmentation = subsample_and_segment(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix], mask,
+                                                 region = ['AR'], ncomp = 3)
+            ar_segmentation = ar_segmentation["AR"]
+        else:
+            ch_segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
+            ar_segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
+        # plt.imshow(aia_data["193A"])
+        # plt.savefig("sheath_data/193A_movie/"
+        aia_ch_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])\
+            *(ch_segmentation[None,...])
+        aia_ar_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])\
+        *(ar_segmentation[None,...])
+        hmi_ch_data = np.asarray([hmi_data[comp][:,int(n_size//2)-npix:int(n_size//2)+npix] for comp in hmi_data.keys()])*(ch_segmentation[None,...])
+        hmi_ar_data = np.asarray([hmi_data[comp][:,int(n_size//2)-npix:int(n_size//2)+npix] for comp in hmi_data.keys()])*(ar_segmentation[None,...])
+        ch_dataset = np.concatenate([aia_ch_data,hmi_ch_data]).transpose([1,2,0])[None,...]
+        ar_dataset = np.concatenate([aia_ar_data,hmi_ar_data]).transpose([1,2,0])[None,...]
+        if self.scaler_aia is not None:
+            ch_dataset = self.scaler_aia.transform(ch_dataset)
+            ar_dataset = self.scaler_aia.transform(ar_dataset)
+        # Should return a torch tensor of form [1,512,34,channels]
+        
+        ch_net_area = np.sum(ch_segmentation)/(ch_segmentation.shape[0]*ch_segmentation.shape[1])  # Calculate area of open-field-line regions    
+        # Calculate the net flux per measurement per passband
+        ch_net_fluxes = np.zeros(ch_dataset.shape[3])
+        for passband in range(ch_dataset.shape[3]):
+            ch_net_fluxes[passband] = np.sum(ch_dataset[0, :, :, passband])
+        ch_data = np.append(ch_net_fluxes, ch_net_area)
+
+        ar_net_area = np.sum(ar_segmentation)/(ar_segmentation.shape[0]*ar_segmentation.shape[1])  # Calculate area of closed-field-line regions    
+        # Calculate the net flux per measurement per passband
+        ar_net_fluxes = np.zeros(ar_dataset.shape[3])
+        for passband in range(ar_dataset.shape[3]):
+            ar_net_fluxes[passband] = np.sum(ar_dataset[0, :, :, passband])
+        ar_data = np.append(ar_net_fluxes, ar_net_area)
+        
+        in_data = np.append(ch_data, ar_data)
+                
+        return in_data
+    

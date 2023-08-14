@@ -53,7 +53,7 @@ def convert_hmi_time_utc(time_hmi):
     return t_obs_new
 
 #Load HMI data from v2_small
-HMIPATHS = sorted(glob("../sheath_data/sdoml_data/sdomlv2_hmi_small.zarr/2010/*"))
+HMIPATHS = sorted(glob("sheath_data/sdoml_data/sdomlv2_hmi_small.zarr/2010/*"))
 #Get B components list
 BCOMP = [v.split('/')[-1] for v in HMIPATHS]
 # Get time stamps of all passbands, and find the nearest index to 193
@@ -65,7 +65,7 @@ if not os.path.isdir(SAVEPATH):
     os.makedirs(SAVEPATH)
     
 times_aia_save = np.asarray([v.to_numpy() for v in TIMES_AIA[IND_193]])[SORTED_INDICES_AIA_193]
-np.save(f"{SAVEPATH}timestamps.npy",times_aia_save)
+# np.save(f"{SAVEPATH}timestamps.npy",times_aia_save)
 
 #==== Subsample and get AIA dataset. 
 for ind,path in enumerate(tqdm(AIAPATHS)):

@@ -6,6 +6,10 @@ import pandas as pd
 from tqdm import tqdm
 import zarr
 import gcsfs
+import xgboost as xgb
+
+from utils.preprocessing import Preprocessor_CH_xgb
+
 
 class CloudFetcher:
     def __init__(self,zarr_bucket="us-fdlx-landing", aia_path = "fdl-sdoml-v2/sdomlv2_small.zarr",
@@ -37,7 +41,7 @@ class CloudFetcher:
         aia_root = zarr.group(store=store_aia)
         hmi_root = zarr.group(store=store_hmi)
         return aia_root, hmi_root
-    def load_aia_image(self, time, idx):
+    def load_aia_image(self, time, idxs):
         """
             Given a particular datetimestamp, get the nearest AIA images.
             TODO: Find the nearest time and use it. Discard idx.
@@ -45,10 +49,14 @@ class CloudFetcher:
         aia_image = {}
         if isinstance(time,str):
             time = pd.to_datetime(time)
-        for wavelength in self.aia_wavelengths:
+        for wavelength, idx in zip(self.aia_wavelengths, idxs):  # The different passbands may have a different index for the same time
             # time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S")
             year = int(time.year)
-            aia_image[wavelength] = self.aia_data[year][wavelength][idx,:,:]
+            try:
+                aia_image[wavelength] = self.aia_data[year][wavelength][idx,:,:]
+            except:
+                print(idx, wavelength)
+                Break
         return aia_image
     def load_hmi_image(self, time, idx):
         """
@@ -86,11 +94,15 @@ class AtomicSamurai:
               This function takens in the AIA and HMI timestamps and the corresponding indices to perform inference.
               This calls the cloudfetcher object to get the data, apply the preprocessing, and pass in the array to sheat module.
         """
-        print(f"Performing inference for AIA time: {aia_timestamp}, HMI time: {hmi_timestamp}")
+        # print(f"Performing inference for AIA time: {aia_timestamp}, HMI time: {hmi_timestamp}")
         aia_data = self.cloudfetcher_object.load_aia_image(aia_timestamp,aia_idx)
         hmi_data = self.cloudfetcher_object.load_hmi_image(hmi_timestamp,hmi_idx)
-        input_datacube = self.sheathmodule_object.preprocessor.preprocess(aia_data,hmi_data,
+        preprocessor = Preprocessor_CH_xgb()
+        input_datacube = preprocessor.preprocess(aia_data,hmi_data,
                                                              self.cloudfetcher_object.aia_wavelengths,
                                                              self.cloudfetcher_object.hmi_components)
-        results = self.sheathmodule_object.predict(input_datacube)
+        
+        results = self.sheathmodule_object.predict(xgb.DMatrix(input_datacube.reshape(1, len(input_datacube))),
+                                                               iteration_range=(0, self.sheathmodule_object.best_iteration + 1))
+        
         return results
