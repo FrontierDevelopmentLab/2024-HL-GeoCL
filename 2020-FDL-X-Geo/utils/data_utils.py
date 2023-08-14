@@ -65,7 +65,8 @@ def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
     if len(indices_df.columns) == 0:
         print("No geomagnetic indices specified. Only upstream data are being loaded.")
     combined_df = pd.concat([omni_df, indices_df], axis=1, ignore_index=True)  # If no geomagnetic indices, concats an empty dataframe
-    del omni_df, indices_df
+    combined_df.index = omni_timestamps
+    del omni_df, indices_df, indices_timestamps, omni_timestamps
     return combined_df
 
 

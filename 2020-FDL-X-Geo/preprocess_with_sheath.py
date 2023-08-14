@@ -21,7 +21,7 @@ from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, 
 from tqdm.contrib.concurrent import process_map
 from utils.helpers import dipole_tilt
 import tqdm
-import pickle
+
 
 # Preprocessing parameters
 past_omni_length = 120
@@ -210,31 +210,31 @@ class PreprocessData():
 if not os.path.exists(output_folder):
     os.makedirs(output_folder, exist_ok=True)
 
-if not os.path.exists(os.path.join(output_folder, 'sheath_scalers.p')):
+# if not os.path.exists(os.path.join(output_folder, 'sheath_scalers.p')):
 
-    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
-    # Note that OMNI data is not used below! Instead, SHEATH's predictions are used.
-    input_data = InputDataset(get_input_data(omni_path="data_local/omni/sheath_sw_data.h5",
-                                             indices_path="data_local/supermag_indices/",
-                                             indices_to_use=extra_input_features,
-                                             year=yearlist))
+#     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
+#     # Note that OMNI data is not used below! Instead, SHEATH's predictions are used.
+#     input_data = InputDataset(get_input_data(omni_path="data_local/omni/sheath_sw_data.h5",
+#                                              indices_path="data_local/supermag_indices/",
+#                                              indices_to_use=extra_input_features,
+#                                              year=yearlist))
 
-    test_ds_all_years = PreprocessData(supermag_data,input_data,train_idx,
-                f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-                zero_supermag=False,scaler=None,training_batch=True,nmax=nmax, num_workers=num_workers)
+#     test_ds_all_years = PreprocessData(supermag_data,input_data,train_idx,
+#                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+#                 past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+#                 zero_supermag=False,scaler=None,training_batch=True,nmax=nmax, num_workers=num_workers)
 
-    scaler = train_ds_all_years.scaler
-    with open(os.path.join(output_folder, f'sheath_supermag_features.p'), 'wb') as f:
-        pickle.dump(train_ds_all_years.supermag_features, f, pickle.HIGHEST_PROTOCOL)
+#     scaler = train_ds_all_years.scaler
+#     with open(os.path.join(output_folder, f'sheath_supermag_features.p'), 'wb') as f:
+#         pickle.dump(train_ds_all_years.supermag_features, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(output_folder, f'sheath_omni_features.p'), 'wb') as f:
-        pickle.dump(train_ds_all_years.omni_features, f, pickle.HIGHEST_PROTOCOL)
+#     with open(os.path.join(output_folder, f'sheath_omni_features.p'), 'wb') as f:
+#         pickle.dump(train_ds_all_years.omni_features, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(output_folder, f'sheath_scalers.p'), 'wb') as f:
-        pickle.dump(scaler, f, pickle.HIGHEST_PROTOCOL)
-else:
-    scaler = pickle.load(open(os.path.join(output_folder, 'sheath_scalers.p'), 'rb'))
+#     with open(os.path.join(output_folder, f'sheath_scalers.p'), 'wb') as f:
+#         pickle.dump(scaler, f, pickle.HIGHEST_PROTOCOL)
+# else: load scaler
+scaler = pickle.load(open('sheath/logs/scaler_X.scaler', 'rb'))
     
 max_stations = get_iaga_max_stations(base="data_local/iaga/",yearlist=yearlist)
     
@@ -244,26 +244,27 @@ for year in yearlist:
                                              indices_path="data_local/supermag_indices/",
                                              indices_to_use=extra_input_features,
                                              year=[year]))
-    print(input_data.data)
-    Break
+    input_data.data.set_axis(["bx", "by", "bz", "vx", "vy", "vz", "density", "psw", "temperature", "xgse", "ygse", 
+                              "zgse","clock_angle"]+extra_input_features, axis="columns", inplace=True)
 
-    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=[year],
-                                                            LENGTH=past_omni_length,LAG=lag,
-                                                            omni_path="data_local/omni/sw_data.h5",
-                                                            weimer_path="data_local/weimer/")
-    train_idx = np.asarray(train_idx)
-    val_idx = np.asarray(val_idx)
-    test_idx = np.asarray(test_idx)
+    # train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=[year],
+    #                                                         LENGTH=past_omni_length,LAG=lag,
+    #                                                         omni_path="data_local/omni/sw_data.h5",
+    #                                                         weimer_path="data_local/weimer/")
+    # train_idx = np.asarray(train_idx)
+    # val_idx = np.asarray(val_idx)
+    # test_idx = np.asarray(test_idx)
+    val_idx = np.arange(len(input_data.data))
     
-    train_ds = PreprocessData(supermag_data,input_data,train_idx,
-                f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-                zero_supermag=False,scaler=scaler,training_batch=True,nmax=nmax, num_workers=num_workers)
+#     train_ds = PreprocessData(supermag_data,input_data,train_idx,
+#                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+#                 past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+#                 zero_supermag=False,scaler=scaler,training_batch=True,nmax=nmax, num_workers=num_workers)
     
-    train_ds.compute_features()
+#     train_ds.compute_features()
 
-    with open(os.path.join(output_folder, f'train_data_{year}.p'), 'wb') as f:
-        pickle.dump(train_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
+#     with open(os.path.join(output_folder, f'train_data_{year}.p'), 'wb') as f:
+#         pickle.dump(train_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
 
     val_ds = PreprocessData(supermag_data,input_data,val_idx,
             f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
@@ -272,17 +273,17 @@ for year in yearlist:
     
     val_ds.compute_features()
 
-    with open(os.path.join(output_folder, f'val_data_{year}.p'), 'wb') as f:
+    with open(os.path.join(output_folder, f'sheath_val_data_{year}.p'), 'wb') as f:
         pickle.dump(val_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
     
-    if wiemer_idx is not None:
-        wiemer_idx = np.asarray(wiemer_idx)
-        wiemer_ds = PreprocessData(supermag_data,input_data,wiemer_idx,
-                f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
-                past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
-                zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
+#     if wiemer_idx is not None:
+#         wiemer_idx = np.asarray(wiemer_idx)
+#         wiemer_ds = PreprocessData(supermag_data,input_data,wiemer_idx,
+#                 f107_dataset="data_local/f107.npz",targets=targets,past_omni_length=past_omni_length,
+#                 past_supermag_length=1,future_length=future_length,lag=lag,zero_omni=False,
+#                 zero_supermag=False,scaler=scaler,training_batch=False,nmax=nmax, num_workers=num_workers)
 
-        wiemer_ds.compute_features()
+#         wiemer_ds.compute_features()
 
-        with open(os.path.join(output_folder, f'wiemer_data_{year}.p'), 'wb') as f:
-            pickle.dump(wiemer_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
+#         with open(os.path.join(output_folder, f'wiemer_data_{year}.p'), 'wb') as f:
+#             pickle.dump(wiemer_ds.sg_indices_list, f, pickle.HIGHEST_PROTOCOL)
