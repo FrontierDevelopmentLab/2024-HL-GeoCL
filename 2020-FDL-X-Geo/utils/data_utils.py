@@ -52,23 +52,19 @@ def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
         raise TypeError("year must be either a list of years, or a single year.")
     indices_timestamps = pd.to_datetime(indices_df.index)
     omni_timestamps = omni_df.index
-    # print(type(timestamps[0]), type(indices_df.index[0]))
-    # print("a")
-    # indices_df = pd.concat([indices_df.loc[time] for time in timestamps.values],axis=0)
-    # print(indices_df.info(), indices_df)
-    # Break
     omni_df.reset_index(inplace=True, drop=True)
+    indices_df = indices_df[indices_to_use]
+    indices_df.reset_index(inplace=True, drop=False)
+    indices_reduced_rows = []
+    for t in tqdm.trange(len(indices_df), desc="Matching input data indices"):
+        if indices_df["Date_UTC"].iloc[t] in omni_timestamps:
+            indices_reduced_rows.append(t)
+    indices_df.drop(columns=["Date_UTC"], inplace=True)
+    indices_df = indices_df.iloc[indices_reduced_rows]
     indices_df.reset_index(inplace=True, drop=True)
     if len(indices_df.columns) == 0:
         print("No geomagnetic indices specified. Only upstream data are being loaded.")
-    indices_df = indices_df[indices_to_use]
-    print(indices_timestamps, omni_timestamps)
-    combined_df = pd.concat([omni_df, indices_df], axis=1)  # If no indices, concats an empty dataframe
-    combined_df.index = indices_timestamps
-    print(combined_df.index, type(combined_df.index[0]), type(omni_timestamps[0]))
-    combined_df = combined_df.loc[omni_timestamps]
-    print(combined_df.info())
-    Break
+    combined_df = pd.concat([omni_df, indices_df], axis=1, ignore_index=True)  # If no geomagnetic indices, concats an empty dataframe
     del omni_df, indices_df
     return combined_df
 
