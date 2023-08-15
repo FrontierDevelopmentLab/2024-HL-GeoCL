@@ -43,6 +43,8 @@ HSE_model.load_model('SHEATH_xgb.model')  # load data
 # Load the solar wind variable names and scalers
 sw_vars_list = pickle.load(open("logs/sw_variables.pickle",'rb'))
 scaler_y = pickle.load(open("logs/scaler_y.scaler",'rb'))
+scaler_X = pickle.load(open("logs/scaler_X.scaler",'rb'))
+
 
 # Instantiate the atomic inference module
 atom = AtomicSamurai(cloudfetcher_object, HSE_model)
@@ -64,7 +66,9 @@ for timestamp in tqdm(image_indices.index, desc="Performing inference"):
     except:
         import pdb;pdb.set_trace()
     sw_values = atom.atomic_inference(aia_timestamp = timestamp, aia_idx = idxs[:-1], 
-                                  hmi_timestamp = timestamp, hmi_idx = idxs[-1])
+                                  hmi_timestamp = timestamp, hmi_idx = idxs[-1],
+                                     scaler_aia = scaler_X
+                                     scaler_omni = scaler_y)
     predictions.append(pd.DataFrame(sw_values))
     
 predictions = pd.concat(predictions, axis=0)
@@ -91,5 +95,5 @@ predictions.index = predictions.index.floor(freq="min")
 # Ensure columns are in the right order
 predictions = predictions[["bx", "by", "bz", "vx", "vy", "vz", "density", "psw", "temperature", "xgse", "ygse", "zgse", "clock_angle"]]
 
-predictions.to_hdf("../data_local/omni/sheath_sw_data.h5", key=int(stime.year))
+predictions.to_hdf("../data_local/omni/sheath_sw_data_test_withy.h5", key=str(stime.year))
 print("Inference complete!")

@@ -22,7 +22,7 @@ from utils.dataloader_torch import Data
 # Hyperparameters and other setup info
 DATAPATH = "sheath_data/"
 param = {'max_depth': 3, 'learning_rate': 1e-3, 'objective': 'reg:squarederror', 'nthread': -1, 'eval_metric': 'rmse'}  # Hyperparameters in xgb notation
-num_rounds = 10000
+num_rounds = 4000
 early_stopping_rounds=40
 
 
@@ -161,7 +161,8 @@ if __name__ == "__main__":
     for ai in range(len(out_feature_names)):
         axes[ai].plot(omni_data["Date"].iloc[:end_timestep], predictions[:end_timestep, ai], label="Predicted"*(not ai))
         axes[ai].plot(omni_data["Date"].iloc[:end_timestep], target_data[:end_timestep, ai], label="Actual"*(not ai))
-        axes[ai].set_title(out_feature_names[ai])
+        axes[ai].tick_params(axis="x", labelrotation=45)
+        axes[ai].set_title(out_feature_names[ai]+f" MSE: {mean_squared_error(predictions[:end_timestep, ai], target_data[:end_timestep, ai])}")
     plt.tight_layout()
     fig.legend()
     plt.savefig("test_timeseries.png")
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     plt.savefig("xgb_importances")
     
     predictions = pd.DataFrame(predictions, columns=['bx',
-           'by', 'bz', 'vx', 'number_density', 'temperature'])
+           'by', 'bz', 'vx', 'density', 'temperature'])
     predictions["Time"] = test_timestamps
     predictions['vz'] = np.zeros(len(predictions))  # Assume velocity is purely radial
     predictions['vy'] = np.zeros(len(predictions))
@@ -178,10 +179,7 @@ if __name__ == "__main__":
     predictions['ygse'] = np.zeros(len(predictions))
     predictions['zgse'] = np.zeros(len(predictions))
     predictions['clock_angle'] = np.arctan(predictions['by']/predictions['bz'])
-    predictions['density'] = predictions['number_density'] * 1e6 * 1.6726e-27  # Assuming Hydrogen solar wind
-    predictions['psw'] = (predictions['vx']*1000)**2 * predictions['number_density'] * 1e6 * 1.6726e-27  # Ram pressure in radial, Hydrogen solar wind
-    
-    predictions.drop(columns=['number_density'], inplace=True)
+    predictions['psw'] = (predictions['vx']*1000)**2 * predictions['density'] * 1e6 * 1.6726e-27  # Ram pressure in radial, Hydrogen solar wind
     predictions.sort_values(by='Time', inplace=True)
     predictions.set_index("Time", inplace=True, drop=True)
     predictions.index = predictions.index.floor(freq="min")

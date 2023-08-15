@@ -92,7 +92,7 @@ class Preprocessor_CH_xgb:
         self.npix = npix
         self.n_size = n_size
         
-    def preprocess(self, aia_data, hmi_data, aia_wavelengths, hmi_components):
+    def preprocess(self, aia_data, hmi_data, aia_wavelengths, hmi_components, scaler_aia):
         ind_193 = aia_wavelengths.index('193A')
         n_size = self.n_size
         npix = self.npix
@@ -107,8 +107,6 @@ class Preprocessor_CH_xgb:
         else:
             ch_segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
             ar_segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
-        # plt.imshow(aia_data["193A"])
-        # plt.savefig("sheath_data/193A_movie/"
         aia_ch_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])\
             *(ch_segmentation[None,...])
         aia_ar_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])\

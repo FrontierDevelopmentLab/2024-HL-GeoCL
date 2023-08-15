@@ -89,7 +89,7 @@ class AtomicSamurai:
         self.sheathmodule_object = sheathmodule_object
 
 
-    def atomic_inference(self, aia_timestamp, aia_idx, hmi_timestamp, hmi_idx):
+    def atomic_inference(self, aia_timestamp, aia_idx, hmi_timestamp, hmi_idx, scaler_aia):
         """
               This function takens in the AIA and HMI timestamps and the corresponding indices to perform inference.
               This calls the cloudfetcher object to get the data, apply the preprocessing, and pass in the array to sheat module.
@@ -100,7 +100,8 @@ class AtomicSamurai:
         preprocessor = Preprocessor_CH_xgb()
         input_datacube = preprocessor.preprocess(aia_data,hmi_data,
                                                              self.cloudfetcher_object.aia_wavelengths,
-                                                             self.cloudfetcher_object.hmi_components)
+                                                             self.cloudfetcher_object.hmi_components,
+                                                             scaler_aia=scaler_aia)
         
         results = self.sheathmodule_object.predict(xgb.DMatrix(input_datacube.reshape(1, len(input_datacube))),
                                                                iteration_range=(0, self.sheathmodule_object.best_iteration + 1))
