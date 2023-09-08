@@ -10,8 +10,10 @@ from astropy.constants import iau2012 as const
 
 """
 
-data_path = "omni2_data.lst"
-fmt_path = "omni2_format.fmt"
+start = 2020
+end = 2023
+data_path = f"omni_5min_{start}_{end}.lst"
+fmt_path = f"omni_5min_{start}_{end}.fmt"
 
 #Read OMNI formatter
 tmp = pd.read_fwf(fmt_path,sep=" ",engine='python',header=1).values[:,0]
@@ -24,7 +26,7 @@ Data['Date'] = Data.apply(lambda row: datetime.datetime(int(row.Year),1,1,int(ro
 Data = Data.drop(["Year","Day","Hour","Minute"],axis=1)
 Data = Data[ ['Date'] + [ col for col in Data.columns if col != 'Date' ] ]
 #Convert all the 9999s to nan
-Data.replace({9999.0:np.nan,999.9:np.nan,9999999.0:np.nan,9.999:np.nan,999.99:np.nan,9999.99:np.nan},inplace=True)
+Data.replace({9999.0:np.nan,999.9:np.nan,9999999.0:np.nan,9.999:np.nan,999.99:np.nan,9999.99:np.nan,99999.9:np.nan},inplace=True)
 
 
 print("Columns in the OMNI file: ")
@@ -32,4 +34,4 @@ print(repr(Data.columns))
 
 print("Max values of different variables")
 _ = [print(np.nanmax(Data[v].values)) for v in Data.columns]
-Data.to_hdf("omni_preprocess.h5",key="omni",mode="w")
+Data.to_hdf(f"omni_preprocess_{start}_{end}.h5",key="omni",mode="w")
