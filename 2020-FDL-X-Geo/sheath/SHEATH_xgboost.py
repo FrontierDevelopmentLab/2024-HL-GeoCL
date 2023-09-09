@@ -20,7 +20,7 @@ from utils.dataloader_torch import Data
 
 
 # Hyperparameters and other setup info
-DATAPATH = "sheath_data/"
+DATAPATH = "/home/jupyter/Vishal/fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_data/"
 param = {'max_depth': 3, 'learning_rate': 1e-3, 'objective': 'reg:squarederror', 'nthread': -1, 'eval_metric': 'rmse'}  # Hyperparameters in xgb notation
 num_rounds = 4000
 early_stopping_rounds=40
