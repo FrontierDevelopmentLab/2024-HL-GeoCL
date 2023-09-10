@@ -7,6 +7,7 @@ import dask.array as da
 from glob import glob
 import os
 import multiprocessing as mp
+from tqdm import tqdm
 
 """
     To pull the data, perform:
@@ -69,27 +70,27 @@ def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
         segments[k] = np.reshape(tmp,list(og.shape))
     return segments
 
-def Get_CH(og):
-    ch = GetMorphologicalStructure(og,mask[:,256-NPIX:256+NPIX],region=['CH'],n_comp=2)
-    return ch["CH"]
+def Get_CH_AR(og):
+    ch = GetMorphologicalStructure(og,mask[:,256-NPIX:256+NPIX],region=['CH','AR'],n_comp=3)
+    return np.asarray([ch["CH"],ch["AR"]])
 
 # Load AIA 193 A data
 sdomlv2_path = "/mnt/disks/sdomlv2-full2/sdomlv2.zarr/"
 aia193_paths = sorted(glob(f"{sdomlv2_path}*/193A/"))
 
-for path in aia193_paths:
+for path in tqdm(aia193_paths):
     print(path)
     year = path.split('/')[-3]
     sdomlsmall = zarr.open(path)
-    print(f"Masking for: {path}, year: {year}")
+    print(f"Masking for: {path}, year: {year},size: {sdomlsmall.shape}")
     sdomlarr = list(np.log10(sdomlsmall[:,:,256-NPIX:256+NPIX]))
     pool = mp.Pool(processes=mp.cpu_count())
-    ch = np.asarray(pool.map(Get_CH,sdomlarr))
+    ch_ar = np.asarray(pool.map(Get_CH_AR,sdomlarr))
     pool.close()
     mask[np.isnan(mask)] = 0.0
-    ch = ch*(mask[:,256-NPIX:256+NPIX][None,...])
+    ch_ar = ch_ar*(mask[:,256-NPIX:256+NPIX][None,...])
     
     SAVEPATH = "../sheath_aia_data/"
     if not os.path.isdir(SAVEPATH):
         os.makedirs(SAVEPATH)
-    np.save(f"{SAVEPATH}ch_mask_{year}.npy",ch)
+    np.save(f"{SAVEPATH}ch_mask_{year}.npy",ch_ar)
