@@ -6,6 +6,7 @@ from astropy.time import Time
 import dask.array as da
 from glob import glob
 import os
+import multiprocessing as mp
 
 """
     To pull the data, perform:
@@ -15,10 +16,9 @@ import os
     And you will need opencv, zarr, dask, skimage for runnign this code.
 """
 
-# Load AIA 193 A data
-sdomlsmall = zarr.open("sheath_data/sdoml_data/sdomlv2_small.zarr/2010/193A/")
-NPIX = 17
 
+
+NPIX = 17
 # Generate mask to get only the disc. I don't care about the limb
 # Define solar disc
 center = np.array([256,256])
@@ -73,18 +73,23 @@ def Get_CH(og):
     ch = GetMorphologicalStructure(og,mask[:,256-NPIX:256+NPIX],region=['CH'],n_comp=2)
     return ch["CH"]
 
+# Load AIA 193 A data
+sdomlv2_path = "/mnt/disks/sdomlv2-full2/sdomlv2.zarr/"
+aia193_paths = sorted(glob(f"{sdomlv2_path}*/193A/"))
 
-sdomlarr = list(np.log10(sdomlsmall[:,:,256-NPIX:256+NPIX]))
-
-import multiprocessing as mp
-
-pool = mp.Pool(processes=mp.cpu_count())
-ch = np.asarray(pool.map(Get_CH,sdomlarr))
-pool.close()
-mask[np.isnan(mask)] = 0.0
-ch = ch*(mask[:,256-NPIX:256+NPIX][None,...])
-
-SAVEPATH = "sheath_data/"
-if not os.path.isdir(SAVEPATH):
-    os.makedirs(SAVEPATH)
-np.save(f"{SAVEPATH}ch_mask.npy",ch)
+for path in aia193_paths:
+    print(path)
+    year = path.split('/')[-3]
+    sdomlsmall = zarr.open(path)
+    print(f"Masking for: {path}, year: {year}")
+    sdomlarr = list(np.log10(sdomlsmall[:,:,256-NPIX:256+NPIX]))
+    pool = mp.Pool(processes=mp.cpu_count())
+    ch = np.asarray(pool.map(Get_CH,sdomlarr))
+    pool.close()
+    mask[np.isnan(mask)] = 0.0
+    ch = ch*(mask[:,256-NPIX:256+NPIX][None,...])
+    
+    SAVEPATH = "../sheath_aia_data/"
+    if not os.path.isdir(SAVEPATH):
+        os.makedirs(SAVEPATH)
+    np.save(f"{SAVEPATH}ch_mask_{year}.npy",ch)
