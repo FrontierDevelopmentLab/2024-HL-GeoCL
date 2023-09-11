@@ -7,6 +7,9 @@ import dask.array as da
 from glob import glob
 import os
 from tqdm import tqdm
+from pathlib import Path
+import time
+
 
 """
     We will need to map the OMNI dates to closest AIA dates. This allows us to form tuples of (AIA,swind). 
@@ -30,8 +33,17 @@ def convert_hmi_time_utc(time_hmi):
 
 years = np.arange(2010,2021).astype(int)
 for year in tqdm(years):
-    import pdb; pdb.set_trace()
+    print(f"Year: {year}")
     
+    while True:
+        # Be trapped here till the mask file is actually being generated.
+        my_file = Path(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/ch_mask_{year}.npy")
+        if my_file.is_file():
+            break
+        else:
+            time.sleep(600)
+    print("Mask available, out of loop.....")
+            
     #Load SDOML data from v2_small
     AIAPATHS = sorted(glob(f"/mnt/disks/sdomlv2-full2/sdomlv2.zarr/{year}/*"))
     #Get passbands list
@@ -43,7 +55,7 @@ for year in tqdm(years):
     
     #Get reference timestamp from the mask array
     times_aia_193 = np.load(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/AIA193_times_{year}.npy",allow_pickle=True)
-    CLOSEST_AIA_INDICES = [np.argmin(np.abs(times_aia_193[None,...]-times[...,None]),axis=0) for times in TIMES_AIA]
+    CLOSEST_AIA_INDICES = [np.argmin(np.abs(pd.to_datetime(times_aia_193)[None,...]-pd.to_datetime(times)[...,None]),axis=0) for times in TIMES_AIA]
     # This should be consistent with Generate_central_mask_CH.py
     NPIX = 17
     
@@ -52,14 +64,14 @@ for year in tqdm(years):
     BCOMP = [v.split('/')[-1] for v in HMIPATHS]
     # Get time stamps of all passbands, and find the nearest index to 193
     TIMES_HMI = [convert_hmi_time_utc(zarr.open(v).attrs['T_OBS']) for v in HMIPATHS]
-    CLOSEST_HMI_INDICES = [np.argmin(np.abs(times_aia_193[None,...]-times[...,None]),axis=0) for times in TIMES_HMI]
+    CLOSEST_HMI_INDICES = [np.argmin(np.abs(pd.to_datetime(times_aia_193)[None,...]-pd.to_datetime(times)[...,None]),axis=0) for times in TIMES_HMI]
     
     # Save these indices.
-    np.savez("/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/logs/aia_hmi_inds_closest_to_193.npz", aia_inds = CLOSEST_AIA_INDICES,
+    np.savez(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/logs/aia_hmi_inds_closest_to_193_{year}.npz", aia_inds = CLOSEST_AIA_INDICES,
              hmi_inds = CLOSEST_HMI_INDICES)
     
     # Multiply with mask and make a cube.
-    
+    print("Multiplying with mask......")
     CH_AR_mask = np.load(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/ch_mask_{year}.npy")
     ch_mask = CH_AR_mask[:,0,:]
     ar_mask = CH_AR_mask[:,1,:]

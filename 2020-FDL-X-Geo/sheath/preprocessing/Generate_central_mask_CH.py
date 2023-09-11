@@ -91,6 +91,7 @@ for path in tqdm(aia193_paths):
     # Get time stamps
     timestamps = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
     # These timestamps are NOT sorted. We wil need to sort them to be in order
+    timestamps = pd.to_datetime([t.replace(tzinfo=None) for t in timestamps])
     new_times, ind_sorted_times = timestamps.sort_values(return_indexer=True)
     # We need these new times to map other AIA and HMI data here. 
     
