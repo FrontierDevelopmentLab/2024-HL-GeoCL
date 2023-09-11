@@ -33,6 +33,7 @@ distance = ((xgrid-center[0])**2+(ygrid-center[1])**2).astype(int)
 mask = np.sign(distance-radius**2)
 mask[mask>0] = np.nan
 mask=np.abs(mask)
+mask = mask[:,256-NPIX:256+NPIX]
 
 #===== Segementation code
 #-- Algorithm here if interested: https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020SW002478
@@ -71,26 +72,54 @@ def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
     return segments
 
 def Get_CH_AR(og):
-    ch = GetMorphologicalStructure(og,mask[:,256-NPIX:256+NPIX],region=['CH','AR'],n_comp=3)
+    ch = GetMorphologicalStructure(og,mask,region=['CH','AR'],n_comp=3)
     return np.asarray([ch["CH"],ch["AR"]])
 
 # Load AIA 193 A data
 sdomlv2_path = "/mnt/disks/sdomlv2-full2/sdomlv2.zarr/"
 aia193_paths = sorted(glob(f"{sdomlv2_path}*/193A/"))
+SUB = 10 # 1 sample every hour.
 
 for path in tqdm(aia193_paths):
-    print(path)
     year = path.split('/')[-3]
     sdomlsmall = zarr.open(path)
+    """
+        We do not need the full time cadence of SDOML. Our model can work with 1 hour cadence 
+        for this work. While inference we can perform on any minute data, since we do not have 
+        temporal dependence.
+    """
+    # Get time stamps
+    timestamps = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
+    # These timestamps are NOT sorted. We wil need to sort them to be in order
+    new_times, ind_sorted_times = timestamps.sort_values(return_indexer=True)
+    # We need these new times to map other AIA and HMI data here. 
+    
+    # Subsample in space
+    sdomlsmall = sdomlsmall[:,:,256-NPIX:256+NPIX]
+    # Sort in time
+    sdomlsmall = sdomlsmall[ind_sorted_times]
+    db = timestamps[ind_sorted_times]
+    # Calculate delta T and assert sorting is done, as a sanity check.
+    db = db[1:]-db[:-1]
+    assert len(np.where(db.total_seconds()<0)[0])==0
+    
+    # Subsample in time
+    sdomlsmall = sdomlsmall[::SUB]
+    new_times = new_times[::SUB]
+    
+    
     print(f"Masking for: {path}, year: {year},size: {sdomlsmall.shape}")
-    sdomlarr = list(np.log10(sdomlsmall[:,:,256-NPIX:256+NPIX]))
+    
+    sdomlsmall[sdomlsmall<1] = 1.0
+    sdomlarr = list(np.log10(sdomlsmall))
     pool = mp.Pool(processes=mp.cpu_count())
     ch_ar = np.asarray(pool.map(Get_CH_AR,sdomlarr))
     pool.close()
     mask[np.isnan(mask)] = 0.0
-    ch_ar = ch_ar*(mask[:,256-NPIX:256+NPIX][None,...])
+    ch_ar = ch_ar*(mask[None,...])
     
     SAVEPATH = "../sheath_aia_data/"
     if not os.path.isdir(SAVEPATH):
         os.makedirs(SAVEPATH)
     np.save(f"{SAVEPATH}ch_mask_{year}.npy",ch_ar)
+    np.save(f"{SAVEPATH}AIA193_times_{year}.npy",new_times)
