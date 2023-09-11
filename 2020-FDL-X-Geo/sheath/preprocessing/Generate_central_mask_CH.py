@@ -58,6 +58,12 @@ def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
     sample = og*mask
     sample = sample[~np.isnan(sample)]
     
+    if len(np.unique(sample)) <=3:
+        segments= {}
+        for k in region:
+            segments[k] = np.zeros_like(og)
+        return segments
+    
     #Define the mixture model, and take the component with highest mean value.
     gmodel = GMM(n_components=n_comp)
     gmodel.fit(np.reshape(sample,[-1,1]))
