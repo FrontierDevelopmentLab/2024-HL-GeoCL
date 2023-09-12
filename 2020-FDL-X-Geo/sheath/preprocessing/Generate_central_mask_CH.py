@@ -8,6 +8,7 @@ from glob import glob
 import os
 import multiprocessing as mp
 from tqdm import tqdm
+import copy
 
 """
     To pull the data, perform:
@@ -86,6 +87,9 @@ sdomlv2_path = "/mnt/disks/sdomlv2-full2/sdomlv2.zarr/"
 aia193_paths = sorted(glob(f"{sdomlv2_path}*/193A/"))
 SUB = 10 # 1 sample every hour.
 
+mask_new = copy.deepcopy(mask)
+mask_new[np.isnan(mask)] = 0.0
+
 for path in tqdm(aia193_paths):
     year = path.split('/')[-3]
     sdomlsmall = zarr.open(path)
@@ -122,8 +126,8 @@ for path in tqdm(aia193_paths):
     pool = mp.Pool(processes=mp.cpu_count())
     ch_ar = np.asarray(pool.map(Get_CH_AR,sdomlarr))
     pool.close()
-    mask[np.isnan(mask)] = 0.0
-    ch_ar = ch_ar*(mask[None,...])
+    
+    ch_ar = ch_ar*(mask_new[None,...])
     
     SAVEPATH = "../sheath_aia_data/"
     if not os.path.isdir(SAVEPATH):

@@ -32,6 +32,7 @@ def convert_hmi_time_utc(time_hmi):
 #=============
 
 years = np.arange(2010,2021).astype(int)
+years = [2020]
 for year in tqdm(years):
     print(f"Year: {year}")
     
@@ -52,9 +53,11 @@ for year in tqdm(years):
     IND_193 = PASSBANDS.index("193A")
     # Get time stamps of all passbands, and find the nearest index to 193
     TIMES_AIA = [pd.to_datetime(zarr.open(v).attrs['T_OBS']) for v in AIAPATHS]
+    TIMES_AIA = [pd.to_datetime([t.replace(tzinfo=None) for t in aiatimes],utc=True)for aiatimes in TIMES_AIA]
     
     #Get reference timestamp from the mask array
     times_aia_193 = np.load(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/AIA193_times_{year}.npy",allow_pickle=True)
+    
     CLOSEST_AIA_INDICES = [np.argmin(np.abs(pd.to_datetime(times_aia_193)[None,...]-pd.to_datetime(times)[...,None]),axis=0) for times in TIMES_AIA]
     # This should be consistent with Generate_central_mask_CH.py
     NPIX = 17
@@ -64,6 +67,7 @@ for year in tqdm(years):
     BCOMP = [v.split('/')[-1] for v in HMIPATHS]
     # Get time stamps of all passbands, and find the nearest index to 193
     TIMES_HMI = [convert_hmi_time_utc(zarr.open(v).attrs['T_OBS']) for v in HMIPATHS]
+    TIMES_HMI = [pd.to_datetime([t.replace(tzinfo=None) for t in hmitimes],utc=True)for hmitimes in TIMES_HMI]
     CLOSEST_HMI_INDICES = [np.argmin(np.abs(pd.to_datetime(times_aia_193)[None,...]-pd.to_datetime(times)[...,None]),axis=0) for times in TIMES_HMI]
     
     # Save these indices.
@@ -100,4 +104,5 @@ for year in tqdm(years):
     # Save this huge matrix!
     np.save(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_{year}.npy",feature_array)
     
-
+    # Compute the features by averaging along last two axes and save that too!!
+    np.save(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_summed_{year}.npy",np.nanmean(feature_array,axis=(-1,-2)))
