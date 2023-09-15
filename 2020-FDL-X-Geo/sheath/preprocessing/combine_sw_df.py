@@ -22,4 +22,6 @@ print(repr(Data.columns))
 
 print("Max values of different variables")
 _ = [print(np.nanmax(Data[v].values)) for v in Data.columns]
+
+Data = Data.dropna()
 Data.to_hdf(f"omni_preprocess_complete.h5",key="omni",mode="w")
