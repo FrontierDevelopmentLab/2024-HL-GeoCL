@@ -17,9 +17,16 @@ from scipy.stats import pearsonr
 
 # Hyperparameters and other setup info
 DATAPATH = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/"
-param = {'max_depth': 12, 'learning_rate': 1e-3, 'objective': 'reg:squarederror', 'nthread': -1, 'eval_metric': 'rmse'}  # Hyperparameters in xgb notation
-num_rounds = 4000
-early_stopping_rounds=40
+param = {'verbosity': 1, 
+                  'objective': 'reg:pseudohubererror',
+                  'nthread': -1,
+                  'eta':2e-3,
+                  'max_depth':3052, 'subsample':0.2, 
+                  'reg_alpha':0.005}
+
+# param = {'max_depth': 12, 'learning_rate': 1e-3, 'objective': 'reg:squarederror', 'nthread': -1, 'eval_metric': 'rmse'}  # Hyperparameters in xgb notation
+num_rounds = 15000
+early_stopping_rounds=30
 
 
 # torch.set_default_dtype(torch.float64)  # this is important else it will overflow
