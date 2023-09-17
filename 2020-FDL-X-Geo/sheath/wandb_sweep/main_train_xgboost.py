@@ -107,14 +107,14 @@ def train():
     bst_params = {'verbosity': 1, 
                   'objective': config.loss,
                   'nthread': -1,
-                  'eta':config.eta, 'gamma':config.gamma, 
+                  'eta':config.eta,
                   'max_depth':config.max_depth, 'subsample':config.subsample, 
                   'reg_alpha':config.reg_alpha}
 
 
     # Initialize the XGBoostClassifier with the WandbCallback
     # Train the model
-    HSE_gb_model = xgb.train(bst_params, train_set, num_rounds)
+    HSE_gb_model = xgb.train(bst_params, train_set, num_rounds, evals = evallist, early_stopping_rounds=config.early_stopping_rounds)
 
     # Log booster metrics
 
@@ -132,8 +132,10 @@ def train():
     hse_correl = np.mean([pearsonr(preds[3][:,i], targs[3][:,i])[0] for i in range(preds[0].shape[-1])])
 
     # Log metrics
-    wandb.log({'val_loss': val_mse, 'train_mse': train_mse, 'test_mse': test_mse, 'hse_mse': hse_mse,
-               'val_correl': val_correl, 'train_correl': train_correl, 'test_correl':test_correl, 'hse_correl': hse_correl})
+    wandb.log({'val_loss': val_mse})
+    wandb.log({'val_correl': val_correl})
+    # , 'train_mse': train_mse, 'test_mse': test_mse, 'hse_mse': hse_mse,
+               # 'val_correl': val_correl, 'train_correl': train_correl, 'test_correl':test_correl, 'hse_correl': hse_correl})
         
 if __name__ == '__main__':
     train()
