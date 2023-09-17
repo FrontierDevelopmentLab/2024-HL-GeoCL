@@ -14,6 +14,8 @@ from torch.utils import data
 from tqdm import tqdm
 import xgboost as xgb
 from scipy.stats import pearsonr
+from pathlib import Path
+import time
 
 # Hyperparameters and other setup info
 DATAPATH = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/"
@@ -32,6 +34,17 @@ early_stopping_rounds=30
 # torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
 if __name__ == "__main__":
+    
+    while True:
+        # Be trapped here till the mask file is actually being generated.
+        my_file = Path(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_summed_2020.npy")
+        if my_file.is_file():
+            break
+        else:
+            print("Yet to have all the files processed.....")
+            time.sleep(600)
+    print("All files have been processed and are ready... Starting to fit XGBoost.....")
+    
 
     # Load AIA data
     

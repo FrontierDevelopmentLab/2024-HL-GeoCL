@@ -19,7 +19,7 @@ import xgboost as xgb
 from scipy.stats import pearsonr
 
 DATAPATH = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/"
-num_rounds = 10000
+num_rounds = 15000
 early_stopping_rounds=40
 
 # hyperparameter_best = {'verbosity': 1, 

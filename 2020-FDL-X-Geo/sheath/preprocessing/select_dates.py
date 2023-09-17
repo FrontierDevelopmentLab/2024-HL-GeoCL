@@ -9,8 +9,10 @@ import os
 # omni_data = pd.read_hdf(omni_path)
 # dates = omni_data.Date.values
 
-datepath = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/logs/closest_omni_aia_dates.npy"
-dates = np.load(datepath)
+years = np.arange(2010,2021).astype(int)
+datepath = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/logs/"
+dates = np.concatenate([np.load(f"{datepath}closest_omni_aia_dates_{year}.npy") for year in years])
+print(dates[0],dates[-1])
 N = len(dates)
 print(f"Total wind measurements: {N}")
 inds = np.arange(N).astype(int)

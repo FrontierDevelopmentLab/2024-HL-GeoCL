@@ -6,12 +6,12 @@ metric:
 parameters:
   eta:
       distribution: log_uniform_values
-      min: 1e-7
+      min: 1e-5
       max: 0.5
   max_depth:
     distribution: int_uniform
     min: 12
-    max: 5000
+    max: 10000
   subsample:
     distribution: categorical
     values:

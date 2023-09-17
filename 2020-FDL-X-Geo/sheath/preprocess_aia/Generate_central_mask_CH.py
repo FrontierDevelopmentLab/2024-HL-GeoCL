@@ -102,25 +102,26 @@ for path in tqdm(aia193_paths):
     timestamps = pd.to_datetime(sdomlsmall.attrs['T_OBS'])
     # These timestamps are NOT sorted. We wil need to sort them to be in order
     timestamps = pd.to_datetime([t.replace(tzinfo=None) for t in timestamps])
-    new_times, ind_sorted_times = timestamps.sort_values(return_indexer=True)
+    indices = np.load(f"../logs/closest_omni_aia_indices_{year}.npy")
     # We need these new times to map other AIA and HMI data here. 
     
     # Subsample in space
     sdomlsmall = sdomlsmall[:,:,256-NPIX:256+NPIX]
     # Sort in time
-    sdomlsmall = sdomlsmall[ind_sorted_times]
-    db = timestamps[ind_sorted_times]
+    sdomlsmall = sdomlsmall[indices]
+    # db = timestamps[ind_sorted_times]
     # Calculate delta T and assert sorting is done, as a sanity check.
-    db = db[1:]-db[:-1]
-    assert len(np.where(db.total_seconds()<0)[0])==0
+    # db = db[1:]-db[:-1]
+    # assert len(np.where(db.total_seconds()<0)[0])==0
     
     # Subsample in time
-    sdomlsmall = sdomlsmall[::SUB]
-    new_times = new_times[::SUB]
-    
+    # sdomlsmall = sdomlsmall[::SUB]
+    # new_times = new_times[::SUB]
     
     print(f"Masking for: {path}, year: {year},size: {sdomlsmall.shape}")
+    timestamps = timestamps[indices]
     
+    new_times, ind_sorted_times = timestamps.sort_values(return_indexer=True)
     sdomlsmall[sdomlsmall<1] = 1.0
     sdomlarr = list(np.log10(sdomlsmall))
     pool = mp.Pool(processes=mp.cpu_count())
@@ -133,4 +134,4 @@ for path in tqdm(aia193_paths):
     if not os.path.isdir(SAVEPATH):
         os.makedirs(SAVEPATH)
     np.save(f"{SAVEPATH}ch_mask_{year}.npy",ch_ar)
-    np.save(f"{SAVEPATH}AIA193_times_{year}.npy",new_times)
+    np.save(f"{SAVEPATH}AIA193_times_{year}.npy",timestamps)

@@ -8,6 +8,7 @@ import numpy as np
 from glob import glob
 
 time_omni_backmapped = np.load("logs/sun_backtraced_dates.npy")
+
 list_aia = sorted(glob("sheath_aia_data/AIA193_times_*.npy"))
 time_aia = np.concatenate([np.load(a) for a in list_aia])
 

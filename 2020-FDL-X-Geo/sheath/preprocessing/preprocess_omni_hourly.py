@@ -3,6 +3,13 @@ import pandas as pd
 import datetime
 from astropy.constants import iau2012 as const
 
+"""
+
+    It is safest to start having OMNI data from 2010-06-01. We dont have data before that!!
+    Also, end on 2020
+
+"""
+
 data_path = f"omni2_1hour_full.lst"
 fmt_path = f"omni2_1hour_full.fmt"
 
@@ -30,4 +37,10 @@ print("Max values of different variables")
 _ = [print(np.nanmax(Data[v].values)) for v in Data.columns]
 # Data.to_hdf(f"omni_preprocess_{start}_{end}.h5",key="omni",mode="w")
 Data = Data.dropna()
+
+start = pd.to_datetime("2010-06-01")
+end = pd.to_datetime("2020-12-31")
+mask = (Data['Date'] > start) & (Data['Date'] <= end)
+Data = Data.loc[mask]
+
 Data.to_hdf(f"omni_preprocess_1hour_full.h5",key="omni",mode="w")
