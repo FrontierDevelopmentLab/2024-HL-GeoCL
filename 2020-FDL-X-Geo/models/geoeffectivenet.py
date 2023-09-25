@@ -31,7 +31,6 @@ class NeuralRNNWiemer(BaseModel):
         omni_resolution,
         nmax,
         targets_idx,
-        extra_input_features,
         **kwargs
     ):
         super(NeuralRNNWiemer, self).__init__(**kwargs)
@@ -39,11 +38,11 @@ class NeuralRNNWiemer(BaseModel):
         # idx of targets in dataset
         self.targets_idx = targets_idx
         
-        self.extra_input_features = extra_input_features
+        # self.extra_input_features = extra_input_features
 
         self.omni_resolution = omni_resolution
 
-        hidden = kwargs.pop('n_hidden',8)
+        hidden = kwargs.pop('n_hidden',16)
         dropout_prob = kwargs.pop('dropout',0.5)
         levels = 2
         kernel_size = 24
@@ -52,7 +51,7 @@ class NeuralRNNWiemer(BaseModel):
         [hidden] * levels
 
         self.omni_past_encoder = nn.GRU(
-            input_size=25+len(extra_input_features), hidden_size=hidden, num_layers=1, bidirectional=False, batch_first=True)
+            input_size=25, hidden_size=hidden, num_layers=1, bidirectional=False, batch_first=True)
 
         # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
 
@@ -124,8 +123,8 @@ class NeuralRNNWiemer(BaseModel):
         features.append(past_omni["temperature"])
         
         # Add things like geomagnetic indices to the input feature list
-        for extra_feature in self.extra_input_features:
-            features.append(past_omni[extra_feature])
+        # for extra_feature in self.extra_input_features:
+        #     features.append(past_omni[extra_feature])
 
         features = torch.stack(features, -1)
 
