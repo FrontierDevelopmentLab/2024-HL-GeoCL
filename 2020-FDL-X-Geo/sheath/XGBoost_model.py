@@ -37,7 +37,7 @@ if __name__ == "__main__":
     
     while True:
         # Be trapped here till the mask file is actually being generated.
-        my_file = Path(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_summed_2020.npy")
+        my_file = Path(f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_summed_2012.npy")
         if my_file.is_file():
             break
         else:
@@ -61,9 +61,12 @@ if __name__ == "__main__":
     out_feature_names = ['BX, nT (GSE, GSM)', 'BY, nT (GSM)', 'BZ, nT (GSM)', 'Speed, km/s', 
                            'Proton Density, n/cc', 'Proton Temperature, K']
     omni_data = omni_data[out_feature_names]
-    omni_inds_closest_to_aia = np.load(f"{DATAPATH}logs/closest_omni_aia_indices.npy")
-    omni_dates_closest_to_aia = np.load(f"{DATAPATH}logs/closest_omni_aia_dates.npy")
-    omni_data_closest_aia = omni_data.iloc[omni_inds_closest_to_aia]
+    # omni_inds_path = sorted(glob(f"{DATAPATH}logs/closest_omni_aia_indices_*.npy"))
+    # omni_inds_closest_to_aia = np.concatenate([np.load(a) for a in omni_inds_path])
+    
+    # omni_dates_path = sorted(glob(f"{DATAPATH}logs/closest_omni_aia_dates_*.npy"))
+    # omni_dates_closest_to_aia = np.concatenate([np.load(a) for a in omni_dates_path])
+    omni_data_closest_aia = omni_data#.iloc[omni_inds_closest_to_aia]
     #==== Now we have OMNI data corresponding to AIA data. We need to split this data into different datasets.
     #Load OMNI dates and indices
     omni_inds = np.load(f"{DATAPATH}logs/sheath_train_test_val_split.npz", allow_pickle=True)
