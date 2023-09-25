@@ -19,7 +19,7 @@ import xgboost as xgb
 from scipy.stats import pearsonr
 
 DATAPATH = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/"
-num_rounds = 15000
+num_rounds = 20000
 early_stopping_rounds=40
 
 # hyperparameter_best = {'verbosity': 1, 
@@ -39,6 +39,8 @@ def train():
     config = wandb.config
     print("###############==============\n New day, new run\n##############=============")
     print(config)
+    # Load AIA data
+    
     list_aia = sorted(glob(f"{DATAPATH}sheath_aia_data/aia_subsamp_masked_summed_*.npy"))
     aia_featureset =  np.concatenate([np.load(a).T for a in list_aia],axis=0)    
     
@@ -52,9 +54,12 @@ def train():
     out_feature_names = ['BX, nT (GSE, GSM)', 'BY, nT (GSM)', 'BZ, nT (GSM)', 'Speed, km/s', 
                            'Proton Density, n/cc', 'Proton Temperature, K']
     omni_data = omni_data[out_feature_names]
-    omni_inds_closest_to_aia = np.load(f"{DATAPATH}logs/closest_omni_aia_indices.npy")
-    omni_dates_closest_to_aia = np.load(f"{DATAPATH}logs/closest_omni_aia_dates.npy")
-    omni_data_closest_aia = omni_data.iloc[omni_inds_closest_to_aia]
+    # omni_inds_path = sorted(glob(f"{DATAPATH}logs/closest_omni_aia_indices_*.npy"))
+    # omni_inds_closest_to_aia = np.concatenate([np.load(a) for a in omni_inds_path])
+    
+    # omni_dates_path = sorted(glob(f"{DATAPATH}logs/closest_omni_aia_dates_*.npy"))
+    # omni_dates_closest_to_aia = np.concatenate([np.load(a) for a in omni_dates_path])
+    omni_data_closest_aia = omni_data#.iloc[omni_inds_closest_to_aia]
     #==== Now we have OMNI data corresponding to AIA data. We need to split this data into different datasets.
     #Load OMNI dates and indices
     omni_inds = np.load(f"{DATAPATH}logs/sheath_train_test_val_split.npz", allow_pickle=True)
@@ -126,14 +131,20 @@ def train():
     test_mse = mean_squared_error(preds[1], targs[1])
     hse_mse = mean_squared_error(preds[3], targs[3])
 
-    val_correl = np.mean([pearsonr(preds[2][:,i], targs[2][:,i])[0] for i in range(preds[0].shape[-1])])
-    train_correl = np.mean([pearsonr(preds[0][:,i], targs[0][:,i])[0] for i in range(preds[0].shape[-1])])
-    test_correl = np.mean([pearsonr(preds[1][:,i], targs[1][:,i])[0] for i in range(preds[0].shape[-1])])
-    hse_correl = np.mean([pearsonr(preds[3][:,i], targs[3][:,i])[0] for i in range(preds[0].shape[-1])])
+    val_correl = np.min([pearsonr(preds[2][:,i], targs[2][:,i])[0] for i in range(preds[0].shape[-1])])
+    train_correl = np.min([pearsonr(preds[0][:,i], targs[0][:,i])[0] for i in range(preds[0].shape[-1])])
+    test_correl = np.min([pearsonr(preds[1][:,i], targs[1][:,i])[0] for i in range(preds[0].shape[-1])])
+    hse_correl = np.min([pearsonr(preds[3][:,i], targs[3][:,i])[0] for i in range(preds[0].shape[-1])])
 
     # Log metrics
     wandb.log({'val_loss': val_mse})
     wandb.log({'val_correl': val_correl})
+    wandb.log({'train_correl': train_correl})
+    wandb.log({'test_correl': test_correl})
+    wandb.log({'hse_correl': hse_correl})
+    wandb.log({'train_mse': train_mse})
+    wandb.log({'test_mse': test_mse})
+    wandb.log({'hse_mse': hse_mse})
     # , 'train_mse': train_mse, 'test_mse': test_mse, 'hse_mse': hse_mse,
                # 'val_correl': val_correl, 'train_correl': train_correl, 'test_correl':test_correl, 'hse_correl': hse_correl})
         

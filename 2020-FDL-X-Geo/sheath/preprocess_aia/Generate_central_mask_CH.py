@@ -134,4 +134,4 @@ for path in tqdm(aia193_paths):
     if not os.path.isdir(SAVEPATH):
         os.makedirs(SAVEPATH)
     np.save(f"{SAVEPATH}ch_mask_{year}.npy",ch_ar)
-    np.save(f"{SAVEPATH}AIA193_times_{year}.npy",timestamps)
+    np.save(f"{SAVEPATH}AIA193_times_{year}.npy",timestamps) 

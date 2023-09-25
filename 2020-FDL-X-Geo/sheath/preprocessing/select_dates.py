@@ -5,13 +5,16 @@ import datetime
 import sys
 import os
 
-# omni_path = "/home/jupyter/Vishal/omni/omni_preprocess_complete.h5"
-# omni_data = pd.read_hdf(omni_path)
-# dates = omni_data.Date.values
+omni_path = "/home/jupyter/Vishal/omni/omni_preprocess_1hour_full.h5"
+omni_data = pd.read_hdf(omni_path)
+dates = omni_data.Date.values
 
-years = np.arange(2010,2021).astype(int)
-datepath = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/logs/"
-dates = np.concatenate([np.load(f"{datepath}closest_omni_aia_dates_{year}.npy") for year in years])
+
+
+
+# years = np.arange(2010,2021).astype(int)
+# datepath = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/logs/"
+# dates = np.concatenate([np.load(f"{datepath}closest_omni_aia_dates_{year}.npy") for year in years])
 print(dates[0],dates[-1])
 N = len(dates)
 print(f"Total wind measurements: {N}")

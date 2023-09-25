@@ -10,8 +10,8 @@ parameters:
       max: 0.5
   max_depth:
     distribution: int_uniform
-    min: 12
-    max: 10000
+    min: 100
+    max: 20000
   subsample:
     distribution: categorical
     values:

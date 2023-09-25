@@ -31,8 +31,8 @@ def convert_hmi_time_utc(time_hmi):
     return t_obs_new
 #=============
 
-years = np.arange(2010,2021).astype(int)[3:]
-# years = [2020]
+years = np.arange(2010,2021).astype(int)
+years = [2012]
 for year in tqdm(years):
     print(f"Year: {year}")
     
