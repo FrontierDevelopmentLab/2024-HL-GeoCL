@@ -5,6 +5,8 @@ import sys
 from utils.torch_utils import _float
 import xgboost as xgb
 import matplotlib.pyplot as plt
+from astropy.constants import iau2012 as const
+import astropy.units as u
 
 
 def get_mask(n_size = 512.0):
@@ -23,6 +25,8 @@ def get_mask(n_size = 512.0):
     return mask
 
 def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
+    #===== Segementation code
+    #-- Algorithm here if interested: https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020SW002478
     '''
         This function segments out the active regions, coronal holes and quiet sun from our images. It uses a Gaussian Mixture Model (GMM)
         to segement out the regions. GMM can be understood to be a generalization of Otsu thresholding.
@@ -40,6 +44,12 @@ def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
     sample = og*mask
     sample = sample[~np.isnan(sample)]
     
+    if len(np.unique(sample)) <=3:
+        segments= {}
+        for k in region:
+            segments[k] = np.zeros_like(og)
+        return segments
+    
     #Define the mixture model, and take the component with highest mean value.
     gmodel = GMM(n_components=n_comp)
     gmodel.fit(np.reshape(sample,[-1,1]))
@@ -47,6 +57,7 @@ def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
     centroidfnlist = {'AR':np.max,"CH":np.min,"QS":np.median}
     assert all([True if x in ["AR","CH","QS"] else False for x in region]) 
     segments= {}
+    mask
     for k in region:
         tmp = th_gmm == np.where(np.asarray(gmodel.means_)==centroidfnlist[k](gmodel.means_))[0]
         segments[k] = np.reshape(tmp,list(og.shape))
@@ -95,46 +106,61 @@ class Preprocessor_CH_xgb:
     def preprocess(self, aia_data, hmi_data, aia_wavelengths, hmi_components, scaler_aia):
         ind_193 = aia_wavelengths.index('193A')
         n_size = self.n_size
+        HALF = int(n_size//2)
         npix = self.npix
-        mask = get_mask(n_size = n_size)[:,int(n_size//2)-npix:int(n_size//2)+npix]
+        mask = get_mask(n_size = n_size)[:,HALF-npix:HALF+npix]
         if self.ch_mask:
-            ch_segmentation = subsample_and_segment(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix], mask,
-                                                 region = ['CH'], ncomp = 3)
-            ch_segmentation = ch_segmentation["CH"]
-            ar_segmentation = subsample_and_segment(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix], mask,
-                                                 region = ['AR'], ncomp = 3)
-            ar_segmentation = ar_segmentation["AR"]
+            ch,ar = subsample_and_segment(aia_data[ind_193][:,HALF-npix:HALF+npix], mask,
+                                                 region = ['CH','AR'], ncomp = 3)
         else:
-            ch_segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
-            ar_segmentation = np.ones_like(aia_data["193A"][:,int(n_size//2)-npix:int(n_size//2)+npix])
-        aia_ch_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])\
-            *(ch_segmentation[None,...])
-        aia_ar_data = np.asarray([aia_data[channel][:,int(n_size//2)-npix:int(n_size//2)+npix] for channel in aia_data.keys()])\
-        *(ar_segmentation[None,...])
-        hmi_ch_data = np.asarray([hmi_data[comp][:,int(n_size//2)-npix:int(n_size//2)+npix] for comp in hmi_data.keys()])*(ch_segmentation[None,...])
-        hmi_ar_data = np.asarray([hmi_data[comp][:,int(n_size//2)-npix:int(n_size//2)+npix] for comp in hmi_data.keys()])*(ar_segmentation[None,...])
-        ch_dataset = np.concatenate([aia_ch_data,hmi_ch_data]).transpose([1,2,0])[None,...]
-        ar_dataset = np.concatenate([aia_ar_data,hmi_ar_data]).transpose([1,2,0])[None,...]
-        if self.scaler_aia is not None:
-            ch_dataset = self.scaler_aia.transform(ch_dataset)
-            ar_dataset = self.scaler_aia.transform(ar_dataset)
-        # Should return a torch tensor of form [1,512,34,channels]
+            ch = np.ones_like(aia_data[ind_193][:,HALF-npix:HALF+npix])
+            ar = np.ones_like(aia_data[ind_193][:,HALF-npix:HALF+npix])
         
-        ch_net_area = np.sum(ch_segmentation)/(ch_segmentation.shape[0]*ch_segmentation.shape[1])  # Calculate area of open-field-line regions    
-        # Calculate the net flux per measurement per passband
-        ch_net_fluxes = np.zeros(ch_dataset.shape[3])
-        for passband in range(ch_dataset.shape[3]):
-            ch_net_fluxes[passband] = np.sum(ch_dataset[0, :, :, passband])
-        ch_data = np.append(ch_net_fluxes, ch_net_area)
+        feature_array = [ch,ar]
+        for channel in np.arange(len(aia_data)):
+            feature_array.append(aia_data[channel][:,HALF-npix:HALF+npix]*ch)
+            feature_array.append(aia_data[channel][:,HALF-npix:HALF+npix]*ar)
+        for channel in np.arange(len(hmi_data)):
+            feature_array.append(hmi_data[channel][:,HALF-npix:HALF+npix]*ch)
+            feature_array.append(hmi_data[channel][:,HALF-npix:HALF+npix]*ar)
+        feature_array = np.asarray(feature_array)
+        feature_array = np.nanmean(feature_array,axis=(-1,-2)).reshape([1,-1])
+        feature_array = self.scaler_aia.transform(feature_array)
+        return feature_array
+    
+def backtrace_radial(vel):
+    """
+        Ballistically backtrace a plasma parcel assuming radial flow.
+        vel: np.ndarray or scalar in km/s.
+    """
+    return const.au.to('km').value/(vel*3600*24.0)
+def get_backtrace_date(vel,sw_date):
+    time = backtrace_radial(vel)
+    return (sw_date-pd.to_timedelta(time,unit='day'))
 
-        ar_net_area = np.sum(ar_segmentation)/(ar_segmentation.shape[0]*ar_segmentation.shape[1])  # Calculate area of closed-field-line regions    
-        # Calculate the net flux per measurement per passband
-        ar_net_fluxes = np.zeros(ar_dataset.shape[3])
-        for passband in range(ar_dataset.shape[3]):
-            ar_net_fluxes[passband] = np.sum(ar_dataset[0, :, :, passband])
-        ar_data = np.append(ar_net_fluxes, ar_net_area)
-        
-        in_data = np.append(ch_data, ar_data)
-                
-        return in_data
+def backtrace_spiral(v,theta):
+    """
+        Ballistically backtrace a plasma parcel assuming spiral flow.
+        vel: np.ndarray or scalar in km/s.
+    """
+    omega_sun = np.deg2rad(360.0)/(27.2*24*3600)
+    ro = const.R_sun.to('km').value
+    au = const.au.to('km').value
+    theta = np.deg2rad(theta)
+    arg = omega_sun*(au-ro)*np.sin(theta)/v
+    return np.arcsin(arg)/(omega_sun*np.sin(theta)*(3600*24.0))
+
+def backtrace_spiral_date(vel,sw_date):
+    """
+        Ballistically backtrace a plasma parcel assuming spiral flow.
+        vel: np.ndarray or scalar in km/s.
+    """
+    time = backtrace_spiral(vel,90)
+    return (sw_date-pd.to_timedelta(time,unit='day'))
+
+def mask_from_aia_193(var):
+    var[var<1] = 1.0
+    var = np.log10(var)
+    return var
+
     

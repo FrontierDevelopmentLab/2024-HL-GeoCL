@@ -9,6 +9,14 @@ import os
 import multiprocessing as mp
 from tqdm import tqdm
 import copy
+import sys
+sys.path.append("../")
+from utils.preprocessing import GetMorphologicalStructure, mask_from_aia_193
+
+#==== Define a wrapper on top.
+def Get_CH_AR(og):
+    ch = GetMorphologicalStructure(og,mask,region=['CH','AR'],n_comp=3)
+    return np.asarray([ch["CH"],ch["AR"]])
 
 """
     To pull the data, perform:
@@ -17,8 +25,6 @@ import copy
     
     And you will need opencv, zarr, dask, skimage for runnign this code.
 """
-
-
 
 NPIX = 17
 # Generate mask to get only the disc. I don't care about the limb
@@ -35,52 +41,6 @@ mask = np.sign(distance-radius**2)
 mask[mask>0] = np.nan
 mask=np.abs(mask)
 mask = mask[:,256-NPIX:256+NPIX]
-
-#===== Segementation code
-#-- Algorithm here if interested: https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020SW002478
-
-from sklearn.mixture import GaussianMixture as GMM
-import cv2
-def GetMorphologicalStructure(og,mask,region=['AR'],n_comp=3):
-    '''
-        This function segments out the active regions, coronal holes and quiet sun from our images. It uses a Gaussian Mixture Model (GMM)
-        to segement out the regions. GMM can be understood to be a generalization of Otsu thresholding.
-        This function is a generalization of `GetActiveRegions`, where:
-            1. Minimum of centroid mean corresponds to CHs.
-            2. Maximum of centroid mean corresponds to ARs.
-            3. Meidan of centroid mean corresponds to QS.
-        Inputs:
-            sample: img of shape [isize,isize], minvalue = 0 and maxvalue = 1
-        
-        This function is a part of suitpy package.
-    '''
-    #Initial smoothing
-    # sample = cv2.bilateralFilter(og.astype(np.float32),9,75,75)
-    sample = og*mask
-    sample = sample[~np.isnan(sample)]
-    
-    if len(np.unique(sample)) <=3:
-        segments= {}
-        for k in region:
-            segments[k] = np.zeros_like(og)
-        return segments
-    
-    #Define the mixture model, and take the component with highest mean value.
-    gmodel = GMM(n_components=n_comp)
-    gmodel.fit(np.reshape(sample,[-1,1]))
-    th_gmm = gmodel.predict(np.reshape(og,[-1,1]))
-    centroidfnlist = {'AR':np.max,"CH":np.min,"QS":np.median}
-    assert all([True if x in ["AR","CH","QS"] else False for x in region]) 
-    segments= {}
-    mask
-    for k in region:
-        tmp = th_gmm == np.where(np.asarray(gmodel.means_)==centroidfnlist[k](gmodel.means_))[0]
-        segments[k] = np.reshape(tmp,list(og.shape))
-    return segments
-
-def Get_CH_AR(og):
-    ch = GetMorphologicalStructure(og,mask,region=['CH','AR'],n_comp=3)
-    return np.asarray([ch["CH"],ch["AR"]])
 
 # Load AIA 193 A data
 sdomlv2_path = "/mnt/disks/sdomlv2-full2/sdomlv2.zarr/"
@@ -122,8 +82,7 @@ for path in tqdm(aia193_paths):
     timestamps = timestamps[indices]
     
     new_times, ind_sorted_times = timestamps.sort_values(return_indexer=True)
-    sdomlsmall[sdomlsmall<1] = 1.0
-    sdomlarr = list(np.log10(sdomlsmall))
+    sdomlarr = list(mask_from_aia_193(sdomlsmall))
     pool = mp.Pool(processes=mp.cpu_count())
     ch_ar = np.asarray(pool.map(Get_CH_AR,sdomlarr))
     pool.close()

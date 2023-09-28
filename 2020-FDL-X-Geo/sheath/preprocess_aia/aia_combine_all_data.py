@@ -9,28 +9,15 @@ import os
 from tqdm import tqdm
 from pathlib import Path
 import time
+import sys
+sys.path.append("../")
+from utils.hmi_utils import convert_hmi_time_utc
 
 
 """
     We will need to map the OMNI dates to closest AIA dates. This allows us to form tuples of (AIA,swind). 
     Since there are many datapoints, we will use data at a lower cadence. 
 """
-
-#====LOAD HMI DATA
-# HMI time is in TAI, not UTC. So convert it first.
-def stringchange(string):
-    new_string = string.replace('_TAI', 'Z')
-    new_string = new_string.replace('_','T')
-    new_string = new_string.replace('.','-')
-    new_string = new_string.replace('Z', '.00')
-    return new_string
-def convert_hmi_time_utc(time_hmi):
-    t_obs_new = [stringchange(string) for string in time_hmi]
-    t =  Time(t_obs_new, format='isot', scale='tai')
-    t_obs_new=pd.to_datetime(t.utc.value,utc=True)
-    return t_obs_new
-#=============
-
 years = np.arange(2010,2021).astype(int)
 years = [2012]
 for year in tqdm(years):
