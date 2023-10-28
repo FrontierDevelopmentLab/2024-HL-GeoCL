@@ -26,7 +26,7 @@ import pickle
 # Preprocessing parameters
 past_omni_length = 120
 lag = 30
-yearlist = list(np.arange(2010,2011).astype(int))
+yearlist = list(np.arange(2018,2019).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20
@@ -211,15 +211,16 @@ class PreprocessData():
 if not os.path.exists(output_folder):
     os.makedirs(output_folder, exist_ok=True)
 
-if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
+all_years_list = list(np.arange(2010, 2019))
 
-    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=yearlist))
+if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
+    supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=all_years_list))
     input_data = InputDataset(get_input_data(omni_path="data_local/omni/sw_data.h5",
                                              indices_path="data_local/supermag_indices/",
                                              indices_to_use=extra_input_features,
-                                             year=yearlist))
+                                             year=all_years_list))
 
-    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=yearlist,
+    train_idx,test_idx,val_idx,wiemer_idx = generate_indices(base="data_local/iaga/",year=all_years_list,
                                                             LENGTH=past_omni_length,LAG=lag,
                                                             omni_path="data_local/omni/sw_data.h5",
                                                             weimer_path="data_local/weimer/")
@@ -242,7 +243,7 @@ if not os.path.exists(os.path.join(output_folder, 'scalers.p')):
 else:
     scaler = pickle.load(open(os.path.join(output_folder, 'scalers.p'), 'rb'))
     
-max_stations = get_iaga_max_stations(base="data_local/iaga/",yearlist=yearlist)
+max_stations = get_iaga_max_stations(base="data_local/iaga/",yearlist=all_years_list)
     
 for year in yearlist:
     supermag_data = SuperMAGIAGADataset(*get_iaga_data_as_list(base="data_local/iaga/",year=[year], max_stations=max_stations))

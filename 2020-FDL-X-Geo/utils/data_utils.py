@@ -38,7 +38,7 @@ def persist_to_file(file_name):
     return decorator
 
 
-def get_input_data(omni_path, indices_path, indices_to_use, year="2016"):
+def get_input_data(omni_path, indices_path="data_local/supermag_indices/", indices_to_use=[], year="2016"):
     # Geomagnetic indices files must be named like `supermag_indices_{year}.csv`
     import pandas as pd
     if isinstance(year,str):
