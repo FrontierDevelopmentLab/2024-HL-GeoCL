@@ -18,7 +18,9 @@ from utils.data_utils import get_iaga_data, load_cached_data,get_wiemer_data,get
 from utils.splitter import generate_indices
 from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
 from experiment import Experiment
-torch.set_default_dtype(torch.float64)  # this is important else it will overflow
+
+# torch.set_default_dtype(torch.float64)  # this is important else it will overflow
+torch.set_default_dtype(torch.float32)
 
 
 md = {'NeuralRNNWiemer':NeuralRNNWiemer}
@@ -58,13 +60,17 @@ def train(config):
     else:
         wandb_logger = False
     
+    print('loading training data')
     if weighted_regression:
         train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train_with_weights', yearlist, weighted_regression, station_regularization)
     else:
         train_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'train', yearlist, weighted_regression, station_regularization)
+    print('loading val data')
     val_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'val', yearlist, False, False)
+    print('loading wiemer data')
     wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(preprocessed_path, 'wiemer', yearlist, False, False)
 
+    print('load scalers')
     scaler = pickle.load(open(os.path.join(preprocessed_path, 'scalers.p'), 'rb'))
 
     wiemer_loader = data.DataLoader(
@@ -78,7 +84,11 @@ def train(config):
     )
     
     plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
+    
+    print('load supermag data')
     supermag_features = pickle.load(open(os.path.join(preprocessed_path, 'supermag_features.p'), 'rb'))
+
+    print('load omni data')
     omni_features = pickle.load(open(os.path.join(preprocessed_path, 'omni_features.p'), 'rb'))
     
     targets_idx = [np.where(supermag_features == target)[0][0] for target in targets]
