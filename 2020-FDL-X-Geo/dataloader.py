@@ -8,7 +8,8 @@ import tqdm
 from scipy.special import sph_harm
 from sklearn.preprocessing import StandardScaler
 from torch.utils import data
-import pickle
+#import pickle
+import dill as pickle
 from utils.helpers import dipole_tilt
 import os
 
@@ -389,6 +390,7 @@ class ShpericalHarmonicsDatasetPreprocessed(data.Dataset):
     ):
         self.features_list = []
         for year in yearlist:
+            print(f'loading year {year}')
             feature_list_year = pickle.load(open(os.path.join(path, f'{category}_data_{year}.p'), 'rb'))
             self.features_list.extend(feature_list_year)
         self.category = category
