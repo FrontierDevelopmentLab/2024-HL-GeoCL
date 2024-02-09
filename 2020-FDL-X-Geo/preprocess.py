@@ -26,7 +26,7 @@ import pickle
 # Preprocessing parameters
 past_omni_length = 120
 lag = 30
-yearlist = list(np.arange(2018,2019).astype(int))
+yearlist = list(np.arange(2010,2019).astype(int))
 targets = ["dbe_nez", "dbn_nez"]
 future_length = 1
 nmax = 20

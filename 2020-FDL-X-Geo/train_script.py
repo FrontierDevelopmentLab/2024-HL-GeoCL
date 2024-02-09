@@ -19,9 +19,8 @@ from utils.splitter import generate_indices
 from dataloader import ShpericalHarmonicsDatasetBucketized,SuperMAGIAGADataset, ShpericalHarmonicsDatasetPreprocessed
 from experiment import Experiment
 
-# torch.set_default_dtype(torch.float64)  # this is important else it will overflow
-torch.set_default_dtype(torch.float32)
 
+torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
 md = {'NeuralRNNWiemer':NeuralRNNWiemer}
 
