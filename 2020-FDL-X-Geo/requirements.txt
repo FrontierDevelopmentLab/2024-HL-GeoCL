@@ -15,3 +15,5 @@ wandb
 celluloid
 pyproj
 tables
+astropy==6.0.0
+
