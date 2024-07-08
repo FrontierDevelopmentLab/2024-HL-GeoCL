@@ -2,39 +2,47 @@ import io
 from os import device_encoding
 
 import matplotlib.cm as cm
+import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image
 import torch
+from dataloader import basis_matrix
 from matplotlib import cycler
 from sklearn.metrics import r2_score
 from torchvision.transforms import ToTensor
 
-from dataloader import basis_matrix
-import matplotlib.colors
-
-#---------------- Torch device
+# ---------------- Torch device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#------------------
+# ------------------
 
 
 class SqueezedNorm(matplotlib.colors.Normalize):
     def __init__(self, vmin=None, vmax=None, mid=0, s1=2, s2=2, clip=False):
         # self.vmin = vmin # minimum value
-        self.mid  = mid  # middle value
+        self.mid = mid  # middle value
         # self.vmax = vmax # maximum value
-        self.s1=s1; self.s2=s2
-        f = lambda x, zero,vmax,s: np.abs((x-zero)/(vmax-zero))**(1./s)*0.5
-        self.g = lambda x, zero,vmin,vmax, s1,s2: f(x,zero,vmax,s1)*(x>=zero) - \
-                                             f(x,zero,vmin,s2)*(x<zero)+0.5
+        self.s1 = s1
+        self.s2 = s2
+        f = (
+            lambda x, zero, vmax, s: np.abs((x - zero) / (vmax - zero)) ** (1.0 / s)
+            * 0.5
+        )
+        self.g = (
+            lambda x, zero, vmin, vmax, s1, s2: f(x, zero, vmax, s1) * (x >= zero)
+            - f(x, zero, vmin, s2) * (x < zero)
+            + 0.5
+        )
         matplotlib.colors.Normalize.__init__(self, vmin, vmax, clip)
 
     def __call__(self, value, clip=None):
-        r = self.g(value, self.mid, self._vmin, self._vmax, self.s1,self.s2)
+        r = self.g(value, self.mid, self._vmin, self._vmax, self.s1, self.s2)
         return np.ma.masked_array(r)
 
 
-def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, mean, std):
+def spherical_plot_forecasting(
+    nmax, coeffs, predictions, target, mlt, mcolat, mean, std
+):
     plt.style.use("default")
     plt.rcParams.update(
         {
@@ -65,7 +73,7 @@ def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, m
         }
     )
 
-    shape_spherical = (45, 180) #colat, lon
+    shape_spherical = (45, 180)  # colat, lon
     _phi_spherical = (
         (np.arange(shape_spherical[0]) + 0.5) / shape_spherical[0] * np.pi / 4
     )  # colat
@@ -73,22 +81,19 @@ def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, m
         (np.arange(shape_spherical[1]) + 0.5) / shape_spherical[1] * 2.0 * np.pi
     )  # lon
 
-    grid_theta_spherical,grid_phi_spherical = np.meshgrid(_theta_spherical,_phi_spherical)
-    
-    basis_grid = basis_matrix(
-        nmax,
-        grid_theta_spherical,
-        grid_phi_spherical,
+    grid_theta_spherical, grid_phi_spherical = np.meshgrid(
+        _theta_spherical, _phi_spherical
     )
+
+    basis_grid = basis_matrix(nmax, grid_theta_spherical, grid_phi_spherical,)
     basis_grid = torch.Tensor(basis_grid).double().squeeze(0).to(device)
 
     cm.get_cmap("viridis")
 
-    grid_predictions = (basis_grid@coeffs.T).detach().cpu().numpy()
+    grid_predictions = (basis_grid @ coeffs.T).detach().cpu().numpy()
     grid_predictions = grid_predictions.reshape(-1, *_theta_spherical.shape)
-    
 
-    cmap='PuOr_r'
+    cmap = "PuOr_r"
 
     maxval = 300
     minval = -300
@@ -96,30 +101,32 @@ def spherical_plot_forecasting(nmax, coeffs, predictions, target, mlt, mcolat, m
 
     fig, ax = plt.subplots(ncols=4, subplot_kw={"projection": "polar"})
 
-    ax[0].set_theta_offset(-np.pi/2)
+    ax[0].set_theta_offset(-np.pi / 2)
     c = ax[0].scatter(mlt, mcolat, c=target, cmap=cmap, norm=norm)
     ax[0].set_title("Target")
 
-    ax[1].set_theta_offset(-np.pi/2)
+    ax[1].set_theta_offset(-np.pi / 2)
     c = ax[1].scatter(mlt, mcolat, c=predictions, cmap=cmap, norm=norm)
     ax[1].set_title("Predictions")
 
-    ax[2].set_theta_offset(-np.pi/2)
+    ax[2].set_theta_offset(-np.pi / 2)
     ax[2].pcolormesh(
         grid_theta_spherical,
         grid_phi_spherical,
-        grid_predictions*std + mean, # un-standardize
+        grid_predictions * std + mean,  # un-standardize
         cmap=cmap,
         shading="auto",
-        norm=norm
+        norm=norm,
     )
     ax[2].set_title("Prediction (SpH)")
-    ax[2].scatter(mlt, mcolat, c=predictions, cmap=cmap, norm=norm,s=20,edgecolors='k')
+    ax[2].scatter(
+        mlt, mcolat, c=predictions, cmap=cmap, norm=norm, s=20, edgecolors="k"
+    )
 
     ax[3].set_axis_off()
-    cb = fig.colorbar(c, ax=ax[3], shrink=0.2,location='left')
-    cb.set_label('dB [nT]', fontsize=14,labelpad=-70)
-    
+    cb = fig.colorbar(c, ax=ax[3], shrink=0.2, location="left")
+    cb.set_label("dB [nT]", fontsize=14, labelpad=-70)
+
     plt.subplots_adjust(wspace=0.4)
     buf = io.BytesIO()
     fig.savefig(buf, format="png")

@@ -1,9 +1,7 @@
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 import utils
 from dataloader import basis_matrix
 from models.base import BaseModel
@@ -37,13 +35,13 @@ class NeuralRNNWiemer(BaseModel):
 
         # idx of targets in dataset
         self.targets_idx = targets_idx
-        
+
         self.extra_input_features = extra_input_features
 
         self.omni_resolution = omni_resolution
 
-        hidden = kwargs.pop('n_hidden',8)
-        dropout_prob = kwargs.pop('dropout',0.5)
+        hidden = kwargs.pop("n_hidden", 8)
+        dropout_prob = kwargs.pop("dropout", 0.5)
         levels = 2
         kernel_size = 24
         levels = levels
@@ -51,7 +49,12 @@ class NeuralRNNWiemer(BaseModel):
         [hidden] * levels
 
         self.omni_past_encoder = nn.GRU(
-            input_size=25+len(extra_input_features), hidden_size=hidden, num_layers=1, bidirectional=False, batch_first=True)
+            input_size=25 + len(extra_input_features),
+            hidden_size=hidden,
+            num_layers=1,
+            bidirectional=False,
+            batch_first=True,
+        )
 
         # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
 
@@ -63,7 +66,7 @@ class NeuralRNNWiemer(BaseModel):
             nn.Linear(hidden, 16),
             nn.ELU(inplace=True),
             nn.Dropout(p=dropout_prob),
-            nn.Linear(16, n_coeffs*len(targets_idx), bias=False),  # 882
+            nn.Linear(16, n_coeffs * len(targets_idx), bias=False),  # 882
         )
 
         self.omni_features = omni_features
@@ -73,7 +76,9 @@ class NeuralRNNWiemer(BaseModel):
         self, past_omni, past_supermag, mlt, mcolat, dates, future_dates, **kargs
     ):
         # 10 mins average
-        past_omni = nn.AvgPool1d(self.omni_resolution)(past_omni.permute([0, 2, 1])).permute([0, 2, 1])
+        past_omni = nn.AvgPool1d(self.omni_resolution)(
+            past_omni.permute([0, 2, 1])
+        ).permute([0, 2, 1])
 
         past_omni = NamedAccess(past_omni, self.omni_features)
 
@@ -120,7 +125,7 @@ class NeuralRNNWiemer(BaseModel):
 
         features.append(past_omni["clock_angle"])
         features.append(past_omni["temperature"])
-        
+
         # Add things like geomagnetic indices to the input feature list
         for extra_feature in self.extra_input_features:
             features.append(past_omni[extra_feature])
@@ -137,7 +142,9 @@ class NeuralRNNWiemer(BaseModel):
 
         encoded = self.omni_past_encoder(features)[1][0]
 
-        coeffs = self.encoder_mlp(encoded).reshape(encoded.shape[0], -1, len(self.targets_idx))
+        coeffs = self.encoder_mlp(encoded).reshape(
+            encoded.shape[0], -1, len(self.targets_idx)
+        )
 
         with torch.no_grad():
             basis = self.sph(mlt.squeeze(1), mcolat.squeeze(1))
@@ -149,6 +156,7 @@ class NeuralRNNWiemer(BaseModel):
 
         if torch.isnan(coeffs).all():
             import pdb
+
             pdb.set_trace()
-            
+
         return basis, coeffs, predictions

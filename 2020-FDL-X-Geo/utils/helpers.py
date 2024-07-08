@@ -16,7 +16,6 @@ def ind2nm(ind):
     return n, m
 
 
-
 """ function for computing subsolar point """
 
 
@@ -559,6 +558,6 @@ def dipole_tilt(times, epoch=2015.0):
 
 
 def R2(true, pred):
-    mse = ((true-pred)**2).mean()
-    var = (true-pred).var()
-    return 1 - mse/var
+    mse = ((true - pred) ** 2).mean()
+    var = (true - pred).var()
+    return 1 - mse / var

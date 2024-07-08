@@ -6,9 +6,9 @@ import torch
 from sympy import (Dummy, I, S, cos, exp, factorial, latex, pi, sin, sqrt,
                    symbols, sympify, var)
 
-#---------------- Torch device
+# ---------------- Torch device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#------------------
+# ------------------
 
 
 def _reduce(fn):

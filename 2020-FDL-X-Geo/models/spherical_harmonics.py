@@ -1,12 +1,12 @@
 import sympy
 import torch
-from sympy import (Ynm, symbols)
-
+from sympy import Ynm, symbols
 from utils.sympy import SymPyModule
 
-#---------------- Torch device
+# ---------------- Torch device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#------------------
+# ------------------
+
 
 class SphericalHarmonics(torch.nn.Module):
     def __init__(self, nmax=20):
