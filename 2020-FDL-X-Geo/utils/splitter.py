@@ -8,7 +8,7 @@ import sklearn.model_selection
 from astropy.time import Time
 
 sys.path.append("../")
-from utils.data_utils import get_iaga_data_as_list, get_input_data
+from utils.data_utils import get_iaga_data_as_list, get_input_data  # noqa: E402
 
 BUCKETS = 100
 
