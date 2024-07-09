@@ -6,9 +6,7 @@ import dill as pickle
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 import tqdm
-from scipy.special import sph_harm
 from sklearn.preprocessing import StandardScaler
 from torch.utils import data
 from utils.helpers import dipole_tilt
@@ -32,13 +30,14 @@ def stack_from_array(data, columns, col_anm_shp=None, dt_loc=None):
     if col_anm_shp is None:
         return data[:, columns]
     else:
+        final = None
         for col in columns:
             tmp = np.stack(data[:, col])
             if tmp.shape[-1] != col_anm_shp:
                 tmp = tmp.reshape([-1, 1])
             try:
                 final = np.concatenate((final, tmp), axis=-1)
-            except:
+            except Exception:
                 final = tmp
         return final.reshape([final.shape[0], -1])
 

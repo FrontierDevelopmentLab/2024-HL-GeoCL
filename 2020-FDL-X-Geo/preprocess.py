@@ -2,26 +2,13 @@ import os
 import os.path
 import pickle
 
-import h5py
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
-import torch.optim
 import tqdm
-import wandb
-from astropy.time import Time
-from dataloader import (InputDataset, ShpericalHarmonicsDatasetBucketized,
-                        SuperMAGIAGADataset)
-from models.geoeffectivenet import *
-from models.spherical_harmonics import SphericalHarmonics
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.loggers import WandbLogger
-from torch.utils import data
-from tqdm.contrib.concurrent import process_map
-from utils.data_utils import (get_iaga_data, get_iaga_data_as_list,
-                              get_iaga_max_stations, get_input_data,
-                              get_wiemer_data, load_cached_data)
+from dataloader import InputDataset, SuperMAGIAGADataset
+from models.geoeffectivenet import NamedAccess
+from utils.data_utils import (get_iaga_data_as_list, get_iaga_max_stations,
+                              get_input_data)
 from utils.helpers import dipole_tilt
 from utils.splitter import generate_indices
 
@@ -313,13 +300,13 @@ if not os.path.exists(os.path.join(output_folder, "scalers.p")):
     )
 
     scaler = train_ds_all_years.scaler
-    with open(os.path.join(output_folder, f"supermag_features.p"), "wb") as f:
+    with open(os.path.join(output_folder, "supermag_features.p"), "wb") as f:
         pickle.dump(train_ds_all_years.supermag_features, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(output_folder, f"omni_features.p"), "wb") as f:
+    with open(os.path.join(output_folder, "omni_features.p"), "wb") as f:
         pickle.dump(train_ds_all_years.omni_features, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(output_folder, f"scalers.p"), "wb") as f:
+    with open(os.path.join(output_folder, "scalers.p"), "wb") as f:
         pickle.dump(scaler, f, pickle.HIGHEST_PROTOCOL)
 else:
     scaler = pickle.load(open(os.path.join(output_folder, "scalers.p"), "rb"))

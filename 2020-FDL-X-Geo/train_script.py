@@ -1,26 +1,16 @@
 import os.path
 import pickle
 
-import h5py
 import numpy as np
-import pandas as pd
 import pytorch_lightning as pl
 import torch.optim
-import wandb
-from astropy.time import Time
-from dataloader import (ShpericalHarmonicsDatasetBucketized,
-                        ShpericalHarmonicsDatasetPreprocessed,
-                        SuperMAGIAGADataset)
+from dataloader import ShpericalHarmonicsDatasetPreprocessed
 from experiment import Experiment
-from models.geoeffectivenet import *
-from models.spherical_harmonics import SphericalHarmonics
+from models.geoeffectivenet import NeuralRNNWiemer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils import data
-from utils.data_utils import (get_iaga_data, get_iaga_data_as_list,
-                              get_wiemer_data, load_cached_data)
-from utils.splitter import generate_indices
 
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 
@@ -30,6 +20,8 @@ config_path = "experiment.yaml"
 
 # ----- Data loading also depends on the sweep parameters.
 # ----- Hence this process will be repeated per training cycle.
+
+
 def train(config):
     past_omni_length = config["past_omni_length"]
     omni_resolution = config["omni_resolution"]
@@ -101,8 +93,6 @@ def train(config):
     val_loader = data.DataLoader(
         val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
-
-    plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
 
     print("load supermag data")
     supermag_features = pickle.load(

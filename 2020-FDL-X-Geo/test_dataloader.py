@@ -1,19 +1,9 @@
-import json
-import os.path
-import pickle
-
-import h5py
 import numpy as np
-import pytorch_lightning as pl
 import torch.optim
-from astropy.time import Time
 from dataloader import (OMNIDataset, ShpericalHarmonicsDatasetBucketized,
                         SuperMAGIAGADataset)
 # from models.geoeffectivenet import *
-from models.spherical_harmonics import SphericalHarmonics
-from torch.utils import data
-from utils.data_utils import (get_iaga_data, get_iaga_data_as_list,
-                              get_omni_data, get_wiemer_data, load_cached_data)
+from utils.data_utils import get_iaga_data_as_list, get_omni_data
 from utils.splitter import generate_indices
 
 # ----------------------------

@@ -3,8 +3,6 @@ import functools as ft
 
 import sympy
 import torch
-from sympy import (Dummy, I, S, cos, exp, factorial, latex, pi, sin, sqrt,
-                   symbols, sympify, var)
 
 # ---------------- Torch device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -83,7 +81,7 @@ class _Node(torch.nn.Module):
         try:
             expr = sympy.Float(expr)
             # print(expr, expr.func, expr.args, sympy.Float(expr))
-        except:
+        except Exception:
             pass
         if issubclass(expr.func, sympy.Float):
             self._value = torch.nn.Parameter(torch.tensor(float(expr)))

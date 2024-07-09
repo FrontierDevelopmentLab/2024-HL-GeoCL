@@ -1,5 +1,4 @@
 import io
-from os import device_encoding
 
 import matplotlib.cm as cm
 import matplotlib.colors
@@ -9,7 +8,6 @@ import PIL.Image
 import torch
 from dataloader import basis_matrix
 from matplotlib import cycler
-from sklearn.metrics import r2_score
 from torchvision.transforms import ToTensor
 
 # ---------------- Torch device

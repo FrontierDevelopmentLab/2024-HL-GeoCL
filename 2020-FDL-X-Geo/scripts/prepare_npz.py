@@ -1,14 +1,11 @@
 import datetime as dt
 import glob
-import json
 import os
 import sys
 
-import dask
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
-import tqdm
 
 year = sys.argv[1]
 
@@ -21,7 +18,7 @@ sw_df = pd.read_hdf(OMNI_PATH, key=year)
 print("Loading csv files from " + SUPERMAG_PATH)
 files = list(glob.glob(SUPERMAG_PATH + "*.csv.gz"))
 
-odf = dd.read_csv(files, dtype={"dt": "float64",}, compression="gzip", blocksize=None)
+odf = dd.read_csv(files, dtype={"dt": "float64"}, compression="gzip", blocksize=None)
 
 print("Index by Date_UTC")
 odf = odf.set_index("Date_UTC").compute()

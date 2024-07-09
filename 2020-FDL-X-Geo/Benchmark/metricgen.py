@@ -4,22 +4,21 @@ from skimage.measure import block_reduce
 """
  Metrics
 
-This defines a bunch of metrics which will take (target, prediction), and returns the computed metrics. 
-Inputs of shape (time,parameter). Will compute metric along axis 0. 
-
+This defines a bunch of metrics which will take (target, prediction), and returns the computed metrics.
+Inputs of shape (time,parameter). Will compute metric along axis 0.
 """
 
 
 def TSEvents(dbn, dbe):
     """
-    NOTE: dbn and dbe are at 1-min cadence. 
+    NOTE: dbn and dbe are at 1-min cadence.
     Time runs along axis=0, and stations along other axis.
     Procedure:
     1. Construct db_dt = \sqrt{(dbn/dt)**2+(dbe/dt)**2}.
     2. Choose a threshold value in nT/s. Let's say 0.3 nT/s.
-    3. Chop the time series into windows of 20 minutes. 
-    4. In each window, if atleast one point has db_dt>threshold, call it an event. 
-  """
+    3. Chop the time series into windows of 20 minutes.
+    4. In each window, if atleast one point has db_dt>threshold, call it an event.
+    """
     db_dt = np.sqrt(
         np.square(np.gradient(dbn, 60, axis=0))
         + np.square(np.gradient(dbe, 60, axis=0))
@@ -27,7 +26,7 @@ def TSEvents(dbn, dbe):
     window = 20  # IN MINUTES
     thresholds = [0.3, 0.7, 1.1, 1.5]
     w_size = np.ones(db_dt.ndim)
-    w_size[0] = 20
+    w_size[0] = window
     w_size = tuple(w_size.astype(int))
     print(w_size)
     final = {}

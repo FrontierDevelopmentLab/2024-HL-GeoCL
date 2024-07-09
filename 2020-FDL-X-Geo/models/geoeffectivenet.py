@@ -1,12 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import utils
-from dataloader import basis_matrix
 from models.base import BaseModel
 from models.spherical_harmonics import SphericalHarmonics
-from models.tcn import TemporalConvNet
 
 
 class NamedAccess:

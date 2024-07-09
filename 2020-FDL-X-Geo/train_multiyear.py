@@ -1,16 +1,12 @@
 import os.path
 import pickle
 
-import h5py
 import numpy as np
 import pytorch_lightning as pl
 import torch.optim
 import wandb
-from astropy.time import Time
-from dataloader import (OMNIDataset, ShpericalHarmonicsDataset,
-                        SuperMAGIAGADataset)
-from models.geoeffectivenet import *
-from models.spherical_harmonics import SphericalHarmonics
+from dataloader import OMNIDataset, SuperMAGIAGADataset
+from models.geoeffectivenet import NeuralRNNWiemer_HidddenSuperMAG
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
@@ -44,6 +40,8 @@ wandb.run.name = "MAE_2015_SMAG_Reg"
 
 # ----- Data loading also depends on the sweep parameters.
 # ----- Hence this process will be repeated per training cycle.
+
+
 def train(config):
     # future_length = config['future_length']
     # past_omni_length = config['past_omni_length']
@@ -93,7 +91,6 @@ def train(config):
         val_idx = idx[int(len(idx) * 0.85) :]
     else:
         train_idx = None
-        test_idx = None
         val_idx = None
         supermag_data = None
         omni_data = None
@@ -138,7 +135,6 @@ def train(config):
     val_loader = data.DataLoader(
         val_ds, batch_size=batch_size, shuffle=False, num_workers=8
     )
-    plot_loader = data.DataLoader(val_ds, batch_size=4, shuffle=False)
 
     targets_idx = [
         np.where(train_ds.supermag_features == target)[0][0] for target in targets

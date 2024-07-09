@@ -1,19 +1,13 @@
-import json
 import os
 import os.path
-import pickle
 from glob import glob
 
 import h5py
 import numpy as np
 import pandas as pd
 from astropy.time import Time
-from dataloader import (OMNIDataset, ShpericalHarmonicsDatasetBucketized,
-                        SuperMAGIAGADataset)
-from torch.utils import data
-from utils.data_utils import (get_iaga_data, get_iaga_data_as_list,
-                              get_omni_data, get_wiemer_data, load_cached_data)
-from utils.splitter import generate_indices
+from dataloader import OMNIDataset, SuperMAGIAGADataset
+from utils.data_utils import get_iaga_data_as_list, get_omni_data
 
 
 def get_stations(dt_array):

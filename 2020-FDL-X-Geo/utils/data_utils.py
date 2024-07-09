@@ -2,23 +2,15 @@ import os
 import pickle
 import re
 import sys
-from datetime import datetime
 from glob import glob
 
 import h5py
 import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-import torchvision
 import tqdm
 from astropy.time import Time
-from scipy.special import sph_harm
-from torch.utils import data
 
 sys.path.append("../")
-from dataloader import (InputDataset, ShpericalHarmonicsDataset,
-                        SuperMAGIAGADataset)
+from dataloader import ShpericalHarmonicsDataset
 
 
 def persist_to_file(file_name):

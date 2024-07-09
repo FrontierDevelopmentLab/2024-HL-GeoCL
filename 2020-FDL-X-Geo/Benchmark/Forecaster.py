@@ -5,7 +5,7 @@ from scipy.interpolate import RegularGridInterpolator as Interpolator
 """
  Generate forecast
 
-A function which takes in the model, dataloader and generates forecast. 
+A function which takes in the model, dataloader and generates forecast.
 
 Will also Generate Weimer forecast at Supermag locations
 
@@ -14,7 +14,6 @@ Will also Generate Weimer forecast at Supermag locations
 
 def Forecaster(dataloader, model, dbe_mean, dbe_std, dbn_mean, dbn_std, target_index):
     with torch.no_grad():
-        val_loss = {"dbe": [], "dbn": []}
         Predictions = {"dbe": [], "dbn": []}
         Targets = {"dbe": [], "dbn": []}
         dates = {"dbe": [], "dbn": []}

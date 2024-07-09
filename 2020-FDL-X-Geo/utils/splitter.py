@@ -1,6 +1,4 @@
 import glob
-import json
-import os
 import sys
 
 import h5py

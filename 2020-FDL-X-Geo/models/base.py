@@ -1,16 +1,10 @@
 import io
 
 import matplotlib.pyplot as plt
-import numpy as np
 import PIL.Image
 import pytorch_lightning as pl
 import torch
 import wandb
-from torch import nn
-from torch.nn import functional as F
-from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
-from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 from utils.helpers import R2
 from utils.plot import spherical_plot_forecasting
@@ -20,6 +14,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # ------------------
 
 # define a function which returns an image as numpy array from figure
+
+
 def get_img_from_fig(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
@@ -91,7 +87,7 @@ class BaseModel(pl.LightningModule):
                 self.lossfun = ldict_weighted[losskey]
             else:
                 self.lossfun = ldict[losskey]
-        except:
+        except Exception:
             self.lossfun = MSE
 
     def configure_optimizers(self):
@@ -217,7 +213,7 @@ class BaseModel(pl.LightningModule):
         # unscaled_predictions = self.scaler['supermag'].inverse_transform(predictions.cpu().numpy())
 
         # loss = ((future_supermag - predictions) ** 2).mean()
-        loss = self.lossfun(future_supermag, predictions)
+        # loss = self.lossfun(future_supermag, predictions)
 
         self.log(
             "val_R2",
