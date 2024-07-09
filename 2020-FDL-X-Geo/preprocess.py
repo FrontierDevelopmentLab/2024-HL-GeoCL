@@ -7,8 +7,11 @@ import pandas as pd
 import tqdm
 from dataloader import InputDataset, SuperMAGIAGADataset
 from models.geoeffectivenet import NamedAccess
-from utils.data_utils import (get_iaga_data_as_list, get_iaga_max_stations,
-                              get_input_data)
+from utils.data_utils import (
+    get_iaga_data_as_list,
+    get_iaga_max_stations,
+    get_input_data,
+)
 from utils.helpers import dipole_tilt
 from utils.splitter import generate_indices
 

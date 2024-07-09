@@ -1,7 +1,11 @@
 import numpy as np
 import torch.optim
-from dataloader import (OMNIDataset, ShpericalHarmonicsDatasetBucketized,
-                        SuperMAGIAGADataset)
+from dataloader import (
+    OMNIDataset,
+    ShpericalHarmonicsDatasetBucketized,
+    SuperMAGIAGADataset,
+)
+
 # from models.geoeffectivenet import *
 from utils.data_utils import get_iaga_data_as_list, get_omni_data
 from utils.splitter import generate_indices

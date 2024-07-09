@@ -11,9 +11,13 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils import data
-from utils.data_utils import (get_iaga_data_as_list, get_omni_data,
-                              get_weimer_data_indices, get_wiemer_data,
-                              load_cached_data)
+from utils.data_utils import (
+    get_iaga_data_as_list,
+    get_omni_data,
+    get_weimer_data_indices,
+    get_wiemer_data,
+    load_cached_data,
+)
 
 torch.set_default_dtype(torch.float64)  # this is important else it will overflow
 

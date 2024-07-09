@@ -3,8 +3,11 @@ import pdb
 import numpy as np
 import pandas as pd
 import torch.optim
-from dataloader import (OMNIDataset, ShpericalHarmonicsDatasetBucketized,
-                        SuperMAGIAGADataset)
+from dataloader import (
+    OMNIDataset,
+    ShpericalHarmonicsDatasetBucketized,
+    SuperMAGIAGADataset,
+)
 from utils.data_utils import get_iaga_data_as_list, get_omni_data
 from utils.splitter import generate_indices
 
