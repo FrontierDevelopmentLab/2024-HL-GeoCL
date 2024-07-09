@@ -50,13 +50,13 @@ def SqSqEr(true, pred):
 
 def MAE_BH(a, b):
     return (torch.abs(a - b)).mean() + torch.abs(
-        (a ** 2).sum(dim=-1) - (b ** 2).sum(dim=-1)
+        (a**2).sum(dim=-1) - (b**2).sum(dim=-1)
     ).mean()
 
 
 def CompErr(true, pred):
     return ((true - pred) ** 2).mean(dim=(0, 1)).sum() + torch.abs(
-        (true ** 2).sum(dim=-1) - (pred ** 2).sum(dim=-1)
+        (true**2).sum(dim=-1) - (pred**2).sum(dim=-1)
     ).mean()
 
 

@@ -83,7 +83,11 @@ def spherical_plot_forecasting(
         _theta_spherical, _phi_spherical
     )
 
-    basis_grid = basis_matrix(nmax, grid_theta_spherical, grid_phi_spherical,)
+    basis_grid = basis_matrix(
+        nmax,
+        grid_theta_spherical,
+        grid_phi_spherical,
+    )
     basis_grid = torch.Tensor(basis_grid).double().squeeze(0).to(device)
 
     cm.get_cmap("viridis")

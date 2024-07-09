@@ -64,7 +64,7 @@ def subsol(datetimes):
     doy = np.float64(datetimes.dayofyear)
     # seconds since start of day:
     ut = np.float64(
-        datetimes.hour * 60.0 ** 2 + datetimes.minute * 60.0 + datetimes.second
+        datetimes.hour * 60.0**2 + datetimes.minute * 60.0 + datetimes.second
     )
 
     yr = year - 2000

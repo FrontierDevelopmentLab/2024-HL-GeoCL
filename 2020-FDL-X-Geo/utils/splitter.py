@@ -37,7 +37,7 @@ def get_sequences(df, length, lag):
 
 def weimerdatesgetter(base="../data_local/weimer/"):
     """
-        Wrapper to get us timesteps of Weimer predictions.
+    Wrapper to get us timesteps of Weimer predictions.
     """
     storm_inds = []
     weimerpaths = sorted(glob.glob(f"{base}*.h5"))

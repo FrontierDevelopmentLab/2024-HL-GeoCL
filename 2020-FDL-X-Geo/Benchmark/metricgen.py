@@ -119,7 +119,7 @@ def npR2(targ, pred):
     _y_sum = np.nansum(targ, -1)
     _y_sq_sum = np.nansum(np.power(targ, 2), -1)
     _num_examples = targ.shape[1]
-    return 1 - _sum_of_errors / (_y_sq_sum - (_y_sum ** 2) / _num_examples)
+    return 1 - _sum_of_errors / (_y_sq_sum - (_y_sum**2) / _num_examples)
 
 
 def Generate_metrics(targ, pred):

@@ -229,15 +229,15 @@ def get_weimer_data_indices(
     targets, lag, past_omni_length, future_length, sg_data, weimer_years
 ):
     """
-        Function to return the indices corresponding to storm times.
-        We have 3 storms for Weimer data: 2011, 2015 and 2017. These 3 will be in weimer/ folder.
-        This code takes in the already loaded supermag measurements, and finds the correct times of
-        weimer predictions. These form our test set.
+    Function to return the indices corresponding to storm times.
+    We have 3 storms for Weimer data: 2011, 2015 and 2017. These 3 will be in weimer/ folder.
+    This code takes in the already loaded supermag measurements, and finds the correct times of
+    weimer predictions. These form our test set.
 
-        Code needs either a single year as a string, or a list of years for generating the indices.
+    Code needs either a single year as a string, or a list of years for generating the indices.
 
-        USE THIS CODE TO REMOVE THE INDICES CORRESPONDING TO WEIMER DATA (IF ANY) FROM THE TRAINING
-        SET.
+    USE THIS CODE TO REMOVE THE INDICES CORRESPONDING TO WEIMER DATA (IF ANY) FROM THE TRAINING
+    SET.
     """
     if isinstance(weimer_years, str):
         weimer_years = [weimer_years]
@@ -278,8 +278,8 @@ def get_wiemer_data(
     wyear,
 ):
     """
-        Function to load the OMNI and SuperMAG measurements corresponding to Weimer storm time.
-        NOTE:::::!!This function actually load the data, and not just returns the indices.
+    Function to load the OMNI and SuperMAG measurements corresponding to Weimer storm time.
+    NOTE:::::!!This function actually load the data, and not just returns the indices.
     """
 
     if isinstance(wyear, str):
