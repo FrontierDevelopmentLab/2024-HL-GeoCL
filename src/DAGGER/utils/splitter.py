@@ -21,7 +21,7 @@ def get_sequences(df, length, lag):
         .apply(lambda x: x[: len(x) - length - lag]["index"])
         .reset_index(drop=True)
         .values.ravel()
-    )  # features (with ttime hist)
+    )  # features (with time hist)
     t = (
         _df.groupby(["cluster"])
         .apply(lambda x: x[length + lag :]["index"])
@@ -115,7 +115,12 @@ def generate_indices(
     # test if it maches omni
     for year in pd.unique(df["dates"].dt.year):
         print(f"testing {year}")
-        omni = get_input_data(omni_path, year=f"{year}")
+        omni = get_input_data(
+            omni_path,
+            year=f"{year}",
+            indices_path="data_local/supermag_indices/",
+            indices_to_use=[],
+        )
         assert len(df.loc[df["dates"].dt.year == year]) == len(omni)
     print("testing done")
 

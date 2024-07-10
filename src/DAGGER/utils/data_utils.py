@@ -10,7 +10,7 @@ import tqdm
 from astropy.time import Time
 
 sys.path.append("../")
-from dataloader import (InputDataset, ShpericalHarmonicsDataset) # noqa: E402
+from dataloader import InputDataset, ShpericalHarmonicsDataset  # noqa: E402
 
 
 def persist_to_file(file_name):
@@ -73,7 +73,9 @@ def get_input_data(
     indices_df.reset_index(inplace=True, drop=True)
     if len(indices_df.columns) == 0:
         print("No geomagnetic indices specified. Only upstream data are being loaded.")
-    combined_df = pd.concat([omni_df, indices_df], axis=1, ignore_index=True)  # If no geomagnetic indices, concats an empty dataframe
+    combined_df = pd.concat(
+        [omni_df, indices_df], axis=1, ignore_index=True
+    )  # If no geomagnetic indices, concats an empty dataframe
     combined_df.index = omni_timestamps
     del omni_df, indices_df, indices_timestamps, omni_timestamps
     return combined_df
