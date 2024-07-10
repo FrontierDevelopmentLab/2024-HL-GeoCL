@@ -17,4 +17,7 @@ pyproj
 tables
 astropy==6.0.0
 zarr
-
+black 
+isort 
+flake8 
+black[jupyter]
