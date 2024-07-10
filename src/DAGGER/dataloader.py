@@ -398,7 +398,7 @@ class ShpericalHarmonicsDatasetBucketized(data.Dataset):
             )
             del po
             future_supermag = self.supermag_data[sg_ind[1], ...][None, :]
-            future_supermag_reg = self.supermag_reg[sg_ind[1], ...][None, :]
+            # future_supermag_reg = self.supermag_reg[sg_ind[1], ...][None, :]
             future_dates = np.array([self.dates[sg_ind[1]]])[None, :]
             sm_future = NamedAccess(future_supermag, self.supermag_features)
             _mlt = 90.0 - sm_future["MLT"] / 24.0 * 360.0
