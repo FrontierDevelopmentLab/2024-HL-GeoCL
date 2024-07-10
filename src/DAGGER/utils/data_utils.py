@@ -10,7 +10,7 @@ import tqdm
 from astropy.time import Time
 
 sys.path.append("../")
-from dataloader import ShpericalHarmonicsDataset  # noqa: E402
+from dataloader import (InputDataset, ShpericalHarmonicsDataset) # noqa: E402
 
 
 def persist_to_file(file_name):
@@ -59,17 +59,23 @@ def get_input_data(
         )
     else:
         raise TypeError("year must be either a list of years, or a single year.")
-    timestamps = omni_df.index
+    indices_timestamps = pd.to_datetime(indices_df.index)
+    omni_timestamps = omni_df.index
     omni_df.reset_index(inplace=True, drop=True)
+    indices_df = indices_df[indices_to_use]
+    indices_df.reset_index(inplace=True, drop=False)
+    indices_reduced_rows = []
+    for t in tqdm.trange(len(indices_df), desc="Matching input data indices"):
+        if indices_df["Date_UTC"].iloc[t] in omni_timestamps:
+            indices_reduced_rows.append(t)
+    indices_df.drop(columns=["Date_UTC"], inplace=True)
+    indices_df = indices_df.iloc[indices_reduced_rows]
     indices_df.reset_index(inplace=True, drop=True)
     if len(indices_df.columns) == 0:
         print("No geomagnetic indices specified. Only upstream data are being loaded.")
-    indices_df = indices_df[indices_to_use]
-    combined_df = pd.concat(
-        [omni_df, indices_df], axis=1
-    )  # If no indices, concats an empty dataframe
-    combined_df.index = timestamps
-    del omni_df, indices_df
+    combined_df = pd.concat([omni_df, indices_df], axis=1, ignore_index=True)  # If no geomagnetic indices, concats an empty dataframe
+    combined_df.index = omni_timestamps
+    del omni_df, indices_df, indices_timestamps, omni_timestamps
     return combined_df
 
 

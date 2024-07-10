@@ -24,7 +24,6 @@ class NeuralRNNWiemer(BaseModel):
         omni_resolution,
         nmax,
         targets_idx,
-        extra_input_features,
         **kwargs
     ):
         super(NeuralRNNWiemer, self).__init__(**kwargs)
@@ -123,8 +122,8 @@ class NeuralRNNWiemer(BaseModel):
         features.append(past_omni["temperature"])
 
         # Add things like geomagnetic indices to the input feature list
-        for extra_feature in self.extra_input_features:
-            features.append(past_omni[extra_feature])
+        # for extra_feature in self.extra_input_features:
+        #     features.append(past_omni[extra_feature])
 
         features = torch.stack(features, -1)
 

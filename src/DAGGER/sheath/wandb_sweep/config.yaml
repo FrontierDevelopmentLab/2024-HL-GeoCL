@@ -1,0 +1,37 @@
+program: main_train_xgboost.py
+method: bayes
+metric:
+  name: val_correl
+  goal: maximize
+parameters:
+  eta:
+      distribution: log_uniform_values
+      min: 1e-5
+      max: 0.5
+  max_depth:
+    distribution: int_uniform
+    min: 100
+    max: 20000
+  subsample:
+    distribution: categorical
+    values:
+      - 0.2
+      - 0.5
+      - 0.8
+      - 1.0
+  reg_alpha:
+    distribution: log_uniform_values
+    min: 1e-7
+    max: 1.0
+  early_stopping_rounds:
+    distribution: categorical
+    values:
+      - 10
+      - 30
+      - 50
+      - 80
+  loss:
+    distribution: categorical
+    values:
+      - 'reg:pseudohubererror'
+      - 'reg:squarederror'

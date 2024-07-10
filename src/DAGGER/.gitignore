@@ -154,3 +154,5 @@ MAE*/
 Overfit*/
 tmp/
 full_data_panos/
+!cme/
+sheath/sheath_data/*
