@@ -5,10 +5,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import tqdm
-from dataloader import (
-    InputDataset,
-    SuperMAGIAGADataset,
-)
+from dataloader import InputDataset, SuperMAGIAGADataset
 from models.geoeffectivenet import NamedAccess
 from utils.data_utils import (
     get_iaga_data_as_list,

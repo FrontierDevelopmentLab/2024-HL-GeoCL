@@ -2,10 +2,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from utils.data_utils import (
-    get_iaga_data_as_list,
-    get_input_data,
-)
+from utils.data_utils import get_iaga_data_as_list, get_input_data
 from utils.splitter import get_sequences
 
 dataset_2015 = dict(np.load("2015_supermag_omni_data.npz"))

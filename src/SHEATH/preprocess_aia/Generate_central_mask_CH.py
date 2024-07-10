@@ -10,7 +10,10 @@ import zarr
 from tqdm import tqdm
 
 sys.path.append("../")
-from utils.preprocessing import GetMorphologicalStructure, mask_from_aia_193  # noqa: E402
+from utils.preprocessing import (  # noqa: E402
+    GetMorphologicalStructure,
+    mask_from_aia_193,
+)
 
 
 # ==== Define a wrapper on top.
