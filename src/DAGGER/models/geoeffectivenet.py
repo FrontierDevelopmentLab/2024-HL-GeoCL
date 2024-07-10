@@ -24,6 +24,7 @@ class NeuralRNNWiemer(BaseModel):
         omni_resolution,
         nmax,
         targets_idx,
+        extra_input_features,
         **kwargs
     ):
         super(NeuralRNNWiemer, self).__init__(**kwargs)

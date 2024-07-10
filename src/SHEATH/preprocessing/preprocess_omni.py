@@ -2,10 +2,9 @@ import datetime
 
 import numpy as np
 import pandas as pd
-from astropy.constants import iau2012 as const
 
 """
-    Script to preprocess OMNI data. 
+    Script to preprocess OMNI data.
     1. OMNI data has dates in format YEAR - No.of days from Jan 1 - Hour - Minutes. This must be converted to a correct datetime variable.
     2. OMNI data contains missing values as 9999.0, 999.9 and so on. These must be replaced with actual np.nan.
 

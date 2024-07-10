@@ -10,7 +10,7 @@ import tqdm
 from astropy.time import Time
 
 sys.path.append("../")
-from dataloader import InputDataset, ShpericalHarmonicsDataset  # noqa: E402
+from dataloader import ShpericalHarmonicsDataset  # noqa: E402
 
 
 def persist_to_file(file_name):

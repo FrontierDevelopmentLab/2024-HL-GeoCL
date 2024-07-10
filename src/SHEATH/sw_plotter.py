@@ -1,9 +1,6 @@
-from pickle import load
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 sw = pd.read_hdf("../data_local/omni/sheath_sw_data.h5", key="2017")
 

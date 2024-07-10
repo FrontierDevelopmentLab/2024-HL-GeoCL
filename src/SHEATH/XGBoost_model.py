@@ -1,22 +1,15 @@
-import os
 import time
 from glob import glob
 from pathlib import Path
-from pickle import dump, load
+from pickle import dump
 
-import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn as nn
 import xgboost as xgb
-from astropy.constants import iau2012 as const
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from torch.utils import data
-from tqdm import tqdm
 
 # Hyperparameters and other setup info
 DATAPATH = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/"
@@ -42,7 +35,7 @@ if __name__ == "__main__":
     while True:
         # Be trapped here till the mask file is actually being generated.
         my_file = Path(
-            f"/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_summed_2012.npy"
+            "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_aia_data/aia_subsamp_masked_summed_2012.npy"
         )
         if my_file.is_file():
             break

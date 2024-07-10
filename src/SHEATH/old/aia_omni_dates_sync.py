@@ -1,6 +1,6 @@
 """
     This script syncs AIA and OMNI dates. We have the training and testing sets defined from OMNI data. Hence, we will map AIA dates to OMNI dates first.
-    Then, we take only those OMNI time points which are closest to AIA time points, since the cadence is lower. And then from that set, we will need to split 
+    Then, we take only those OMNI time points which are closest to AIA time points, since the cadence is lower. And then from that set, we will need to split
     the data into train-test-val sets.
 """
 

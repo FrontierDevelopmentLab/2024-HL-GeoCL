@@ -1,13 +1,7 @@
-import argparse
-import os
-
 import gcsfs
-import numpy as np
 import pandas as pd
-import torch
 import xgboost as xgb
 import zarr
-from tqdm import tqdm
 from utils.preprocessing import Preprocessor_CH_xgb
 
 
@@ -88,9 +82,9 @@ class CloudFetcher:
             year = int(time.year)
             try:
                 aia_image[wavelength] = self.aia_data[year][wavelength][idx, :, :]
-            except:
+            except Exception:
                 print(idx, wavelength)
-                Break
+                break
         return aia_image
 
     def load_hmi_image(self, time, idx):

@@ -1,8 +1,7 @@
 import os
 from glob import glob
-from pickle import dump, load
+from pickle import dump
 
-import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,7 +9,6 @@ import torch
 import torch.nn as nn
 from astropy.constants import iau2012 as const
 from SHEATH_module import HSENN
-from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils import data
 from tqdm import tqdm

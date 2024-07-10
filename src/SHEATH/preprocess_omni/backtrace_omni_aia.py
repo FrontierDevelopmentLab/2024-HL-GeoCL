@@ -1,12 +1,10 @@
 import sys
-from glob import glob
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 sys.path.append("../")
-from utils.preprocessing import backtrace_spiral_date, get_backtrace_date
+from utils.preprocessing import get_backtrace_date  # noqa: E402
 
 """
     For the original OMNI dataset, we backtrace each time stamp back to AIA data. This is BEFORE TRAIN-TEST-VAL split.

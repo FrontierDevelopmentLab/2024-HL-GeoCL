@@ -1,8 +1,5 @@
-import datetime
-
 import numpy as np
 import pandas as pd
-from astropy.constants import iau2012 as const
 
 start = 2020
 end = 2023
@@ -25,4 +22,4 @@ print("Max values of different variables")
 _ = [print(np.nanmax(Data[v].values)) for v in Data.columns]
 
 Data = Data.dropna()
-Data.to_hdf(f"omni_preprocess_complete.h5", key="omni", mode="w")
+Data.to_hdf("omni_preprocess_complete.h5", key="omni", mode="w")

@@ -1,7 +1,8 @@
 import datetime as dt
-
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-from SHEATH_atomic_predict import *
+from inference.SHEATH_atomic_predict import CloudFetcher
 from tqdm import tqdm
 
 image_indices = pd.read_csv("aligndata_2010_2020_AIA_HMI.csv")

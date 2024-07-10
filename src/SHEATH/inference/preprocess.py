@@ -1,9 +1,4 @@
-import sys
-
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-import xgboost as xgb
 from sklearn.mixture import GaussianMixture as GMM
 
 

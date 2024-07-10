@@ -1,23 +1,12 @@
-import os
 from glob import glob
-from pickle import dump, load
-
-import astropy.units as u
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn as nn
 import wandb
 import xgboost as xgb
 import yaml
-from astropy.constants import iau2012 as const
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from torch.utils import data
-from tqdm import tqdm
-from wandb.xgboost import WandbCallback
 
 DATAPATH = "/home/jupyter/Vishal/clean_fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/"
 num_rounds = 20000
@@ -52,7 +41,6 @@ def train():
 
     # Load AIA times
     list_aia = sorted(glob(f"{DATAPATH}sheath_aia_data/AIA193_times_*.npy"))
-    aia_times = np.concatenate([np.load(a) for a in list_aia])
 
     # Load OMNI data and dates
     omni_path = "/home/jupyter/Vishal/omni/omni_preprocess_1hour_full.h5"

@@ -1,7 +1,4 @@
-import datetime
 import os
-import sys
-from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -18,7 +15,7 @@ N = len(dates)
 print(f"Total wind measurements: {N}")
 inds = np.arange(N).astype(int)
 
-##--First, some of the pre-defined dates will go into testing set. --
+# First, some of the pre-defined dates will go into testing set. --
 # NOTE: These timestamps are present in the data, check `Check_train_test_val_split.ipynb`
 
 # 4 Aug 2011 storm

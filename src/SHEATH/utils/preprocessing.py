@@ -1,10 +1,5 @@
-import sys
-
-import astropy.units as u
-import cv2
-import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
-import xgboost as xgb
 from astropy.constants import iau2012 as const
 from sklearn.mixture import GaussianMixture as GMM
 from utils.torch_utils import _float
@@ -84,7 +79,6 @@ class Preprocessor_CH:
         self.n_size = n_size
 
     def preprocess(self, aia_data, hmi_data, aia_wavelengths, hmi_components):
-        ind_193 = aia_wavelengths.index("193A")
         n_size = self.n_size
         npix = self.npix
         mask = get_mask(n_size=n_size)[

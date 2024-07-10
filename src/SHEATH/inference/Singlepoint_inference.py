@@ -1,17 +1,12 @@
-import argparse
 import datetime as dt
-import os
 import pickle
+import pdb
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import torch
 import xgboost as xgb
-from preprocessing import Preprocessor_CH_xgb
 from SHEATH_atomic_predict import AtomicSamurai, CloudFetcher
-from SHEATH_module import HSENN, SHEATH
-from sklearn.preprocessing import StandardScaler
+from preprocessings import Preprocessor_CH
 from tqdm import tqdm
 
 # -------
@@ -28,7 +23,6 @@ scaler_omni = pickle.load(open("../logs/scaler_y.scaler", "rb"))
 
 # Define the preprocessing module
 preprocessor = Preprocessor_CH(npix=17, n_size=512, ch_mask=True, scaler_aia=scaler_aia)
-
 
 # Define the NN model
 HSE_model = xgb.Booster({"nthread": -1})  # init model
@@ -54,23 +48,22 @@ predictions = []
 for timestamp in tqdm(image_indices.index, desc="Performing inference"):
     try:
         idxs = image_indices.loc[timestamp]
-    except:
-        import pdb
-
+    except Exception:
         pdb.set_trace()
+
     sw_values = atom.atomic_inference(
         aia_timestamp=timestamp,
         aia_idx=idxs[:-1],
         hmi_timestamp=timestamp,
         hmi_idx=idxs[-1],
-        scaler_aia=scaler_X,
-        scaler_omni=scaler_y,
+        scaler_aia=scaler_aia,
+        scaler_omni=scaler_omni,
     )
     predictions.append(pd.DataFrame(sw_values))
 
 predictions = pd.concat(predictions, axis=0)
 
-predictions = scaler_y.inverse_transform(predictions)
+predictions = scaler_omni.inverse_transform(predictions)
 
 predictions = pd.DataFrame(
     predictions, columns=["bx", "by", "bz", "vx", "number_density", "temperature"]

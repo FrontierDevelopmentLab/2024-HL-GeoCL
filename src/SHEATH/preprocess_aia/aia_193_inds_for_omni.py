@@ -1,10 +1,9 @@
 """
     This script syncs AIA and OMNI dates. We have the training and testing sets defined from OMNI data. Hence, we will map AIA dates to OMNI dates first.
-    We will select the AIA 193 data and which are closest to the backtraced OMNI data. This must be done for every year separately [for now!!]. And then from that set, we will need to split 
+    We will select the AIA 193 data and which are closest to the backtraced OMNI data. This must be done for every year separately [for now!!]. And then from that set, we will need to split
     the data into train-test-val sets.
 """
 
-from glob import glob
 
 import numpy as np
 import pandas as pd

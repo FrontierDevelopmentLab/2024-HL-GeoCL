@@ -1,8 +1,6 @@
-import datetime
-
 import numpy as np
 import pandas as pd
-from astropy.constants import iau2012 as const
+import pdb
 
 """
 
@@ -11,8 +9,8 @@ from astropy.constants import iau2012 as const
 
 """
 
-data_path = f"omni2_1hour_full.lst"
-fmt_path = f"omni2_1hour_full.fmt"
+data_path = "omni2_1hour_full.lst"
+fmt_path = "omni2_1hour_full.fmt"
 
 # Read OMNI formatter
 tmp = pd.read_fwf(fmt_path, sep=" ", engine="python", header=1).values[:, 0]
@@ -44,7 +42,6 @@ Data.replace(
     },
     inplace=True,
 )
-import pdb
 
 pdb.set_trace()
 
@@ -61,4 +58,4 @@ end = pd.to_datetime("2020-12-31")
 mask = (Data["Date"] > start) & (Data["Date"] <= end)
 Data = Data.loc[mask]
 
-Data.to_hdf(f"omni_preprocess_1hour_full.h5", key="omni", mode="w")
+Data.to_hdf("omni_preprocess_1hour_full.h5", key="omni", mode="w")

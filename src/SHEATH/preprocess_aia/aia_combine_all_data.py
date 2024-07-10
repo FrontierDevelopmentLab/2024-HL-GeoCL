@@ -1,23 +1,19 @@
-import os
 import sys
 import time
 from glob import glob
 from pathlib import Path
 
-import dask.array as da
-import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
 import zarr
-from astropy.time import Time
 from tqdm import tqdm
 
 sys.path.append("../")
-from utils.hmi_utils import convert_hmi_time_utc
+from utils.hmi_utils import convert_hmi_time_utc  # noqa: E402
 
 """
-    We will need to map the OMNI dates to closest AIA dates. This allows us to form tuples of (AIA,swind). 
-    Since there are many datapoints, we will use data at a lower cadence. 
+    We will need to map the OMNI dates to closest AIA dates. This allows us to form tuples of (AIA,swind).
+    Since there are many datapoints, we will use data at a lower cadence.
 """
 years = np.arange(2010, 2021).astype(int)
 years = [2012]

@@ -1,22 +1,13 @@
-import os
 from glob import glob
-from pickle import dump, load
+from pickle import dump
 
-import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
-import optuna
 import pandas as pd
-import torch
-import torch.nn as nn
 import xgboost as xgb
 from astropy.constants import iau2012 as const
-from SHEATH_module import HSENN
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from torch.utils import data
-from tqdm import tqdm
-from utils.dataloader_torch import Data
 
 # Hyperparameters and other setup info
 DATAPATH = "/home/jupyter/Vishal/fdlx/2023-FDL-X-Geo/2020-FDL-X-Geo/sheath/sheath_data/"

@@ -1,8 +1,6 @@
 import os
 from glob import glob
 
-import dask.array as da
-import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
 import zarr
@@ -13,9 +11,9 @@ from tqdm import tqdm
     To pull the data, perform:
     gsutil -m cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr ../sheath_data/sdoml_data/
     gsutil -m cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr ../sheath_data/sdoml_data/
-    
+
     And you will need opencv, zarr, dask, skimage for runnign this code.
-    
+
     CONSISTENCY of NPIX expected with Generate_central_mask_CH.py
 """
 sdomlsmall = zarr.open(

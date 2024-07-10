@@ -2,13 +2,9 @@
  In this script we define functions and modules of sheath which will perform the preprocessing for SHEATH.
 """
 
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils import data
-from tqdm import tqdm
-from utils.torch_utils import _float
 
 
 class HSENN(nn.Module):

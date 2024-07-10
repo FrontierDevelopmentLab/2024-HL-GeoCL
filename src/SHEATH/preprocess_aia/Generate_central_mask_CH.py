@@ -4,16 +4,13 @@ import os
 import sys
 from glob import glob
 
-import dask.array as da
-import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
 import zarr
-from astropy.time import Time
 from tqdm import tqdm
 
 sys.path.append("../")
-from utils.preprocessing import GetMorphologicalStructure, mask_from_aia_193
+from utils.preprocessing import GetMorphologicalStructure, mask_from_aia_193  # noqa: E402
 
 
 # ==== Define a wrapper on top.
@@ -26,7 +23,7 @@ def Get_CH_AR(og):
     To pull the data, perform:
     gsutil -m cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_small.zarr ../sheath_data/sdoml_data/
     gsutil -m cp -r gs://us-fdlx-landing/fdl-sdoml-v2/sdomlv2_hmi_small.zarr ../sheath_data/sdoml_data/
-    
+
     And you will need opencv, zarr, dask, skimage for runnign this code.
 """
 
@@ -58,8 +55,8 @@ for path in tqdm(aia193_paths):
     year = path.split("/")[-3]
     sdomlsmall = zarr.open(path)
     """
-        We do not need the full time cadence of SDOML. Our model can work with 1 hour cadence 
-        for this work. While inference we can perform on any minute data, since we do not have 
+        We do not need the full time cadence of SDOML. Our model can work with 1 hour cadence
+        for this work. While inference we can perform on any minute data, since we do not have
         temporal dependence.
     """
     # Get time stamps

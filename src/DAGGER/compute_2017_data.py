@@ -1,15 +1,10 @@
-import pickle
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from utils.data_utils import (
-    get_iaga_data,
     get_iaga_data_as_list,
-    get_iaga_max_stations,
     get_input_data,
-    get_wiemer_data,
-    load_cached_data,
 )
 from utils.splitter import get_sequences
 

@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from torch.utils import data
 from utils.torch_utils import _float
 
