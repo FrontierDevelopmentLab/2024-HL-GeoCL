@@ -1,7 +1,7 @@
 """
-This module provide an API to download various near real time data from various
-observatories and sources using their end point API. It will also provide the choice to the user to save
-the data in specific format.
+This module provides an API to download various near real-time data
+from multiple observatories and sources using their endpoint APIs.
+It also allows the user to choose to save the data in a specific format.
 """
 
 import datetime
@@ -171,10 +171,10 @@ class NRTDataDownloader:
         pass
 
     def get_DSCOVRdata(
-        self,
-        start_date: datetime.datetime = None,
-        end_date: datetime.datetime = None,
-        outformat=None,
+            self,
+            start_date: datetime.datetime = None,
+            end_date: datetime.datetime = None,
+            outformat=None,
     ) -> pd.DataFrame | None:
         """
         This method will check for exiting DSCOVR data and download rest of NRT data.
@@ -220,8 +220,8 @@ class NRTDataDownloader:
         # Get all the data in list of data frames
         for filename in filenames:
             ind = filename.find("_s")
-            yr = filename[ind + 2 : ind + 6]
-            mo = filename[ind + 6 : ind + 8]
+            yr = filename[ind + 2: ind + 6]
+            mo = filename[ind + 6: ind + 8]
             downlaod_url = base_url.format(yr, mo, filename)
             if filename.startswith("oe_f1m_dscovr_"):
                 dflistf1m.append(downloader.download(downlaod_url, data_type="f1m"))
