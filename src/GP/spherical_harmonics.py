@@ -6,7 +6,7 @@ import scipy.special
 import numpy as np
 
 
-def get_spherical_harmonic_basis_evaluation(latitude, longitude, ell=10):
+def get_spherical_harmonic_basis_matrix(latitude, longitude, ell=10):
     """
     A function to construct the spherical harmonic evaluation at GSE locations (latitude, longitude)
 
@@ -14,23 +14,25 @@ def get_spherical_harmonic_basis_evaluation(latitude, longitude, ell=10):
     ----------
     latitude: float or na
         latitude location in radians [0, pi]
-    longitude: float
+    longitude: ndarray
         longitude location in radians [0, 2pi]
-    ell: int
+    ell: ndarray
         integer of the higher order of spherical harmonic fit
 
     Returns
     -------
-    Y: array
+    Y: ndarray matrix dimensions = ((ell+1)^2, N)
         [Y_{0 ,0}, Y_{-1, 1}, Y_{0, 1}, Y_{1, 1} ... Y_{ell, ell}]
     """
+    # number of sample points
+    N = len(latitude)
     # running index
     ii = 0
     # vector with all basis functions evaluated at the [latitude, longitude] location
-    Y = np.zeros((ell**2 + 2*ell + 1))
+    Y = np.zeros((N, ell**2 + 2*ell + 1))
     for n in range(0, ell+1):
         for m in range(-n, n+1):
-            Y[ii] = scipy.special.sph_harm(m, n, longitude, latitude).real
+            Y[:, ii] = scipy.special.sph_harm(m, n, longitude, latitude).real
             # update running index
             ii += 1
     return Y
@@ -91,3 +93,4 @@ def construct_global_view(coeff, longitude, latitude):
             # update running index
             ii += 1
     return G
+
