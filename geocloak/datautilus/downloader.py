@@ -4,16 +4,17 @@ observatories and sources using their end point API. It will also provide the ch
 the data in specific format.
 """
 
-import os
 import datetime
 import gzip
+import os
+import urllib
 from io import BytesIO
-import numpy as np
+
 import netCDF4 as nc
+import numpy as np
 import pandas as pd
 import requests
-import re
-import urllib
+
 from geocloak.configs.nrtdata import dscovr_f1m_cols, dscovr_m1m_cols
 
 
@@ -240,7 +241,7 @@ class NRTDataDownloader:
         assert filtered_df_f1m.shape[0] == filtered_df_m1m.shape[0]
         df = filtered_df_f1m.join(filtered_df_m1m, how="inner")
 
-        return filtered_df_m1m, filtered_df_f1m
+        return df
 
     def get_SuperMAGdata(self, baseurl: str = None, outformat=None) -> None:
         """
