@@ -171,10 +171,10 @@ class NRTDataDownloader:
         pass
 
     def get_DSCOVRdata(
-            self,
-            start_date: datetime.datetime = None,
-            end_date: datetime.datetime = None,
-            outformat=None,
+        self,
+        start_date: datetime.datetime = None,
+        end_date: datetime.datetime = None,
+        outformat=None,
     ) -> pd.DataFrame | None:
         """
         This method will check for exiting DSCOVR data and download rest of NRT data.
@@ -220,8 +220,8 @@ class NRTDataDownloader:
         # Get all the data in list of data frames
         for filename in filenames:
             ind = filename.find("_s")
-            yr = filename[ind + 2: ind + 6]
-            mo = filename[ind + 6: ind + 8]
+            yr = filename[ind + 2 : ind + 6]
+            mo = filename[ind + 6 : ind + 8]
             downlaod_url = base_url.format(yr, mo, filename)
             if filename.startswith("oe_f1m_dscovr_"):
                 dflistf1m.append(downloader.download(downlaod_url, data_type="f1m"))
