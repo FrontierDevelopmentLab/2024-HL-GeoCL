@@ -3,9 +3,9 @@ This module provides an API to download various exiting data from the
 from multiple observatories and sources using their endpoint APIs.
 """
 
-import logging
 import datetime
 import gzip
+import logging
 import os
 import urllib
 from io import BytesIO
@@ -13,8 +13,8 @@ from io import BytesIO
 import netCDF4 as nc
 import numpy as np
 import pandas as pd
-import tqdm
 import requests
+import tqdm
 
 from geocloak.configs.datainfo import dscovr_f1m_cols, dscovr_m1m_cols
 
