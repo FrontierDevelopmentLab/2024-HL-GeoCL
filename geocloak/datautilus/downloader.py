@@ -3,21 +3,20 @@ This module provides an API to download various exiting data from the
 from multiple observatories and sources using their endpoint APIs.
 """
 
-import logging
 import datetime
 import gzip
+import logging
 import os
-import urllib
 import re
+import urllib
 from io import BytesIO
 
 import netCDF4 as nc
 import numpy as np
 import pandas as pd
-import tqdm
 import requests
+import tqdm
 from bs4 import BeautifulSoup
-
 from geocloak.configs.datainfo import dscovr_f1m_cols, dscovr_m1m_cols
 
 log = logging.getLogger(__name__)
@@ -64,8 +63,8 @@ def _download_dscvr(file_url: str, **kwargs) -> pd.DataFrame | None:
         df = pd.DataFrame(data_list).transpose()
         df.columns = cols
         return df
-    except Exception as e:
-        log.error(f"Unable to download the data from DSCVR website.")
+    except FileNotFoundError:
+        log.error("Unable to download the data from DSCVR website.")
         return None
 
 
@@ -97,8 +96,8 @@ def _download_ace(url: str, datatype: str = "mag") -> pd.DataFrame | None:
     # Read data by skiping header rows
     try:
         df = pd.read_table(url, sep=r"\s+", skiprows=indices)
-    except FileNotFoundError as e:
-        log.error(f"Unable to download the data from ACE.")
+    except FileNotFoundError:
+        log.error("Unable to download the data from ACE.")
         df = None
 
     names = df.columns[1:]

@@ -3,10 +3,10 @@ Python Module to download the NRT data from NOAA website.
 """
 
 import logging
-import pandas as pd
 import os
 import pathlib
 
+import pandas as pd
 from geocloak.configs.datainfo import dscovr_f1m_cols, dscovr_m1m_cols
 
 this_dir = pathlib.Path(__file__).parent.absolute()
