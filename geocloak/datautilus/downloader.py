@@ -17,7 +17,7 @@ import pandas as pd
 import requests
 import tqdm
 from bs4 import BeautifulSoup
-from geocloak.configs.datainfo import dscovr_f1m_cols, dscovr_m1m_cols, column_names
+from geocloak.configs.datainfo import column_names, dscovr_f1m_cols, dscovr_m1m_cols
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -68,8 +68,8 @@ def _download_dscvr(file_url: str, **kwargs) -> pd.DataFrame | None:
         # Give column names
         df.columns = cols
         return df
-    except FileNotFoundError:
-        log.error("Unable to download the data from DSCVR website.")
+    except Exception as e:
+        log.error("Unable to download the data from DSCVR website.{}".format(e))
         return None
 
 
@@ -381,7 +381,8 @@ class DataDownloader:
             log.info(f"Saved ACE data to {os.path.join(self.outpath, filename)}")
 
     def omniweb(self, datafile: str, fmtfile: str, **kwargs) -> pd.DataFrame | None:
-        """To transform omni data into formated data frame and save it as hdf5 file.
+        """To transform omni data into formated data frame and save it
+         as hdf5 for each year file.
 
         Parameters
         ----------
@@ -392,22 +393,41 @@ class DataDownloader:
 
         Returns
         ----------
-
+        data: pd.DataFrame | None
+            The data frame containg all the data from the given file.
         """
+        # New column name dictionary to update names
+        cols = {
+            "Scalar B, nT": "Bt",
+            "BX, nT (GSE, GSM)": "Bx",
+            "BY, nT (GSM)": "By",
+            "BZ, nT (GSM)": "Bz",
+            "SW Plasma Temperature, K": "Temperature",
+            "SW Proton Density, N/cm^3": "Density",
+            "SW Plasma Speed, km/s": "Speed",
+        }
+        # Read formate file to get the list of available variables.
+
         fmt = pd.read_fwf(fmtfile, sep=" ", engine="python", header=1).values[:, 0]
 
         heads = [" ".join(t.split(" ")[1:]) for t in fmt]
+
+        # Read data from lst file
         data = pd.read_csv(
             datafile, sep="\s{1,}", engine="python", header=None, names=heads
         )
-        data["Date"] = data.apply(
+
+        # Convert day of year to ISO datetime format
+        data["Time"] = data.apply(
             lambda row: datetime.datetime(int(row.YEAR), 1, 1, int(row.Hour), 0)
             + datetime.timedelta(row.DOY - 1),
             axis=1,
         )
+
+        # Ohh, get rid of some of the coumns
         data.drop(["YEAR", "DOY", "Hour"], inplace=True, axis=1)
-        data = data[["Date"] + [col for col in data.columns if col != "Date"]]
-        data.set_index("Date", inplace=True)
+        data = data[["Time"] + [col for col in data.columns if col != "Time"]]
+        data.set_index("Time", inplace=True)
 
         # Convert all the 9999s to nan
         log.info("Replacing default fill values with NaN")
@@ -424,11 +444,18 @@ class DataDownloader:
             inplace=True,
         )
 
-        # Save data in HDF5 file
-        tstart = data.index[0].strftime("%Y%m%d")
-        tend = data.index[-1].strftime("%Y%m%d")
-        filename = f"omniweb_{tstart}_{tend}.h5"
-        data.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
-        log.info(f"Saved OMNI data to {os.path.join(self.outpath, filename)}")
+        # Format the data as other data sources (ACE, DSCOVR)
+        data.index = pd.to_datetime(data.index)
+        data.rename(columns=cols, inplace=True)
+        data = data[["Speed", "Density", "Temperature", "Bt", "Bx", "By", "Bz"]]
+
+        # Save yearly data to hdf panda data frames
+        for year in (pbar := tqdm.tqdm(np.unique(data.index.year))):
+            pbar.set_description(str(year))
+            _data = data.loc[str(year)].copy()
+            # Save data in HDF5 file
+            filename = f"omniweb_formatted_{year}.h5"
+            _data.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
+            log.info(f"Saved OMNI data to {os.path.join(self.outpath, filename)}")
 
         return data
