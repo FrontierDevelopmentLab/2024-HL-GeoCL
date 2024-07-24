@@ -22,30 +22,34 @@ sdodata = ["AIA.zarr", "HMI.zarr"]
 out_dir = "/home/bjha/data/geocloak/formatted_data/sdo"
 
 # List of years
-years=["2011", "2012"]
+years = ["2013", "2014", "2015"]
 
 # AIA Data
-dataaia = zarr.open("/mnt/sdoml/"+sdodata[0])
+dataaia = zarr.open("/mnt/sdoml/" + sdodata[0])
 
 # HMI data
-datahmi = zarr.open("/mnt/sdoml/"+sdodata[1])
+datahmi = zarr.open("/mnt/sdoml/" + sdodata[1])
 
 for year in years:
 
-    # AIA 193 reference data
-    print(f"Generating Reference timestamps from AIA193 for {year}.")
-    print("%"*60)
-    aia193 = dataaia[f"{year}/193A"]
-    aia193times = Time(np.sort(aia193.attrs["T_OBS"]))
-    allind = {"Times": aia193times.fits}
-    alltimes = {"Times": aia193times.fits}
+    # HMI as reference data
+    print(f"Generating Reference timestamps from HMI for {year}.")
+    print("%" * 60)
+    hmi720 = datahmi[f"{year}/Bz"]
+    hmi720times = pd.to_datetime(
+        hmi720.attrs["T_OBS"], format="%Y.%m.%d_%H:%M:%S.%f_TAI"
+    )
+    hmi720times = Time(np.sort(hmi720times))
+
+    allind = {"Times": hmi720times.fits}
+    alltimes = {"Times": hmi720times.fits}
 
     # AIA data
     channels = dataaia[f"{year}"]
     for ch in channels.array_keys():
         _times = Time(np.sort(channels[ch].attrs["T_OBS"]))
         ind = []
-        for result in tq.tqdm(aia193times, desc=f"{year:4}/{ch:6}"):
+        for result in tq.tqdm(hmi720times, desc=f"{year:4}/{ch:6}"):
             _ind = np.argmin(np.abs(_times.jd - result.jd))
             ind.append(_ind)
         allind[ch] = np.array(ind)
@@ -54,10 +58,12 @@ for year in years:
     # HMI data
     channels = datahmi[f"{year}"]
     for ch in channels.array_keys():
-        formated_time = pd.to_datetime(channels[ch].attrs["T_OBS"], format="%Y.%m.%d_%H:%M:%S.%f_TAI")
+        formated_time = pd.to_datetime(
+            channels[ch].attrs["T_OBS"], format="%Y.%m.%d_%H:%M:%S.%f_TAI"
+        )
         _times = Time(np.sort(formated_time))
         ind = []
-        for result in tq.tqdm(aia193times, desc=f"{year:4}/{ch:6}"):
+        for result in tq.tqdm(hmi720times, desc=f"{year:4}/{ch:6}"):
             _ind = np.argmin(np.abs(_times.jd - result.jd))
             ind.append(_ind)
         allind[ch] = np.array(ind)
@@ -76,11 +82,4 @@ for year in years:
     pd.DataFrame(alltimes).to_csv(os.path.join(_outdir, timestampfilename), index=False)
 
     print("Completed")
-    print("%"*60)
-
-
-
-
-
-
-
+    print("%" * 60)
