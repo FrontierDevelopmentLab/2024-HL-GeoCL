@@ -13,11 +13,17 @@ import os
 from astropy.time import Time
 import tqdm as tq
 import csv
+import sys
 from sunpy.coordinates.sun import (
     L0,
     carrington_rotation_number,
     carrington_rotation_time,
 )
+
+# Add geocloak in the python path
+sys.path.append(os.path.abspath("../"))
+from geocloak.preprocess.backtrack import ballistic, HUX
+
 
 # Top level variables for the run
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
