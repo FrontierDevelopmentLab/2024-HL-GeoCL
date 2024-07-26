@@ -19,34 +19,6 @@ from sunpy.coordinates.sun import (
     carrington_rotation_time,
 )
 
-
-def ballistic(times, velocity):
-    """
-    Thi function will map the give time and velocity to SDO time
-    using the ballistic back propogation approach.
-
-    Parameters
-    ----------
-    times : datetime | str
-        The time for which the SDO time needs to be calculated.
-    velocity : float
-        The velocity of the solar wind at the given time.
-
-    Returns
-    -------
-    sdotime : datetime
-        The SDO time corresponding to the given time and velocity.
-    """
-    try:
-        times = pd.to_datetime(times)
-    except TypeError:
-        raise TypeError("Unable to Conver time to datetime.")
-
-    dt = (const.au.to("km").value / velocity) / (3600.0 * 24)
-    newtime = (times - pd.to_timedelta(dt, unit="day")).round("min")
-    return newtime
-
-
 # Top level variables for the run
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 MAXIMUM_TIME_DIFF = 1  # days
@@ -79,11 +51,12 @@ for year in tq.tqdm(years, position=0, leave=True, desc=f"Total"):
     # Read data
     omnidf = pd.read_hdf(os.path.join(omni_dir, f"omniweb_formatted_{year}.h5"))
     omnidf.index = pd.to_datetime(omnidf.index)
+    omnidf.dropna(inplace=True)
     sdodf = pd.read_csv(os.path.join(sdo_dir, f"sdo_prep_{year}.csv"), index_col=0)
     sdodf.index = pd.to_datetime(sdodf.index)
 
     # Create header for CSV writer
-    fieldnames = ["Time"] + list(sdodf.columns) + list(omnidf.columns)
+    fieldnames = ["Time", "TimeSDO"] + list(sdodf.columns) + list(omnidf.columns)
 
     # Strat back tracking using specified method and writing data
     with open(filepath, "w") as csvfile:
@@ -91,17 +64,21 @@ for year in tq.tqdm(years, position=0, leave=True, desc=f"Total"):
         csvwriter.writeheader()
 
         # Main loop
+        i = 0
         for _time in tq.tqdm(omnidf.index, position=1, desc=f"{year}", leave=False):
             if not np.array(omnidf.loc[_time]).all():
                 continue
             _sdotime = backtrack_method(_time, omnidf.loc[_time].Speed)
-            ind = np.nanargmin(sdodf.index - _sdotime)
+            ind = np.nanargmin(np.abs(sdodf.index - _sdotime).total_seconds())
             dt = sdodf.index[ind] - _sdotime
-            if dt.days > MAXIMUM_TIME_DIFF:
+            if dt.total_seconds() / 86400.0 > MAXIMUM_TIME_DIFF:
                 continue
 
             # Write data
-            outdict = {"Time": _time.isoformat()}
+            outdict = {
+                "Time": _time.isoformat(),
+                "TimeSDO": sdodf.index[ind].isoformat(),
+            }
             outdict.update(sdodf.iloc[ind].to_dict())
             outdict.update(omnidf.loc[_time].to_dict())
             csvwriter.writerow(outdict)

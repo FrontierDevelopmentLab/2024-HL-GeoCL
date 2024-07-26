@@ -382,7 +382,7 @@ class DataDownloader:
             )
             # Save data in HDF5 file
             t_char = "1h" if resample else "1m"
-            filename = f"ace_formated_{t_char}_{year}.h5"
+            filename = f"ace_formatted_{t_char}_{year}.h5"
 
             # Hurrey, save the data.
             df.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
