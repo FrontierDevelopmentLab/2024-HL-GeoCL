@@ -49,12 +49,12 @@ def T_df(obs_loc, sec_loc):
                    out=np.zeros_like(np.sin(theta)), where=np.sin(theta) != 0)
 
     # transform back to Bx, By, Bz at each local point
-    T = np.zeros((len(obs_loc), 3, len(sec_loc)))
+    T = np.zeros((len(obs_loc)*3, len(sec_loc)))
     # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
-    T[:, 0, :] = -Bt * np.sin(alpha)
-    T[:, 1, :] = -Bt * np.cos(alpha)
-    T[:, 2, :] = -Br
-    return T.reshape(-1, len(sec_loc))
+    T[:len(obs_loc), :] = -Bt * np.sin(alpha)
+    T[len(obs_loc):2*len(obs_loc), :] = -Bt * np.cos(alpha)
+    T[2*len(obs_loc):, :] = -Br
+    return T
 
 
 def calc_angular_distance(latlon1, latlon2):
