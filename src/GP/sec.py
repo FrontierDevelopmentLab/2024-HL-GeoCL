@@ -1,10 +1,13 @@
 """This is a module to compute Spherical Elementary Currents via superMAG magnetometer observations
 
 references:
+---------------
 [1] O. Amm. Ionospheric elementary current systems in spherical coordinates and their application. Journal of
 geomagnetism and geoelectricity, 49(7):947–955, 1997.
+
 [2] Amm, O., and A. Viljanen. "Ionospheric disturbance magnetic field continuation from the ground to the ionosphere
 using spherical elementary current systems." Earth, Planets and Space 51.6: 431-440, 1999.
+
 
 Author: Opal Issan (PhD student @ucsd). email: oissan@ucsd.edu.
 Last Modified: July 23st, 2024
@@ -12,7 +15,7 @@ Last Modified: July 23st, 2024
 import numpy as np
 
 
-def T_df(obs_loc, sec_loc):
+def T_df(obs_loc: np.ndarray, sec_loc: np.ndarray):
     """calculates the divergence free (df) magnetic field transfer function in Eq. (14) [2]
 
     Parameters
@@ -57,7 +60,7 @@ def T_df(obs_loc, sec_loc):
     return T
 
 
-def calc_angular_distance(latlon1, latlon2):
+def calc_angular_distance(latlon1: np.ndarray, latlon2: np.ndarray):
     """Calculate the angular distance between a set of points.
 
     This function calculates the angular distance in radians
@@ -85,7 +88,7 @@ def calc_angular_distance(latlon1, latlon2):
     return np.arccos(np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(lat2) * np.cos(lon2 - lon1))
 
 
-def calc_bearing(latlon1, latlon2):
+def calc_bearing(latlon1: np.ndarray, latlon2: np.ndarray):
     """calculate the bearing (direction) between a set of latitude and longitude points.
 
     Parameters

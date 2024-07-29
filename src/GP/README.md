@@ -6,6 +6,7 @@
 3. geodatasets>=2024.7.0
 4. mycolorpy>=1.5.1
 5. cartopy>=0.23.0
+6. scipy >= 1.14.0
 
 ## Tutorials 
 1. spherical_harmonics_tutorial.ipynb: spherical harmonics (ridge) regression of SuperMAG stations
