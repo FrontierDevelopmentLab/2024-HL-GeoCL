@@ -1,5 +1,6 @@
 # User defined
 test.ipynb
+.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
