@@ -4,6 +4,7 @@ This is a module modified from https://github.com/greglucas/pysecs/blob/master/p
 Author: Opal Issan (PhD student @ucsd). contact: oissan@ucsd.edu
 Last Modified: July 21st, 2024
 """
+
 import numpy as np
 
 
@@ -136,8 +137,9 @@ class SECS:
             # Only (re-)calculate SVD when necessary
             if i == 0 or not np.all(obs_std[i] == obs_std[i - 1]):
                 # Weight T_obs with obs_std
-                svd_in = (T_obs.reshape(-1, self.nsec) /
-                          obs_std[i].ravel()[:, np.newaxis])
+                svd_in = (
+                    T_obs.reshape(-1, self.nsec) / obs_std[i].ravel()[:, np.newaxis]
+                )
 
                 # Find singular value decompostion
                 U, S, Vh = np.linalg.svd(svd_in, full_matrices=False)
@@ -146,7 +148,7 @@ class SECS:
                 # reciprocal to zero (setting S to infinity firsts avoids
                 #  divide-by-zero warings)
                 S[S < epsilon * S.max()] = np.inf
-                W = 1. / S
+                W = 1.0 / S
 
                 # Update VWU if obs_std changed
                 VWU = Vh.T @ (np.diag(W) @ U.T)
@@ -159,8 +161,8 @@ class SECS:
             # shape: ntimes x nsec
             valid = np.isfinite(obs_std[i].reshape(-1))
             self.sec_amps_var[i, :] = np.sum(
-                (VWU[:, valid] * obs_std[i].reshape(-1)[valid]) ** 2,
-                axis=1)
+                (VWU[:, valid] * obs_std[i].reshape(-1)[valid]) ** 2, axis=1
+            )
 
         return self
 
@@ -196,8 +198,10 @@ class SECS:
             raise ValueError("Prediction locations must have 3 columns (lat, lon, r)")
 
         if self.sec_amps is None:
-            raise ValueError("There are no currents associated with the SECs," +
-                             "you need to call .fit() first to fit to some observations.")
+            raise ValueError(
+                "There are no currents associated with the SECs,"
+                + "you need to call .fit() first to fit to some observations."
+            )
 
         # T_pred shape=(npred x 3 x nsec)
         # sec_amps shape=(nsec x ntimes)
@@ -333,7 +337,7 @@ def T_df(obs_loc, sec_loc):
 
     sin_theta = np.sin(theta)
     cos_theta = np.cos(theta)
-    factor = 1. / np.sqrt(1 - 2 * x * cos_theta + x ** 2)
+    factor = 1.0 / np.sqrt(1 - 2 * x * cos_theta + x**2)
 
     # Amm & Viljanen: Equation 9
     Br = mu0 / (4 * np.pi * obs_r) * (factor - 1)
@@ -343,8 +347,9 @@ def T_df(obs_loc, sec_loc):
     Btheta = -mu0 / (4 * np.pi * obs_r) * (factor * (x - cos_theta) + cos_theta)
     # If sin(theta) == 0: Btheta = 0
     # There is a possible 0/0 in the expansion when sec_loc == obs_loc
-    Btheta = np.divide(Btheta, sin_theta, out=np.zeros_like(sin_theta),
-                       where=sin_theta != 0)
+    Btheta = np.divide(
+        Btheta, sin_theta, out=np.zeros_like(sin_theta), where=sin_theta != 0
+    )
 
     # When observation points radii are outside of the sec locations
     under_locs = sec_r < obs_r
@@ -358,15 +363,26 @@ def T_df(obs_loc, sec_loc):
         x = sec_r / obs_r
 
         # Amm & Viljanen: Equation A.7
-        Br2 = mu0 * x / (4 * np.pi * obs_r) * (1. / np.sqrt(1 - 2 * x * cos_theta + x ** 2) - 1)
+        Br2 = (
+            mu0
+            * x
+            / (4 * np.pi * obs_r)
+            * (1.0 / np.sqrt(1 - 2 * x * cos_theta + x**2) - 1)
+        )
 
         # Amm & Viljanen: Equation A.8
-        Btheta2 = - mu0 / (4 * np.pi * obs_r) * ((obs_r - sec_r * cos_theta) /
-                                                 np.sqrt(obs_r ** 2 -
-                                                         2 * obs_r * sec_r * cos_theta +
-                                                         sec_r ** 2) - 1)
-        Btheta2 = np.divide(Btheta2, sin_theta, out=np.zeros_like(sin_theta),
-                            where=sin_theta != 0)
+        Btheta2 = (
+            -mu0
+            / (4 * np.pi * obs_r)
+            * (
+                (obs_r - sec_r * cos_theta)
+                / np.sqrt(obs_r**2 - 2 * obs_r * sec_r * cos_theta + sec_r**2)
+                - 1
+            )
+        )
+        Btheta2 = np.divide(
+            Btheta2, sin_theta, out=np.zeros_like(sin_theta), where=sin_theta != 0
+        )
 
         # Update only the locations where secs are under observations
         Btheta[under_locs] = Btheta2[under_locs]
@@ -401,7 +417,9 @@ def T_cf(obs_loc, sec_loc):
     ndarray (nobs, 3, nsec)
         The T transfer matrix.
     """
-    raise NotImplementedError("Curl Free Magnetic Field Transfers are not implemented yet.")
+    raise NotImplementedError(
+        "Curl Free Magnetic Field Transfers are not implemented yet."
+    )
 
 
 def J_df(obs_loc, sec_loc):
@@ -434,20 +452,24 @@ def J_df(obs_loc, sec_loc):
     alpha = calc_bearing(obs_loc[:, :2], sec_loc[:, :2])
 
     # Amm & Viljanen: Equation 6
-    tan_theta2 = np.tan(theta / 2.)
+    tan_theta2 = np.tan(theta / 2.0)
 
-    J_phi = 1. / (4 * np.pi * sec_r)
-    J_phi = np.divide(J_phi, tan_theta2, out=np.ones_like(tan_theta2) * np.inf,
-                      where=tan_theta2 != 0.)
+    J_phi = 1.0 / (4 * np.pi * sec_r)
+    J_phi = np.divide(
+        J_phi,
+        tan_theta2,
+        out=np.ones_like(tan_theta2) * np.inf,
+        where=tan_theta2 != 0.0,
+    )
     # Only valid on the SEC shell
-    J_phi[sec_r != obs_r] = 0.
+    J_phi[sec_r != obs_r] = 0.0
 
     # Transform back to Bx, By, Bz at each local point
     J = np.empty((nobs, 3, nsec))
     # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
     J[:, 0, :] = -J_phi * np.cos(alpha)
     J[:, 1, :] = J_phi * np.sin(alpha)
-    J[:, 2, :] = 0.
+    J[:, 2, :] = 0.0
 
     return J
 
@@ -481,19 +503,23 @@ def J_cf(obs_loc, sec_loc):
     alpha = calc_bearing(obs_loc[:, :2], sec_loc[:, :2])
 
     # Amm & Viljanen: Equation 7
-    tan_theta2 = np.tan(theta / 2.)
+    tan_theta2 = np.tan(theta / 2.0)
 
-    J_theta = 1. / (4 * np.pi * sec_r)
-    J_theta = np.divide(J_theta, tan_theta2, out=np.ones_like(tan_theta2) * np.inf,
-                        where=tan_theta2 != 0)
+    J_theta = 1.0 / (4 * np.pi * sec_r)
+    J_theta = np.divide(
+        J_theta,
+        tan_theta2,
+        out=np.ones_like(tan_theta2) * np.inf,
+        where=tan_theta2 != 0,
+    )
     # Uniformly directed FACs around the globe, except the pole
     # Integrated over the globe, this will lead to zero
-    J_r = -np.ones(J_theta.shape) / (4 * np.pi * sec_r ** 2)
-    J_r[theta == 0.] = 1.
+    J_r = -np.ones(J_theta.shape) / (4 * np.pi * sec_r**2)
+    J_r[theta == 0.0] = 1.0
 
     # Only valid on the SEC shell
-    J_theta[sec_r != obs_r] = 0.
-    J_r[sec_r != obs_r] = 0.
+    J_theta[sec_r != obs_r] = 0.0
+    J_r[sec_r != obs_r] = 0.0
 
     # Transform back to Bx, By, Bz at each local point
     J = np.empty((nobs, 3, nsec))
@@ -533,8 +559,9 @@ def calc_angular_distance(latlon1, latlon2):
     dlon = lon2 - lon1
 
     # theta == angular distance between two points
-    theta = np.arccos(np.sin(lat1) * np.sin(lat2) +
-                      np.cos(lat1) * np.cos(lat2) * np.cos(dlon))
+    theta = np.arccos(
+        np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(lat2) * np.cos(dlon)
+    )
     return theta
 
 
@@ -573,7 +600,8 @@ def calc_bearing(latlon1, latlon2):
     # SEC coordinates are: theta (colatitude (+ away from North Pole)),
     #                      phi (longitude, + east), r (+ out)
     # Obs coordinates are: X (+ north), Y (+ east), Z (+ down)
-    alpha = np.pi / 2 - np.arctan2(np.sin(dlon) * np.cos(lat2),
-                                   np.cos(lat1) * np.sin(lat2) -
-                                   np.sin(lat1) * np.cos(lat2) * np.cos(dlon))
+    alpha = np.pi / 2 - np.arctan2(
+        np.sin(dlon) * np.cos(lat2),
+        np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(dlon),
+    )
     return alpha

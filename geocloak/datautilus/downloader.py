@@ -17,6 +17,7 @@ import pandas as pd
 import requests
 import tqdm
 from bs4 import BeautifulSoup
+
 from geocloak.configs.datainfo import column_names, dscovr_f1m_cols, dscovr_m1m_cols
 
 log = logging.getLogger(__name__)

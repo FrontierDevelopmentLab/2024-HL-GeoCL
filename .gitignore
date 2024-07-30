@@ -9,6 +9,12 @@ __pycache__/
 # C extensions
 *.so
 
+.env
+*env
+wandb/
+cl-testing/
+sheathNRT/
+
 # Distribution / packaging
 .Python
 build/
