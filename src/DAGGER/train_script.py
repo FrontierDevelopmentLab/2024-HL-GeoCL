@@ -23,9 +23,6 @@ config_path = "experiment.yaml"
 
 
 def train(config):
-    past_omni_length = config["past_omni_length"]
-    omni_resolution = config["omni_resolution"]
-    nmax = config["nmax"]
     targets = ["dbe_nez", "dbn_nez"]  # config.targets
     learning_rate = config["learning_rate"]
     batch_size = config["batch_size"]
@@ -36,17 +33,10 @@ def train(config):
     loss = config["loss"]
     NN_md = md[config["model"]]
     is_logging_enabled = config["is_logging_enabled"]
-    weighted_regression = config["weighted_regression"]
-    yearlist = config["yearlist"]
     wandb_run_name = config["wandb_run_name"]
     preprocessed_path = config["preprocessed_data_path"]
-    extra_input_features = config["extra_input_features"]
-    station_regularization = config["station_regularization"]
-    station_regularization_weight = config["station_regularization_weight"]
-    imbalanced_regression_weight = config["imbalanced_regression_weight"]
     num_workers = config["num_workers"]
     num_devices = config["num_devices"]
-    stn_reg_dmp = config["stn_reg_dmp"]
 
     if is_logging_enabled:
         wandb_logger = WandbLogger(
@@ -56,37 +46,18 @@ def train(config):
         wandb_logger = False
 
     print("loading training data")
-    if weighted_regression:
-        train_ds = ShpericalHarmonicsDatasetPreprocessed(
-            preprocessed_path,
-            "train_with_weights",
-            yearlist,
-            weighted_regression,
-            station_regularization,
-        )
-    else:
-        train_ds = ShpericalHarmonicsDatasetPreprocessed(
-            preprocessed_path,
-            "train",
-            yearlist,
-            weighted_regression,
-            station_regularization,
-        )
+    train_ds = ShpericalHarmonicsDatasetPreprocessed(
+        preprocessed_path,
+        "train",
+    )
     print("loading val data")
     val_ds = ShpericalHarmonicsDatasetPreprocessed(
-        preprocessed_path, "val", yearlist, False, False
-    )
-    print("loading wiemer data")
-    wiemer_ds = ShpericalHarmonicsDatasetPreprocessed(
-        preprocessed_path, "wiemer", yearlist, False, False
+        preprocessed_path, "val",
     )
 
     print("load scalers")
-    scaler = pickle.load(open(os.path.join(preprocessed_path, "scalers.p"), "rb"))
+    scaler = pickle.load(open(os.path.join(preprocessed_path, "scalers.p"), "rb")) # create scalar file - not pickle @Mike
 
-    wiemer_loader = data.DataLoader(
-        wiemer_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers
-    )
     train_loader = data.DataLoader(
         train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
@@ -108,23 +79,14 @@ def train(config):
 
     # initialize model
     model = NN_md(
-        past_omni_length,
         omni_features,
         supermag_features,
-        omni_resolution,
-        nmax,
         targets_idx,
         learning_rate=learning_rate,
         l2reg=l2reg,
         dropout_prob=dropout_prob,
         n_hidden=n_hidden,
         loss=loss,
-        weighted_regression=weighted_regression,
-        extra_input_features=extra_input_features,
-        stn_reg=station_regularization,
-        station_regularization_weight=station_regularization_weight,
-        imbalanced_regression_weight=imbalanced_regression_weight,
-        stn_reg_dmp=stn_reg_dmp,
     )
     model = model.double()
 

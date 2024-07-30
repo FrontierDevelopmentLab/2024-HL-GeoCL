@@ -52,17 +52,12 @@ class NeuralRNNWiemer(BaseModel):
             batch_first=True,
         )
 
-        # self.omni_past_encoder = TemporalConvNet(25, num_channels, kernel_size, dropout=0.5)
-
-        self.nmax = nmax
-        self.sph = SphericalHarmonics(nmax)
-        n_coeffs = len(self.sph.ylm) * 2
 
         self.encoder_mlp = nn.Sequential(
             nn.Linear(hidden, 16),
             nn.ELU(inplace=True),
             nn.Dropout(p=dropout_prob),
-            nn.Linear(16, n_coeffs * len(targets_idx), bias=False),  # 882
+            nn.Linear(16, n_coeffs * len(targets_idx), bias=False),  # needs to map to SuperMAG
         )
 
         self.omni_features = omni_features
@@ -78,81 +73,17 @@ class NeuralRNNWiemer(BaseModel):
 
         past_omni = NamedAccess(past_omni, self.omni_features)
 
-        features = []
-        # add the wiemer2013 features
-        bt = (past_omni["by"] ** 2 + past_omni["bz"] ** 2) ** 0.5
-        v = (past_omni["vx"] ** 2 + past_omni["vy"] ** 2 + past_omni["vz"] ** 2) ** 0.5
-
-        features.append(past_omni["bx"])
-        features.append(past_omni["by"])
-        features.append(past_omni["bz"])
-        features.append(bt)
-        features.append(v)
-        features.append(past_omni["dipole"])
-        features.append(torch.sqrt(past_omni["f107"]))
-
-        features.append(bt * torch.cos(past_omni["clock_angle"]))
-        features.append(v * torch.cos(past_omni["clock_angle"]))
-        features.append(past_omni["dipole"] * torch.cos(past_omni["clock_angle"]))
-        features.append(
-            torch.sqrt(past_omni["f107"]) * torch.cos(past_omni["clock_angle"])
-        )
-
-        features.append(bt * torch.sin(past_omni["clock_angle"]))
-        features.append(v * torch.sin(past_omni["clock_angle"]))
-        features.append(past_omni["dipole"] * torch.sin(past_omni["clock_angle"]))
-        features.append(
-            torch.sqrt(past_omni["f107"]) * torch.sin(past_omni["clock_angle"])
-        )
-
-        features.append(bt * torch.cos(2 * past_omni["clock_angle"]))
-        features.append(v * torch.cos(2 * past_omni["clock_angle"]))
-        features.append(past_omni["dipole"] * torch.cos(2 * past_omni["clock_angle"]))
-        features.append(
-            torch.sqrt(past_omni["f107"]) * torch.cos(2 * past_omni["clock_angle"])
-        )
-
-        features.append(bt * torch.sin(2 * past_omni["clock_angle"]))
-        features.append(v * torch.sin(2 * past_omni["clock_angle"]))
-        features.append(past_omni["dipole"] * torch.sin(2 * past_omni["clock_angle"]))
-        features.append(
-            torch.sqrt(past_omni["f107"]) * torch.sin(2 * past_omni["clock_angle"])
-        )
-
-        features.append(past_omni["clock_angle"])
-        features.append(past_omni["temperature"])
-
-        # Add things like geomagnetic indices to the input feature list
-        # for extra_feature in self.extra_input_features:
-        #     features.append(past_omni[extra_feature])
-
-        features = torch.stack(features, -1)
+        features = past_omni # get this from the .csv file
 
         # zero fill
         features[features.isnan()] = 0.0
-
-        # fix the zero gradients error
-        # future_supermag[future_supermag.isnan()] = 0.0
 
         assert not (torch.isnan(features).any() or torch.isinf(features).any())
 
         encoded = self.omni_past_encoder(features)[1][0]
 
-        coeffs = self.encoder_mlp(encoded).reshape(
+        predictions = self.encoder_mlp(encoded).reshape(
             encoded.shape[0], -1, len(self.targets_idx)
         )
 
-        with torch.no_grad():
-            basis = self.sph(mlt.squeeze(1), mcolat.squeeze(1))
-
-            # fix the zero gradients error
-            basis[basis.isnan()] = 0.0
-
-        predictions = torch.einsum("bij,bjk->bik", basis.squeeze(1), coeffs)
-
-        if torch.isnan(coeffs).all():
-            import pdb
-
-            pdb.set_trace()
-
-        return basis, coeffs, predictions
+        return predictions
