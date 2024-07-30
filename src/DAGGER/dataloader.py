@@ -31,6 +31,8 @@ class GeoCLoakDataLoader(Dataset):
         input_filename = input_timestamp.strftime("%Y%m%d%H%M") + ".csv"
         target_filename = target_timestamp.strftime("%Y%m%d%H%M") + ".csv"
         
+        # need to merge dbe and den into targets
+        
         input_blob = self._get_file_from_subfolder(input_filename,self.input_path)
         target_blob = self._get_file_from_subfolder(target_filename,self.target_path)
         
