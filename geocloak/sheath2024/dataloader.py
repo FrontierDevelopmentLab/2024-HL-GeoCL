@@ -41,26 +41,30 @@ class SHEATHDataLoader(Dataset):
         target_data = torch.tensor(self.targets[idx], dtype=torch.float32)
         return input_data, target_data
 
-def main():
-    # Specifying the local directory
-    directory = "/home/chetrajpandey/data/formatted_data/sheath_splits"
 
-    # Create datasets
-    train_dataset = SHEATHDataLoader(directory, 'train_set.csv')
-    val_dataset = SHEATHDataLoader(directory, 'val_set.csv')
-    test_dataset = SHEATHDataLoader(directory, 'test_set.csv')
 
-    # Print the number of samples in each dataset
-    print(f"Training set length: {len(train_dataset)}")
-    print(f"Validation set length: {len(val_dataset)}")
-    print(f"Test set length: {len(test_dataset)}")
 
-    # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+""" USE CASE"""
+# def main():
+#     # Specifying the local directory
+#     directory = "/home/chetrajpandey/data/formatted_data/sheath_splits"
 
-    return train_loader, val_loader, test_loader
+#     # Create datasets
+#     train_dataset = SHEATHDataLoader(directory, 'train_set.csv')
+#     val_dataset = SHEATHDataLoader(directory, 'val_set.csv')
+#     test_dataset = SHEATHDataLoader(directory, 'test_set.csv')
 
-if __name__ == "__main__":
-    train_loader, val_loader, test_loader = main()
+#     # Print the number of samples in each dataset
+#     print(f"Training set length: {len(train_dataset)}")
+#     print(f"Validation set length: {len(val_dataset)}")
+#     print(f"Test set length: {len(test_dataset)}")
+
+#     # Create data loaders
+#     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+#     val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+#     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+#     return train_loader, val_loader, test_loader
+
+# if __name__ == "__main__":
+#     train_loader, val_loader, test_loader = main()
