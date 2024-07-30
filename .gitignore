@@ -6,6 +6,9 @@ format_and_lint.sh
 __pycache__/
 *.py[cod]
 *$py.class
+wandb/
+cl-testing/
+sheathNRT/
 
 # C extensions
 *.so
