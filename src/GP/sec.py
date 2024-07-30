@@ -114,3 +114,53 @@ def calc_bearing(latlon1: np.ndarray, latlon2: np.ndarray):
     # observation coordinates are: X (+ north), Y (+ east), Z (+ down)
     return np.pi / 2 - np.arctan2(np.sin(lon2 - lon1) * np.cos(lat2),
                                   np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(lon2 - lon1))
+
+
+def get_mesh(n_lon, n_lat, radius, lat_max=90, lat_min=-90, endpoint_lon=False):
+    """
+
+    Parameters
+    ----------
+    n_lon : int
+        number of SECs in longitude
+
+    n_lat : int
+        number of SECs in latitude
+
+    radius: float (km)
+        radius of the spherical mesh
+
+    lat_max: float (deg)
+        default: 90 (deg)
+        latitude maximum degree
+
+    lat_min: float (deg)
+        default: -90 (deg)
+        latitude minimum degree
+
+    endpoint_lon: bool
+        default: False
+        include last point in longitude grid
+
+    Returns
+    -------
+    ndarray (n_lon*n_lat x 3) [latitude (deg), longitude (deg), radius (km)]
+        array with locations of SEC nodes
+    """
+    # latitude is uniform in sin(lat)
+    sin_dt = np.abs(np.sin(np.linspace(lat_min / 180 * np.pi, lat_max / 180 * np.pi, n_lat - 1)))
+    dt_sphere = (lat_max - lat_min) / np.sum(sin_dt) * sin_dt
+
+    # set up latitude mesh grid
+    theta_vec = np.zeros(n_lat)
+    theta_vec[0] = lat_min
+    for ii in range(1, n_lat):
+        theta_vec[ii] = theta_vec[ii - 1] + dt_sphere[ii - 1]
+
+    # specify the secs grid
+    lat_sec, lon_sec, r_sec = np.meshgrid(theta_vec,  # in deg [-90, 90]
+                                          np.linspace(0, 360, n_lon, endpoint=endpoint_lon),  # in deg [0, 360)
+                                          radius,  # in km
+                                          indexing='ij')
+
+    return np.hstack((lat_sec.reshape(-1, 1), lon_sec.reshape(-1, 1), r_sec.reshape(-1, 1))), lat_sec, lon_sec
