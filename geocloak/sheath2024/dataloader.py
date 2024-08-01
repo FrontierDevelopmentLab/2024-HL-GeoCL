@@ -80,6 +80,8 @@ class SHEATHDataLoader(Dataset):
             "mean": scaler.mean_.tolist(),
             "scale": scaler.scale_.tolist(),
             "var": scaler.var_.tolist(),
+            "n_features": scaler.n_features_in_,
+            "feature_names": scaler.feature_names_in_.tolist(),
         }
         with open(os.path.join(self.scaler_dir, filename), "w") as f:
             json.dump(scaler_dict, f)
@@ -100,6 +102,8 @@ class SHEATHDataLoader(Dataset):
         scaler.mean_ = np.array(scaler_dict["mean"])
         scaler.scale_ = np.array(scaler_dict["scale"])
         scaler.var_ = np.array(scaler_dict["var"])
+        scaler.n_features_in_ = scaler_dict["n_features"]
+        scaler.feature_names_in_ = np.array(scaler_dict["feature_names"])
         return scaler
 
     def __len__(self):
