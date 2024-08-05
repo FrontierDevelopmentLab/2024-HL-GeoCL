@@ -100,6 +100,8 @@ class SDODataPreprocess:
         else:
             og = im
 
+        og[~np.isnan(og)] = 0.0
+
         # Crop the image abouth 17 pixels in longitude by multiplying with mask
         sample = og * mask
         sample = sample[~np.isnan(sample)]

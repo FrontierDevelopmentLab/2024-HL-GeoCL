@@ -23,7 +23,7 @@ from geocloak.preprocess.sdoprep import SDODataPreprocess
 # Later on it can be worked with the argparser
 
 # Top level directories
-rootdir = "/mnt/sdomlv2/sdomlv2a-static/"
+rootdir = "/mnt/sdoml"
 sdodata = ["AIA.zarr", "HMI.zarr"]
 out_dir = "/home/bjha/data/geocloak/formatted_data/sdo"
 timeind_dir = "/home/bjha/data/geocloak/formatted_data/sdo/timestamps"
@@ -81,7 +81,7 @@ def sdoyear(year):
 
 
 def main():
-    years = ["2023"]
+    years = ["2022"]
     processes = []
     for year in years:
         p = Process(target=sdoyear, args=(year,))

@@ -429,7 +429,9 @@ class DataDownloader:
 
         # Convert day of year to ISO datetime format
         data["Time"] = data.apply(
-            lambda row: datetime.datetime(int(row.YEAR), 1, 1, int(row.Hour), 0)
+            lambda row: datetime.datetime(
+                int(row.YEAR), 1, 1, int(row.Hour), int(row.Minute)
+            )
             + datetime.timedelta(row.DOY - 1),
             axis=1,
         )
@@ -456,6 +458,7 @@ class DataDownloader:
 
         # Format the data as other data sources (ACE, DSCOVR)
         data.index = pd.to_datetime(data.index)
+        data = data[cols.keys()]
         data.rename(columns=cols, inplace=True)
         data = data[["Speed", "Density", "Temperature", "Bt", "Bx", "By", "Bz"]]
 
@@ -464,7 +467,7 @@ class DataDownloader:
             pbar.set_description(str(year))
             _data = data.loc[str(year)].copy()
             # Save data in HDF5 file
-            filename = f"omniweb_formatted_{year}.h5"
+            filename = f"omniweb_formatted_1m_{year}.h5"
             _data.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
             log.info(f"Saved OMNI data to {os.path.join(self.outpath, filename)}")
 

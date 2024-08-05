@@ -22,7 +22,7 @@ sdodata = ["AIA.zarr", "HMI.zarr"]
 out_dir = "/home/bjha/data/geocloak/formatted_data/sdo"
 
 # List of years
-years = ["2013", "2014", "2015"]
+years = ["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"]
 
 # AIA Data
 dataaia = zarr.open("/mnt/sdoml/" + sdodata[0])
