@@ -19,7 +19,10 @@ This guide provides instructions to set up InfluxDB on Google Cloud Platform (GC
    - Choose your preferred region, zone, machine type, and other settings as needed.
    - Click **Deploy** to start the deployment process.
 
-[![Watch the video](https://youtu.be/bNL6DvtmD40)
+## Watch the Quick Set Up Video
+
+[![Watch the video](https://img.youtube.com/vi/bNL6DvtmD40/0.jpg)](https://youtu.be/bNL6DvtmD40)
+
 
 ## Step 2: Access the InfluxDB VM
 
