@@ -36,6 +36,7 @@ class DataProcessor:
 
         merged_df = pd.concat(dfs)
         self.column_names = merged_df.columns.tolist()
+        # print(self.column_names)
         return merged_df
 
     def create_splits(self, data, test_intervals, val_years_months):
@@ -43,10 +44,10 @@ class DataProcessor:
         Creates training, validation, and test sets from the given data based on specified intervals,
         ensuring that test and validation sets do not overlap.
         """
-        initial_timestamp_col = self.column_names[0]
+        initial_timestamp_col = self.column_names[1]
+        # print(initial_timestamp_col)
         data[initial_timestamp_col] = pd.to_datetime(
-            data[initial_timestamp_col], format="%Y-%m-%dT%H:%M:%S", errors="coerce"
-        )
+            data[initial_timestamp_col])
 
         # Initialize boolean Series for test and validation indices
         test_indices = pd.Series([False] * len(data), index=data.index)
@@ -101,9 +102,9 @@ class DataProcessor:
             os.makedirs(output_directory)
 
         # Define the paths for the files in the directory
-        train_path = os.path.join(output_directory, "train_set.csv")
-        val_path = os.path.join(output_directory, "val_set.csv")
-        test_path = os.path.join(output_directory, "test_set.csv")
+        train_path = os.path.join(output_directory, "sheath_train_set.csv")
+        val_path = os.path.join(output_directory, "sheath_val_set.csv")
+        test_path = os.path.join(output_directory, "sheath_test_set.csv")
 
         # Save DataFrames to CSV files
         train_set.to_csv(train_path, index=False)
@@ -112,15 +113,16 @@ class DataProcessor:
 
 
 def main():
-    directory = "/home/chetrajpandey/data/formatted_data/sheath_train/"
+    directory = "/home/chetrajpandey/data/formatted_data/sheath_trainv2"
     output_directory = "/home/chetrajpandey/data/formatted_data/sheath_splits"
     test_intervals = [
         ("2011-08-04", "2011-08-08"),
-        ("2012-07-21", "2012-07-25"),
-        ("2013-03-13", "2013-03-17"),
+        ("2017-09-26", "2017-09-29"),
+        ("2018-08-13", "2018-08-17"),
+        ("2019-08-29", "2019-09-01"),
     ]
-    val_years_months = {2011: (10, 12), 2012: (4, 6), 2013: (10, 12)}
-    # val_years_months = {2011: (10, 12), 2012: (4, 6), 2013: None}  # Example of specifying whole year 2013
+    # val_years_months = {2011: (10, 12), 2012: (4, 6), 2013: (10, 12)}
+    val_years_months = {2014: None, 2017: None}  # Example of specifying whole year 2013
 
     # Initialize the DataProcessor
     processor = DataProcessor(directory)
