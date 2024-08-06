@@ -46,8 +46,8 @@ class SHEATHDataLoader(Dataset):
         self.dataframe = pd.read_csv(file_path)
 
         # Select input features and target variables
-        self.inputs = self.dataframe.iloc[:, 2:-7].values
-        self.targets = self.dataframe.iloc[:, -7:].values
+        self.inputs = self.dataframe.iloc[:, 2:-14].values
+        self.targets = self.dataframe.iloc[:, -14:].values
 
         # Initialize scalers and apply them
         if self.is_train:
