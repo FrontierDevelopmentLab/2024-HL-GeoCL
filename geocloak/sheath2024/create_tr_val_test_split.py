@@ -32,6 +32,7 @@ class DataProcessor:
         for file in csv_files:
             file_path = os.path.join(self.directory, file)
             df = pd.read_csv(file_path, low_memory=False)
+            df = df.dropna()
             dfs.append(df)
 
         merged_df = pd.concat(dfs)

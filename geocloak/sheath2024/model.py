@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.init as init
 
 class SHEATH_MLP(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, dropout_rate=0.5, init_type='kaiming'):
+    def __init__(self, input_dim, hidden_dim, output_dim, dropout_rate=0.3, init_type='kaiming'):
         super(SHEATH_MLP, self).__init__()
         
         self.fc1 = nn.Linear(input_dim, hidden_dim)
