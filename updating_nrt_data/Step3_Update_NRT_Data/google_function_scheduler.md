@@ -27,7 +27,8 @@ Below is a video that shows the connection between Google Cloud Functions and Go
     - Set the target to the HTTP endpoint of the corresponding Google Cloud Function.
 
 ### Example Crontab File for Google Cloud Scheduler
-#### DISCLAIMER Kp, Hp30, ap30, and Fadj require query strings at the end of their url, for example: https://yourgooglefunction.com?index=kp
+
+DISCLAIMER Kp, Hp30, ap30, and Fadj require query strings at the end of their url, for example: https://yourgooglefunction.com?index=kp
 
 ```plaintext
 # ACE and DSCOVR data collection every 5 minutes
