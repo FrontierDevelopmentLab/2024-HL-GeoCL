@@ -63,12 +63,10 @@ def sheath_training(year):
     )
 
     # Read data
-    omnidf1 = pd.read_hdf(os.path.join(omni_dir, f"omniweb_formatted_1m_{year-1}.h5"))
-    omnidf2 = pd.read_hdf(os.path.join(omni_dir, f"omniweb_formatted_1m_{year}.h5"))
-    omnidf2.index = pd.to_datetime(omnidf2.index)
-    omnidf = pd.concat([omnidf1, omnidf2])
+    omnidf = pd.read_hdf(os.path.join(omni_dir, f"omniweb_formatted_1m_{year}.h5"))
     omnidf.index = pd.to_datetime(omnidf.index)
     omnidf.dropna(inplace=True)
+
     sdodf2 = pd.read_csv(os.path.join(sdo_dir, f"sdo_prep_{year}.csv"), index_col=0)
     if os.path.exists(os.path.join(sdo_dir, f"sdo_prep_{year-1}.csv")):
         sdodf1 = pd.read_csv(
@@ -84,14 +82,12 @@ def sheath_training(year):
 
     # Strat back tracking using specified method and writing data
     with open(filepath, "w") as csvfile, tq.tqdm(
-        total=omnidf.shape[0], position=current_pro, desc=f"{year}", leave=False
+        total=omnidf.shape[0], position=current_pro, desc=f"{year}"
     ) as pbar:
         csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csvwriter.writeheader()
         for ii, _time in enumerate(omnidf.index):
             pbar.update()
-            if ii == 10000:
-                break
             if not np.array(omnidf.loc[_time]).all():
                 continue
             if backtrack_method.__name__ == "ballistic":
@@ -135,7 +131,7 @@ def sheath_training(year):
 
 
 def main():
-    years = [2020]
+    years = range(2021, 2024)
     processes = []
     for year in years:
         p = Process(target=sheath_training, args=(year,))

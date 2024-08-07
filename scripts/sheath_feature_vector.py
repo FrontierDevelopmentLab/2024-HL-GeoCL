@@ -1,7 +1,8 @@
 """
-This is the python script which will generate the feature set
-used to generate the feature set for SHEATH by combining the multi
-wavelength observation from the SDO.
+This Python script extracts features from multi-wavelength observations of the Sun 
+collected by the Solar Dynamics Observatory (SDO). These features are then used 
+to generate a feature set for the SHEATH machine learning model, which  
+aims to predict the solar wind condition at L1 point. 
 """
 
 import zarr
@@ -12,6 +13,7 @@ import tqdm as tq
 import os
 import sys
 import csv
+from multiprocessing import current_process
 from multiprocessing import Process
 
 # Add geocloak in the python path
@@ -61,8 +63,11 @@ def sdoyear(year):
         os.makedirs(_outdir, exist_ok=True)
 
     filepath = os.path.join(_outdir, f"sdo_prep_{year}.csv")
+    current_pro = current_process()._identity[0]
     with open(filepath, "w") as csvfile, tq.tqdm(
-        total=timeindex.shape[0], desc=f"{year}"
+        total=timeindex.shape[0],
+        desc=f"{year}",
+        position=current_pro,
     ) as pbar:
         for i, times in enumerate(timeindex.index):
             pbar.update()
@@ -81,7 +86,7 @@ def sdoyear(year):
 
 
 def main():
-    years = ["2023"]
+    years = ["2021", "2022"]
     processes = []
     for year in years:
         p = Process(target=sdoyear, args=(year,))

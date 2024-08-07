@@ -100,7 +100,7 @@ class SDODataPreprocess:
         else:
             og = im
 
-        og[~np.isnan(og)] = 0.0
+        og[np.isnan(og)] = 0.0
 
         # Crop the image abouth 17 pixels in longitude by multiplying with mask
         sample = og * mask
@@ -176,7 +176,10 @@ class SDODataPreprocess:
                     datetime.strptime(_timestamp, "%Y.%m.%d_%H:%M:%S_TAI")
                 )
             else:
-                raise SyntaxError("Unable to interprate time format.")
+                try:
+                    _timestamp = pd.to_datetime(_timestamp)
+                except:
+                    raise SyntaxError("Unable to interprate time format.")
         elif isinstance(_timestamp, datetime):
             _timestamp = pd.to_datetime(_timestamp)
         feature_vector = {
