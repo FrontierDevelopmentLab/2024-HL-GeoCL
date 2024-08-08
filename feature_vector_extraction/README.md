@@ -1,4 +1,4 @@
-# InfluxDB Data Processing Script
+# Feature Extraction Script (ACE, DSCOVR, Hp30, ap30, Kp, Fadj)
 
 ## Overview
 
@@ -14,6 +14,9 @@ This script is designed to interact with InfluxDB to fetch, process, and manage 
 - shutil
 - os
 - datetime
+- pickle
+- datetime
+- dipole
 
 ## Functions
 
