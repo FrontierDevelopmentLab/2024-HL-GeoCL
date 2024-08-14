@@ -15,7 +15,7 @@ Last Modified: July 23st, 2024
 import numpy as np
 
 
-def T_df(obs_loc: np.ndarray, sec_loc: np.ndarray):
+def T_df(obs_loc: np.ndarray, sec_loc: np.ndarray, include_Bz=True):
     """calculates the divergence free (df) magnetic field transfer function in Eq. (14) [2]
 
     Parameters
@@ -25,6 +25,9 @@ def T_df(obs_loc: np.ndarray, sec_loc: np.ndarray):
 
     sec_loc : ndarray (nsec, 3 [lat, lon, r]) in [deg (-90, 90), deg (0, 360), km]
         locations of the SEC points
+
+    include_Bz: boolean (default is True)
+        indication to include or not the Bz component
 
     Returns
     -------
@@ -51,13 +54,21 @@ def T_df(obs_loc: np.ndarray, sec_loc: np.ndarray):
     Bt = np.divide(-(factor_term * (r_ratio - np.cos(theta)) + np.cos(theta)) / obs_loc[0, 2], np.sin(theta),
                    out=np.zeros_like(np.sin(theta)), where=np.sin(theta) != 0)
 
-    # transform back to Bx, By, Bz at each local point
-    T = np.zeros((len(obs_loc)*3, len(sec_loc)))
-    # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
-    T[:len(obs_loc), :] = -Bt * np.sin(alpha)
-    T[len(obs_loc):2*len(obs_loc), :] = -Bt * np.cos(alpha)
-    T[2*len(obs_loc):, :] = -Br
-    return T
+    if include_Bz:
+        # transform back to Bx, By, Bz at each local point
+        T = np.zeros((len(obs_loc)*3, len(sec_loc)))
+        # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
+        T[:len(obs_loc), :] = -Bt * np.sin(alpha)
+        T[len(obs_loc):2*len(obs_loc), :] = -Bt * np.cos(alpha)
+        T[2*len(obs_loc):, :] = -Br
+        return T
+    else:
+        # transform back to Bx, By, Bz at each local point
+        T = np.zeros((len(obs_loc)*2, len(sec_loc)))
+        # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
+        T[:len(obs_loc), :] = -Bt * np.sin(alpha)
+        T[len(obs_loc):, :] = -Bt * np.cos(alpha)
+        return T
 
 
 def calc_angular_distance(latlon1: np.ndarray, latlon2: np.ndarray):
@@ -164,3 +175,17 @@ def get_mesh(n_lon, n_lat, radius, lat_max=90, lat_min=-90, endpoint_lon=False):
                                           indexing='ij')
 
     return np.hstack((lat_sec.reshape(-1, 1), lon_sec.reshape(-1, 1), r_sec.reshape(-1, 1))), lat_sec, lon_sec
+
+def remove_duplicate_lonlat(lon, lat):
+    """
+    remove duplicates from an array of lon / lat points
+    """
+
+    a = np.ascontiguousarray(np.vstack((lon, lat)).T)
+    unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
+    llunique = unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
+
+    lon1 = llunique[:,0]
+    lat1 = llunique[:,1]
+
+    return lon1, lat1
