@@ -104,7 +104,7 @@ n_lat, n_lon = 100, 200
 pred_lat_lon_r, pred_lat, pred_lon = get_mesh(n_lon=n_lon, n_lat=n_lat, radius=R_earth,
                                               lat_max=80, lat_min=-80, endpoint_lon=True)
 # predict via GP
-mean_, sd_ = model.predict(Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r))
+mean_, sd_ = model.predict(Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r, include_Bz=False))
 
 # plot results
 fig = plt.figure(figsize=(9, 4))
