@@ -61,7 +61,7 @@ class SDODataPreprocess:
         ]
         return mask
 
-    def get_193mask(self, im, region=["CH", "AR"], n_comp=3):
+    def get_193mask(self, region=["CH", "AR"], n_comp=3):
         """
         This function takes the 193A image and generate the mask for the
         Coronal Holes (CH) and Active Regions (AR) using the Gaussian Mixture Model.
@@ -89,8 +89,13 @@ class SDODataPreprocess:
         if not all([True if x in ["AR", "CH", "QS"] else False for x in region]):
             return None
 
+        im = self.sdofiles["193A"]
+        im[im < 1] = 1.0
+        im = np.log10(im)
+
         # Get the mask of the image
         mask = self.__get_diskmask()
+        # mask[np.isnan(mask)] = 0
 
         # Crop the image abouth 17 pixels in longitude
         if not self.crop:
@@ -141,9 +146,12 @@ class SDODataPreprocess:
         feature_vector : list
             The list of feature vector for the SHEATH model.
         """
-        _mask = self.get_193mask(self.sdofiles["193A"])
-        chmask = _mask["CH"]
-        armask = _mask["AR"]
+        _mask = self.get_193mask()
+        newmask = self.__get_diskmask()
+        newmask[np.isnan(newmask)] = 0
+
+        chmask = _mask["CH"] * newmask
+        armask = _mask["AR"] * newmask
         feature_vector = {"CHArea": np.nanmean(chmask), "ARArea": np.nanmean(armask)}
         for im in self.sdofiles:
             if not self.crop:

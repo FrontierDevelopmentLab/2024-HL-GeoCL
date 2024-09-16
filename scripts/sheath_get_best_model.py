@@ -119,7 +119,7 @@ if __name__ == "__main__":
     api = wandb.Api()
 
     # Project name
-    project = "sheath_regression"
+    project = "sheath_EMBED_sweep"
 
     # Get all runs in the project
     runs = api.runs(project)
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     best_run_config = get_best_model(runs)
 
     # Save the config to a YAML file
-    with open("best_hyper.yaml", "w") as file:
+    with open("sheath_best_hyper_embeded.yml", "w") as file:
         yaml.dump(best_run_config, file)
 
-    print("Best run config saved to final_sweep.yaml")
+    print("Best run config saved to 'sheah_best_hyper.yml'")

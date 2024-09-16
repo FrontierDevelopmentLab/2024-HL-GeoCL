@@ -32,13 +32,13 @@ from geocloak.preprocess.backtrack import ballistic, HUX
 MAXIMUM_TIME_DIFF = 1  # days
 
 # Location for SDO preprocessed data
-sdo_dir = "/home/bjha/data/geocloak/formatted_data/sdo/sdoprep/"
+sdo_dir = "/home/bjha/sdoprepv2/"
 
 # Location for OMNI data
 omni_dir = "/home/bjha/data/geocloak/formatted_data/OMNI/omniweb_1m"
 
 # Output Directory
-out_dir = "/home/bjha/data/geocloak/formatted_data/sheath_trainv2"
+out_dir = "/home/bjha/data/geocloak/formatted_data/sheath_train"
 
 # Backtracking method
 backtrack_method = ballistic
@@ -51,6 +51,8 @@ dindex = int(27.3 * 24 * 60)
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+cadence = "1m"
+
 
 # for year in tq.tqdm(years, position=0, leave=True, desc=f"Total"):
 def sheath_training(year):
@@ -59,11 +61,13 @@ def sheath_training(year):
 
     # Outfile path/name
     filepath = os.path.join(
-        out_dir, f"sheath_training_1m_{backtrack_method.__name__}_{year}.csv"
+        out_dir, f"sheath_training_{cadence}_{backtrack_method.__name__}_{year}.csv"
     )
 
     # Read data
-    omnidf = pd.read_hdf(os.path.join(omni_dir, f"omniweb_formatted_1m_{year}.h5"))
+    omnidf = pd.read_hdf(
+        os.path.join(omni_dir, f"omniweb_formatted_{cadence}_{year}.h5")
+    )
     omnidf.index = pd.to_datetime(omnidf.index)
     omnidf.dropna(inplace=True)
 
@@ -124,14 +128,15 @@ def sheath_training(year):
     dstd.rename(lambda x: x + "sd", axis=1, inplace=True)
 
     filepath = os.path.join(
-        out_dir, f"sheath_training_mstd_1m_{backtrack_method.__name__}_{year}.csv"
+        out_dir,
+        f"sheath_training_mstd_{cadence}_{backtrack_method.__name__}_{year}.csv",
     )
     df = dmean.join(dstd, how="inner")
     df.to_csv(filepath)
 
 
 def main():
-    years = range(2021, 2024)
+    years = range(2015, 2020)
     processes = []
     for year in years:
         p = Process(target=sheath_training, args=(year,))
