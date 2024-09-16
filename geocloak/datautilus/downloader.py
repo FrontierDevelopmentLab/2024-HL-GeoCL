@@ -155,7 +155,7 @@ class DataDownloader:
         self,
         start_year: int = None,
         end_year: int = None,
-        resample=True,
+        resample=False,
     ) -> None:
         """
         This method will download the data using DSCOVR weburl ("https://www.ngdc.noaa.gov/dscovr/)
@@ -258,9 +258,6 @@ class DataDownloader:
                 log.warning("Size of two data frames are different.")
             df = filtered_df_f1m.join(filtered_df_m1m, how="inner")
 
-            # Save data in HDF5 file
-            filename = f"dscovr_formatted_{year:0>4}.h5"
-
             # Convert to cftime to strig so that it can be saved in HDF
             # Without Pickeling
             df.index = pd.to_datetime([s.isoformat() for s in df.index])
@@ -271,6 +268,10 @@ class DataDownloader:
             if resample:
                 df = df.resample("H").mean()
 
+            # Save data in HDF5 file
+            t_char = "1h" if resample else "1m"
+            filename = f"dscovr_formatted_{t_char}_{year:0>4}.h5"
+
             # Save data to given directory in HDF format.
             df.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
             log.info(f"Saved DSCOVR data to {os.path.join(self.outpath, filename)}")
@@ -279,6 +280,7 @@ class DataDownloader:
         self,
         start_year: int = None,
         end_year: int = None,
+        resample: bool = False,
     ) -> pd.DataFrame | None:
         """
         This method will download the exiting ACE data in a given time range.
@@ -289,6 +291,8 @@ class DataDownloader:
             Start date of the data range, by default None.
         end_year: datetime.datetime, optional
             End date of the data range, by default None.
+        resample: bool, optional
+            Whether or not to resample the data by hour, by default True.
 
         Returns
         -------
@@ -296,7 +300,7 @@ class DataDownloader:
 
         """
         # Download url
-        base_url = "https://sohoftp.nascom.nasa.gov/sdb/goes/ace/monthly/"
+        base_url = "https://sohoftp.nascom.nasa.gov/sdb/goes/ace/daily/"
 
         # Convert date time to datetime object
         start_year = 2015 if start_year is None else start_year
@@ -315,8 +319,8 @@ class DataDownloader:
         for year in range(start_year, end_year + 1):
 
             # Get the format string
-            mag = re.compile("^{}[0-9]+_ace_mag_1h.txt".format(year))
-            swepam = re.compile("^{}[0-9]+_ace_swepam_1h.txt".format(year))
+            mag = re.compile("^{}[0-9]+_ace_mag_1m.txt".format(year))
+            swepam = re.compile("^{}[0-9]+_ace_swepam_1m.txt".format(year))
 
             # Okay, its time to get the links and list it
             mag_list = []
@@ -356,8 +360,9 @@ class DataDownloader:
                 log.warning("Size of two data frames are different.")
             df = filtered_df_swepam.join(filtered_df_mag, how="inner")
 
-            # Save data in HDF5 file
-            filename = f"ace_formated_{year}.h5"
+            # Resample it to hours if the flag is set.
+            if resample:
+                df = df.resample("H").mean()
 
             # Index it and rearange the columns for consitency, replace
             # fill values with Nan.
@@ -376,18 +381,23 @@ class DataDownloader:
                 },
                 inplace=True,
             )
+            # Save data in HDF5 file
+            t_char = "1h" if resample else "1m"
+            filename = f"ace_formatted_{t_char}_{year}.h5"
 
             # Hurrey, save the data.
             df.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
             log.info(f"Saved ACE data to {os.path.join(self.outpath, filename)}")
 
-    def omniweb(self, datafile: str, fmtfile: str, **kwargs) -> pd.DataFrame | None:
+    def omniweb(
+        self, datafile: str | list, fmtfile: str, **kwargs
+    ) -> pd.DataFrame | None:
         """To transform omni data into formated data frame and save it
          as hdf5 for each year file.
 
         Parameters
         ----------
-        datafile: str
+        datafile: str | list
             The path to the data file.
         fmtfile: str
             The path to the format file.
@@ -420,7 +430,9 @@ class DataDownloader:
 
         # Convert day of year to ISO datetime format
         data["Time"] = data.apply(
-            lambda row: datetime.datetime(int(row.YEAR), 1, 1, int(row.Hour), 0)
+            lambda row: datetime.datetime(
+                int(row.YEAR), 1, 1, int(row.Hour), int(row.Minute)
+            )
             + datetime.timedelta(row.DOY - 1),
             axis=1,
         )
@@ -447,6 +459,7 @@ class DataDownloader:
 
         # Format the data as other data sources (ACE, DSCOVR)
         data.index = pd.to_datetime(data.index)
+        data = data[cols.keys()]
         data.rename(columns=cols, inplace=True)
         data = data[["Speed", "Density", "Temperature", "Bt", "Bx", "By", "Bz"]]
 
@@ -455,7 +468,7 @@ class DataDownloader:
             pbar.set_description(str(year))
             _data = data.loc[str(year)].copy()
             # Save data in HDF5 file
-            filename = f"omniweb_formatted_{year}.h5"
+            filename = f"omniweb_formatted_1m_{year}.h5"
             _data.to_hdf(os.path.join(self.outpath, filename), key="data", mode="w")
             log.info(f"Saved OMNI data to {os.path.join(self.outpath, filename)}")
 

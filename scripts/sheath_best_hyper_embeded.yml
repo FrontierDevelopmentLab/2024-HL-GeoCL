@@ -1,0 +1,5 @@
+batch_size: 512
+dropout_rate: 0.5
+epochs: 50
+lr: 0.01
+weight_decay: 0.01
