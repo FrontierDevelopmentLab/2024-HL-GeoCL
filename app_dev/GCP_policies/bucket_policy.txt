@@ -1,0 +1,25 @@
+Make bucket public
+
+1) Click on bucket
+
+2) click on permissions tab
+
+3) click on grant access
+
+4) type allUsers in New principals box
+
+5) assign role:
+	cloud storage -> storage object viewer
+
+
+<img src='/image/https%3A%2F%2Fprod-files-secure.s3.us-west-2.amazonaws.com%2F97233_acbf251855&width=1610&userId=4cdee108-d82e-4dee-a0b2-44d7983a0893&cache=v2' referrerpolicy="same-origin" style="display: block; object-fit: cover; border-radius: 0px; width: 100%; height: 30vh; opacity: 1; object-position: center 50%;">
+
+gcloud builds submit --tag gcr.io/hl-geo/fdl-geo-dashboard-test-1  --project=hl-geo
+
+gcloud run deploy --image gcr.io/hl-geo/fdl-geo-dashboard-test-1 --platform managed  --project=hl-geo --allow-unauthenticated
+
+Give yourself permission to add Storage Object Viewer
+
+1) Go to the console
+2) IAM & Admin
+3) select service accounts

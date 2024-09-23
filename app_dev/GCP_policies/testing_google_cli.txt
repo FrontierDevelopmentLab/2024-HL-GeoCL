@@ -1,0 +1,54 @@
+Checks
+
+active accounts:
+
+gcloud auth list
+
+
+Should look like this
+
+Credentialed Accounts
+ACTIVE  ACCOUNT
+*       user@example.com
+        other_user@example.com
+
+
+configuration list (show region, zone, account, and project):
+
+gcloud config list
+
+[compute]
+region = us-east4
+zone = us-east4-a
+[core]
+account = indiajacksonphd@gmail.com
+disable_usage_reporting = False
+project = hl-geo
+
+Your active configuration is: [default]
+
+log out
+
+gcloud auth revoke user@example.com
+
+Testing
+
+Create a new VM
+
+gcloud compute instances create india-test-instance-from-cli \
+    --zone=us-central1-a \
+    --machine-type=e2-micro \
+    --image=debian-11-bullseye-v20240709 \
+    --image-project=debian-cloud
+
+stop the VM
+gcloud compute instances stop india-test-instance-from-cli --zone=us-central1-a
+
+
+start the VM
+gcloud compute instances start india-test-instance-from-cli --zone=us-central1-a
+
+
+terminate the VM
+gcloud compute instances delete india-test-instance-from-cli --zone=us-central1-a
+
