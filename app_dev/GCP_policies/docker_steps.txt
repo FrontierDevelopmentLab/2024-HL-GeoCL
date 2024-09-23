@@ -1,0 +1,50 @@
+1. download docker
+
+2. create dockerfile/image(with no extension)
+
+# Use an official Python runtime as a parent image
+FROM python:3.8
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir streamlit yfinance
+
+# Make port 8501 available to the world outside this container
+EXPOSE 8501
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["streamlit", "run", "starter_script.py"]
+
+
+3. create the docker image
+
+ docker build -t streamlit-app
+
+
+4. run dymaic container of docker image locally
+
+docker run -p 8501:8501 streamlit-app
+
+1. create docker image for gcloud
+
+docker build -t gcr.io/hl-geo/india-test-cli .
+
+2. push to repository (make sure the artifact repository API is enabled in the console)
+
+docker push gcr.io/hl-geo/india-test-cli
+
+3. Go to the console and make sure that the container is in the repository
+4. Go to Cloud Run, select the image, make your choice, click create
+
+
+
+
+
