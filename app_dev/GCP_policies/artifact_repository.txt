@@ -1,0 +1,16 @@
+Create Artifact Repository
+
+1) check to make sure that your project is active
+	gcloud config get-value project
+
+	if it is not active then do the following
+
+	gcloud config set core/project your-project-name
+
+2) create new artifact repository
+	
+	gcloud artifacts repositories create hello \
+		--project=your-project-name \
+		--repository-format=docker \
+		--location=us-east4 \
+		--description="Give a description"

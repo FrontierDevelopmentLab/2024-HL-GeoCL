@@ -1,6 +1,8 @@
 # User defined
 test.ipynb
-format_and_lint.sh
+.idea/
+scripts/wandb/
+script/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -10,12 +12,15 @@ wandb/
 cl-testing/
 sheathNRT/
 
+
 # C extensions
 *.so
 
-#Environment Files
-*.env
 .env
+*env
+wandb/
+cl-testing/
+sheathNRT/
 
 # Distribution / packaging
 .Python

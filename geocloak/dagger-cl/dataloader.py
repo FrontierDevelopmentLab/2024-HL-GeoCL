@@ -1,4 +1,5 @@
 # imports
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
@@ -7,6 +8,18 @@ from os import path
 from sklearn.preprocessing import PowerTransformer, StandardScaler
 import json
 import os
+import warnings
+warnings.filterwarnings("ignore")
+import time
+
+from paths import (
+    ace_input_path,
+    supermag_target_paths,
+    mapping_train_files,
+    mapping_val_file,
+    mapping_test_file,
+    scaler_dir
+)
 
 class GeoCLoakDataLoader(Dataset):
     def __init__(self, mapping_file, input_path, target_paths,scaler_dir):
@@ -15,59 +28,47 @@ class GeoCLoakDataLoader(Dataset):
         self.target_paths = target_paths  # List of target paths
         self.scaler_dir = scaler_dir
         self.mapping = pd.read_csv(self.mapping_file, parse_dates=[0, 1], header=0)
+        self.input_fnms = self.mapping.iloc[:, 0].apply(lambda x: x.strftime("%Y%m%d%H%M") + ".csv")
+        self.target_fnms = self.mapping.iloc[:, 1].apply(lambda x: x.strftime("%Y%m%d%H%M") + ".csv")
         
         # Load existing scalers
         self.scaler_rtsw_pt, self.scaler_rtsw_std = self._load_rtsw_scaler("scaler.json")
         self.scaler_rtsw_pt._scaler = self.scaler_rtsw_std
         self.scaler_rtsw_pt.set_output(transform='pandas')
-        self.scaler_dbe = self._load_db_scaler("dbe_scaler.json")
-        self.scaler_dbe.set_output(transform='pandas')
-        self.scaler_dbn = self._load_db_scaler("dbn_scaler.json")
-        self.scaler_dbn.set_output(transform='pandas')
-        self.scaler_dbz = self._load_db_scaler("dbz_scaler.json")
-        self.scaler_dbz.set_output(transform='pandas')
+        self.scaler_db = {}
+        self.scaler_db['dbe_geo'] = self._load_db_scaler("std_dbe_scaler.json")
+        self.scaler_db['dbe_geo'].set_output(transform='pandas')
+        self.scaler_db['dbn_geo'] = self._load_db_scaler("std_dbn_scaler.json")
+        self.scaler_db['dbn_geo'].set_output(transform='pandas')
+        self.scaler_db['dbz_geo']=self._load_db_scaler("std_dbz_scaler.json")
+        self.scaler_db['dbz_geo'].set_output(transform='pandas')
            
     def __len__(self):
-        return 10
+        return len(self.mapping)
     
     def __getitem__(self, idx):
-        input_timestamp = self.mapping.iloc[idx, 0]
-        target_timestamp = self.mapping.iloc[idx, 1]
-        
-        input_filename = input_timestamp.strftime("%Y%m%d%H%M") + ".csv"
-        target_filename = target_timestamp.strftime("%Y%m%d%H%M") + ".csv"
-        
+        input_filename = self.input_fnms[idx]
+        target_filename = self.target_fnms[idx]
         input_path = path.join(self.input_path, input_filename)
-        
         if not path.exists(input_path):
             raise FileNotFoundError(f"Input file {input_filename} not found.")
-        
-        input_df = pd.read_csv(input_path, header=None)
+        input_df = pd.read_csv(input_path, header=None, engine='c', memory_map=True, dtype=np.float32)
         scaled_input_df = self.scaler_rtsw_pt.transform(input_df)
-          
         target_dfs = []
         for target_path in self.target_paths:
+            comp = target_path.split('/')[-1]
             full_target_path = path.join(target_path, target_filename)
             if not path.exists(full_target_path):
                 raise FileNotFoundError(f"Target file {target_filename} not found in {target_path}.")
-            target_df = pd.read_csv(full_target_path, header=None)
-            if target_path.split('/')[-1] == 'dbe_geo':
-                scaled_target_df = self.scaler_dbe.transform(target_df)
-            elif target_path.split('/')[-1] == 'dbn_geo':
-                scaled_target_df = self.scaler_dbn.transform(target_df)
-            elif target_path.split('/')[-1] == 'dbz_geo':
-                scaled_target_df = self.scaler_dbz.transform(target_df)
-            else:
-                raise ValueError(f"Unknown target path {target_path}.")
+            target_df = pd.read_csv(full_target_path, header=None, engine='c',memory_map=True,dtype=np.float32)
+            print(target_df.shape)
+            scaled_target_df = self.scaler_db[comp].transform(target_df.T)
             target_dfs.append(scaled_target_df)
-        
         concatenated_target_df = pd.concat(target_dfs, axis=1)
-        
         mask_target = torch.tensor(~np.isnan(concatenated_target_df).values.flatten(), dtype=torch.bool)
-        
         input_data = torch.tensor(scaled_input_df.values, dtype=torch.float32)
         target_data = torch.tensor(concatenated_target_df.values.flatten(), dtype=torch.float32)
-        
+
         return input_data, target_data, mask_target
 
     def _save_rtsw_scaler(self, scaler, filename):
@@ -167,3 +168,53 @@ class GeoCLoakDataLoader(Dataset):
         scaler.n_features_in_ = scaler_dict["n_features"]
         scaler.feature_names_in_ = np.array(scaler_dict["feature_names"])
         return scaler
+
+
+# Example Use Case
+
+# Define paths
+mapping_file = mapping_train_files[0]
+input_path = ace_input_path
+target_paths =  supermag_target_paths
+scaler_dir = scaler_dir
+
+# Initialize the GeoCLoakDataLoader with use_dbz_geo set to False
+geo_data_loader = GeoCLoakDataLoader(
+    mapping_file=mapping_file,
+    input_path=input_path,
+    target_paths=target_paths,
+    scaler_dir=scaler_dir,
+)
+# start_time = time.time()
+# Create a PyTorch DataLoader
+batch_size = 2048
+
+data_loader = DataLoader(geo_data_loader, batch_size=batch_size, num_workers=80, pin_memory=True, shuffle=True)
+# end_time = time.time()
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Iterate through the data loader
+for epochs in range(1,2):
+    start_time = time.time()
+    for i, (inputs, targets, masks) in enumerate(data_loader):
+        # start_time = time.time()
+        # worker_id = torch.utils.data.get_worker_info().id
+        inputs.to(device)
+        targets.to(device)
+        masks.to(device)
+        # inputs: Tensor of shape (batch_size, num_features)
+        # targets: Tensor of shape (batch_size, num_targets)
+        # masks: Tensor of shape (batch_size, num_targets) indicating valid target values
+        # print(worker_id)
+        print(f"Inputs: {inputs.shape}")
+        print(f"Targets: {targets.shape}")
+        print(f"Masks: {masks.shape}")
+        print("\n")
+        
+
+        # print("time: ", end_time-start_time)
+
+        # del inputs, targets, masks
+        # torch.cuda.empty_cache()
+    end_time = time.time()
+    print(f'Epoch {epochs} Total Time', end_time-start_time)
