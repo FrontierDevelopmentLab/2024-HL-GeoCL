@@ -98,7 +98,7 @@ def calc_angular_distance(latlon1: np.ndarray, latlon2: np.ndarray):
     # angular distance between two points
     return np.arccos(np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(lat2) * np.cos(lon2 - lon1))
 
-
+  
 def calc_bearing(latlon1: np.ndarray, latlon2: np.ndarray):
     """calculate the bearing (direction) between a set of latitude and longitude points.
 

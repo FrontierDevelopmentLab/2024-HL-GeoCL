@@ -1,13 +1,24 @@
 # User defined
 test.ipynb
+.idea/
+scripts/wandb/
+script/data/
+test*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
+
 # C extensions
 *.so
+
+.env
+*env
+wandb/
+cl-testing/
+sheathNRT/
 
 # Distribution / packaging
 .Python
