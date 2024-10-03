@@ -1,0 +1,18 @@
+# sweep_config.yaml
+method: grid
+metric:
+  name: val_rmse
+  goal: minimize
+parameters:
+  epochs:
+    value: 200
+  batch_size:
+    values: [32, 64, 128]
+  lr:
+    values: [0.1, 0.01, 0.001, 0.0001, 0.00001]
+  weight_decay:
+    values: [0.0, 0.01, 0.001, 0.00001]
+  hidden_dim:
+    values: [64, 128, 256]
+  dropout_rate:
+    values: [0.2, 0.3, 0.4, 0.5]

@@ -1,3 +1,5 @@
+# imports
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
@@ -66,6 +68,7 @@ class GeoCLoakDataLoader(Dataset):
         mask_target = torch.tensor(~np.isnan(concatenated_target_df).values.flatten(), dtype=torch.bool)
         input_data = torch.tensor(scaled_input_df.values, dtype=torch.float32)
         target_data = torch.tensor(concatenated_target_df.values.flatten(), dtype=torch.float32)
+
         return input_data, target_data, mask_target
 
     def _save_rtsw_scaler(self, scaler, filename):
