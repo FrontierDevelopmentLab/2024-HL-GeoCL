@@ -2,10 +2,10 @@
 This python script will prepare omniweb data fro sheath data preparation.
 """
 
-import sys
 import os
-import warnings
 import pathlib
+import sys
+import warnings
 
 warnings.filterwarnings("ignore")
 

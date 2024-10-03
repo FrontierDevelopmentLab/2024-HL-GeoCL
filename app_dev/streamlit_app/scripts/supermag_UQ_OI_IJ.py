@@ -8,37 +8,35 @@ Author: Opal Issan (oissan@ucsd.edu) PhD @ ucsd
 Last Modified: July 30th, 2024
 """
 
-import numpy as np
+import os
 import tkinter
-import cartopy.crs as ccrs
-from supermag_api import *
-import GPy
-from sec import T_df, get_mesh
 from io import BytesIO
 
-import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import GPy
 import matplotlib
-
-from mycolorpy import colorlist as mcp
+import matplotlib.pyplot as plt
+import numpy as np
 from google.cloud import storage
-import os
+from mycolorpy import colorlist as mcp
+from sec import T_df, get_mesh
+from supermag_api import *
 
 
 def supermag_setup():
     os.environ.setdefault("GCLOUD_PROJECT", "hl-geo'")
 
     # Set your project ID
-    project_id = 'hl-geo'
+    project_id = "hl-geo"
 
     # Initialize a client
     storage_client = storage.Client(project=project_id)
 
-    font = {'family': 'serif',
-            'size': 14}
+    font = {"family": "serif", "size": 14}
 
-    matplotlib.rc('font', **font)
-    matplotlib.rc('xtick', labelsize=14)
-    matplotlib.rc('ytick', labelsize=14)
+    matplotlib.rc("font", **font)
+    matplotlib.rc("xtick", labelsize=14)
+    matplotlib.rc("ytick", labelsize=14)
 
     storage_client = storage.Client()
     return storage_client
@@ -52,6 +50,7 @@ def download_csv_from_gcs(storage_client, bucket_name, source_blob_name):
     content = blob.download_as_bytes()
     df = pd.read_csv(BytesIO(content))
     return df
+
 
 '''
 # Function to convert CSV to NPY
@@ -68,6 +67,7 @@ def df_to_npy(df):
     """Convert a pandas DataFrame to a numpy array."""
     return df.to_numpy()
 
+
 '''
 # Function to split lat/lon CSV into separate NPY files
 def split_lat_lon_csv_to_npy(csv_file_path, lat_npy_file, lon_npy_file):
@@ -81,13 +81,13 @@ def split_lat_lon_csv_to_npy(csv_file_path, lat_npy_file, lon_npy_file):
 # Function to split lat/lon DataFrame into separate NPY arrays
 def split_lat_lon_df(df):
     """Split lat/lon DataFrame and return separate NPY arrays."""
-    glat = df['glat'].to_numpy()
-    glon = df['glon'].to_numpy()
+    glat = df["glat"].to_numpy()
+    glon = df["glon"].to_numpy()
     return glat, glon
 
 
 def call_supermag(storage_client):
-    bucket_name = 'geocloak2024'
+    bucket_name = "geocloak2024"
     csv_files = {
         "inference_outputs/DAGGER/202405120000/dbn_geo/202405120000.csv": "data_Bn.npy",
         "inference_outputs/DAGGER/202405120000/dbe_geo/202405120000.csv": "data_Be.npy",
@@ -113,7 +113,7 @@ def call_supermag(storage_client):
     lat_lon_df = download_csv_from_gcs(storage_client, bucket_name, lat_lon_csv)
     geo_lat, geo_lon = split_lat_lon_df(lat_lon_df)
 
-    '''
+    """
     # Load the lat/lon data
     geo_lat = np.load("data/glat.npy")
     geo_lon = np.load("data/glon.npy")
@@ -125,8 +125,7 @@ def call_supermag(storage_client):
     for npy_file, data in npy_data.items():
         np.save(f"data/{npy_file}", data)
         print(f"Saved {npy_file} to data directory.")
-    '''
-
+    """
 
     # Print shapes to verify the data
     print(f"data_Bn shape: {data_Bn.shape}")
@@ -142,11 +141,15 @@ def call_supermag(storage_client):
     # setup the SECs "node" grid
     # n_lon and n_lat are free parameters but are limited to n_lon*n_lat ~ number of stations
     n_lon, n_lat = 35, 35
-    secs_lat_lon_r, lat_sec, lon_sec = get_mesh(n_lon=n_lon, n_lat=n_lat, radius=R_ionosphere)
+    secs_lat_lon_r, lat_sec, lon_sec = get_mesh(
+        n_lon=n_lon, n_lat=n_lat, radius=R_ionosphere
+    )
 
     ############################################################################################
     # Setup the SuperMAG stations grid
-    min_length = min(len(data_Bn), len(data_Be), len(data_Bz), len(geo_lat), len(geo_lon))
+    min_length = min(
+        len(data_Bn), len(data_Be), len(data_Bz), len(geo_lat), len(geo_lon)
+    )
 
     data_Bn = data_Bn[:min_length]
     data_Be = data_Be[:min_length]
@@ -179,21 +182,41 @@ def call_supermag(storage_client):
 
     # predicted grid
     n_lat, n_lon = 100, 200
-    pred_lat_lon_r, pred_lat, pred_lon = get_mesh(n_lon=n_lon, n_lat=n_lat, radius=R_earth,
-                                                  lat_max=80, lat_min=-80, endpoint_lon=True)
+    pred_lat_lon_r, pred_lat, pred_lon = get_mesh(
+        n_lon=n_lon,
+        n_lat=n_lat,
+        radius=R_earth,
+        lat_max=80,
+        lat_min=-80,
+        endpoint_lon=True,
+    )
     # predict via GP
-    mean_, sd_ = model.predict(Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r))
+    mean_, sd_ = model.predict(
+        Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r)
+    )
 
     # plot results
     fig = plt.figure(figsize=(9, 4))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
     ax.coastlines()
-    pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0], np.reshape(mean_[:n_lat * n_lon], (n_lat, n_lon), "C"),
-                      alpha=0.6,
-                      transform=ccrs.PlateCarree())
+    pos = ax.contourf(
+        pred_lon[:, :, 0],
+        pred_lat[:, :, 0],
+        np.reshape(mean_[: n_lat * n_lon], (n_lat, n_lon), "C"),
+        alpha=0.6,
+        transform=ccrs.PlateCarree(),
+    )
 
-    ax.scatter(geo_lon, geo_lat, c=data_Bn, vmin=np.min(mean_[:n_lat * n_lon]), vmax=np.max(mean_[:n_lat * n_lon]),
-               s=10, cmap='viridis', transform=ccrs.PlateCarree())
+    ax.scatter(
+        geo_lon,
+        geo_lat,
+        c=data_Bn,
+        vmin=np.min(mean_[: n_lat * n_lon]),
+        vmax=np.max(mean_[: n_lat * n_lon]),
+        s=10,
+        cmap="viridis",
+        transform=ccrs.PlateCarree(),
+    )
     cbar = fig.colorbar(pos)
     cbar.ax.set_ylabel("mean $B_{n}$ [nT]", rotation=90)
     ax.set_xticks([-180, -90, 0, 90, 180])
@@ -202,19 +225,30 @@ def call_supermag(storage_client):
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
     plt.tight_layout()
-    plt.savefig("figures/secgp_mean_Bn.png", bbox_inches='tight', dpi=600)
+    plt.savefig("figures/secgp_mean_Bn.png", bbox_inches="tight", dpi=600)
     plt.show()
 
     # plot results
     fig = plt.figure(figsize=(9, 4))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
     ax.coastlines()
-    pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0],
-                      np.reshape(mean_[n_lat * n_lon:2 * n_lat * n_lon], (n_lat, n_lon), "C"),
-                      alpha=0.6,
-                      transform=ccrs.PlateCarree())
-    ax.scatter(geo_lon, geo_lat, c=data_Be, vmin=np.min(mean_[n_lat * n_lon:2 * n_lat * n_lon]),
-               vmax=np.max(mean_[n_lat * n_lon:2 * n_lat * n_lon]), s=10, cmap='viridis', transform=ccrs.PlateCarree())
+    pos = ax.contourf(
+        pred_lon[:, :, 0],
+        pred_lat[:, :, 0],
+        np.reshape(mean_[n_lat * n_lon : 2 * n_lat * n_lon], (n_lat, n_lon), "C"),
+        alpha=0.6,
+        transform=ccrs.PlateCarree(),
+    )
+    ax.scatter(
+        geo_lon,
+        geo_lat,
+        c=data_Be,
+        vmin=np.min(mean_[n_lat * n_lon : 2 * n_lat * n_lon]),
+        vmax=np.max(mean_[n_lat * n_lon : 2 * n_lat * n_lon]),
+        s=10,
+        cmap="viridis",
+        transform=ccrs.PlateCarree(),
+    )
     cbar = fig.colorbar(pos)
     cbar.ax.set_ylabel("mean $B_{e}$ [nT]", rotation=90)
     ax.set_xticks([-180, -90, 0, 90, 180])
@@ -223,18 +257,21 @@ def call_supermag(storage_client):
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
     plt.tight_layout()
-    plt.savefig("figures/secgp_mean_Be.png", bbox_inches='tight', dpi=600)
+    plt.savefig("figures/secgp_mean_Be.png", bbox_inches="tight", dpi=600)
     plt.show()
 
     # plot results
     fig = plt.figure(figsize=(9, 4))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
     ax.coastlines()
-    pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0],
-                      np.reshape(np.sqrt(sd_)[:n_lat * n_lon], (n_lat, n_lon), "C"),
-                      alpha=0.6,
-                      cmap="plasma",
-                      transform=ccrs.PlateCarree())
+    pos = ax.contourf(
+        pred_lon[:, :, 0],
+        pred_lat[:, :, 0],
+        np.reshape(np.sqrt(sd_)[: n_lat * n_lon], (n_lat, n_lon), "C"),
+        alpha=0.6,
+        cmap="plasma",
+        transform=ccrs.PlateCarree(),
+    )
 
     ax.scatter(lon_sec[:, :, 0], lat_sec[:, :, 0], c="blue", s=7, marker="x")
     ax.scatter(geo_lon, geo_lat, c="red", s=7)
@@ -246,18 +283,23 @@ def call_supermag(storage_client):
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
     plt.tight_layout()
-    plt.savefig("figures/secgp_sd_Bn.png", bbox_inches='tight', dpi=600)
+    plt.savefig("figures/secgp_sd_Bn.png", bbox_inches="tight", dpi=600)
     plt.show()
 
     # plot results
     fig = plt.figure(figsize=(9, 4))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
     ax.coastlines()
-    pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0],
-                      np.reshape(np.sqrt(sd_)[n_lat * n_lon:2 * n_lat * n_lon], (n_lat, n_lon), "C"),
-                      alpha=0.6,
-                      cmap="plasma",
-                      transform=ccrs.PlateCarree())
+    pos = ax.contourf(
+        pred_lon[:, :, 0],
+        pred_lat[:, :, 0],
+        np.reshape(
+            np.sqrt(sd_)[n_lat * n_lon : 2 * n_lat * n_lon], (n_lat, n_lon), "C"
+        ),
+        alpha=0.6,
+        cmap="plasma",
+        transform=ccrs.PlateCarree(),
+    )
 
     ax.scatter(lon_sec[:, :, 0], lat_sec[:, :, 0], c="blue", s=7, marker="x")
     ax.scatter(geo_lon, geo_lat, c="red", s=7)
@@ -269,6 +311,5 @@ def call_supermag(storage_client):
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
     plt.tight_layout()
-    plt.savefig("figures/secgp_sd_Be.png", bbox_inches='tight', dpi=600)
+    plt.savefig("figures/secgp_sd_Be.png", bbox_inches="tight", dpi=600)
     plt.show()
-

@@ -2,19 +2,20 @@
 This is main sheath training script for training SHEATH based.
 """
 
-import sys
-import os
-import warnings
 import json
-import torch
-import torch.optim as optim
-import torch.nn as nn
-from torch.utils.data import DataLoader
-import wandb
+import os
+import sys
+import warnings
+
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import tqdm as tq
+import wandb
 import yaml
 from sklearn.preprocessing import StandardScaler
-import tqdm as tq
+from torch.utils.data import DataLoader
 
 warnings.filterwarnings("ignore")
 
@@ -25,11 +26,11 @@ RUNS = 1
 
 
 from geocloak.models.sheath import (
+    SHEATH_MLP,
     DataProcessor,
     SHEATHDataLoader,
-    SHEATH_MLP,
-    calculate_metrics,
     calculate_individual_metrics,
+    calculate_metrics,
 )
 
 
@@ -67,7 +68,9 @@ def seed_everything(seed: int):
     seed : int
         Seed value.
     """
-    import random, os
+    import os
+    import random
+
     import numpy as np
     import torch
 

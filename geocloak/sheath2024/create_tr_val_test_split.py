@@ -1,5 +1,7 @@
 import os
+
 import pandas as pd
+
 
 class DataProcessor:
     """
@@ -47,8 +49,7 @@ class DataProcessor:
         """
         initial_timestamp_col = self.column_names[1]
         # print(initial_timestamp_col)
-        data[initial_timestamp_col] = pd.to_datetime(
-            data[initial_timestamp_col])
+        data[initial_timestamp_col] = pd.to_datetime(data[initial_timestamp_col])
 
         # Initialize boolean Series for test and validation indices
         test_indices = pd.Series([False] * len(data), index=data.index)

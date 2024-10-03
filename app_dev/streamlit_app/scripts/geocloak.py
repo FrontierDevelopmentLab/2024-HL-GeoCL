@@ -1,7 +1,8 @@
+from io import BytesIO
+
+import requests
 import streamlit as st
 from PIL import Image
-import requests
-from io import BytesIO
 
 
 def get_geocloak():
@@ -14,7 +15,9 @@ def get_geocloak():
         """,
     )
     # response = requests.get("https://storage.googleapis.com/india-jackson-1/FDL_GeoCLoak_3.png")
-    response = requests.get("https://storage.googleapis.com/india-jackson-1/geocloak_2.png")
+    response = requests.get(
+        "https://storage.googleapis.com/india-jackson-1/geocloak_2.png"
+    )
     img = Image.open(BytesIO(response.content))
     st.image(
         img,

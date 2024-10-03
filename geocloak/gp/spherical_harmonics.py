@@ -8,9 +8,9 @@ import numpy as np
 import scipy.special
 
 
-def get_spherical_harmonic_basis_matrix(latitude: list | np.ndarray,
-                                        longitude: list | np.ndarray,
-                                        ell=10):
+def get_spherical_harmonic_basis_matrix(
+    latitude: list | np.ndarray, longitude: list | np.ndarray, ell=10
+):
     """
     A function to construct the spherical harmonic evaluation at GSE locations (latitude, longitude)
 
@@ -68,8 +68,10 @@ def ridge_regression(basis_matrix: np.ndarray, data: np.ndarray, lambda_: float)
     )
 
 
-def construct_global_view(coeff: np.ndarray, longitude: np.ndarray, latitude: np.ndarray):
-    """    A function to perform ridge regression (L2 regularization of the coefficient vector)
+def construct_global_view(
+    coeff: np.ndarray, longitude: np.ndarray, latitude: np.ndarray
+):
+    """A function to perform ridge regression (L2 regularization of the coefficient vector)
 
 
     Parameters

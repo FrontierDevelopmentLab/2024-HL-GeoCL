@@ -1,8 +1,10 @@
-import torch
 import json
-import numpy as np
-from sklearn.preprocessing import StandardScaler
 import os
+
+import numpy as np
+import torch
+from sklearn.preprocessing import StandardScaler
+
 
 def load_scaler(scaler_dir, filename):
     """
@@ -25,7 +27,10 @@ def load_scaler(scaler_dir, filename):
     scaler.feature_names_in_ = np.array(scaler_dict["feature_names"])
     return scaler
 
-def unscale_predicted_target(predicted_target, scaler_dir= "/home/jupyter/models/DAGGER_CL"):
+
+def unscale_predicted_target(
+    predicted_target, scaler_dir="/home/jupyter/models/DAGGER_CL"
+):
     """
     Unscales the predicted target using the appropriate scalers and prints the unscaled values.
 
@@ -33,7 +38,9 @@ def unscale_predicted_target(predicted_target, scaler_dir= "/home/jupyter/models
         predicted_target (torch.Tensor): The predicted target tensor of shape (1070,).
         scaler_dir (str): Directory where the scaler JSON files are stored.
     """
-    assert predicted_target.shape[0] == 1070, "Predicted target must have 1070 dimensions."
+    assert (
+        predicted_target.shape[0] == 1070
+    ), "Predicted target must have 1070 dimensions."
 
     # Load the scalers
     scaler_dbe = load_scaler(scaler_dir, "std_dbe_scaler.json")

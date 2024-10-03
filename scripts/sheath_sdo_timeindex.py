@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import zarr
-import pandas as pd
-import numpy as np
-from astropy.time import Time
-import tqdm as tq
 import os
+
+import numpy as np
+import pandas as pd
+import tqdm as tq
+import zarr
+from astropy.time import Time
 
 """
 This is the python script which will generate the time index file

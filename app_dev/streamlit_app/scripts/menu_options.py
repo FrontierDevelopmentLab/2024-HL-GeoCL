@@ -8,7 +8,7 @@ def streamlit_menu(example=1):
         with st.sidebar:
             selected = option_menu(
                 menu_title="GeoCLoak",  # required
-                options=["About", "SHEATH", "DAGGER-CL", "Data Sources"], # required
+                options=["About", "SHEATH", "DAGGER-CL", "Data Sources"],  # required
                 # icons=["house", "book", "envelope"],  # optional
                 menu_icon="cast",  # optional
                 default_index=0,  # optional

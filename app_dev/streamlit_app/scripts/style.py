@@ -115,4 +115,3 @@ def render_custom_style():
         </style>
         """,
     )
-

@@ -1,14 +1,14 @@
-import streamlit as st
-from streamlit_option_menu import option_menu
-from PIL import Image
-import requests
-from io import BytesIO
-import pandas as pd
-import h5py
 import os
-from data_module import fetch_data, prepare_dataframe, save_csv, plot_time_series
-from sec import T_df, get_mesh
+from io import BytesIO
 
+import h5py
+import pandas as pd
+import requests
+import streamlit as st
+from data_module import fetch_data, plot_time_series, prepare_dataframe, save_csv
+from PIL import Image
+from sec import T_df, get_mesh
+from streamlit_option_menu import option_menu
 
 token = "8xj_AxxKhgKYz9oMfrsgyacXB-b8BgvG-KpBtKLZIK3yvQr7v7MCZmNQFOmyJ0N56m_OEnY1Snwn4O86foraEQ=="
 org = "Google"
@@ -73,7 +73,13 @@ def streamlit_menu(example=1):
         with st.sidebar:
             selected = option_menu(
                 menu_title="Main Menu",  # required
-                options=["About", "FLD 2024 - GeoCLoak", "FDL 2023 - SHEATH", "FDL 2020 - DAGGER", "Data Sources"],  # required
+                options=[
+                    "About",
+                    "FLD 2024 - GeoCLoak",
+                    "FDL 2023 - SHEATH",
+                    "FDL 2020 - DAGGER",
+                    "Data Sources",
+                ],  # required
                 icons=["house", "book", "envelope"],  # optional
                 menu_icon="cast",  # optional
                 default_index=0,  # optional
@@ -84,7 +90,11 @@ def streamlit_menu(example=1):
         # 2. horizontal menu w/o custom style
         selected = option_menu(
             menu_title=None,  # required
-            options=["FLD 2024 - GeoCLoak", "FDL 2023 - SHEATH", "FDL 2020 - DAGGER"],  # required
+            options=[
+                "FLD 2024 - GeoCLoak",
+                "FDL 2023 - SHEATH",
+                "FDL 2020 - DAGGER",
+            ],  # required
             icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             default_index=0,  # optional
@@ -96,7 +106,11 @@ def streamlit_menu(example=1):
         # 2. horizontal menu with custom style
         selected = option_menu(
             menu_title=None,  # required
-            options=["FLD 2024 - GeoCLoak", "FDL 2023 - SHEATH", "FDL 2020 - DAGGER"],  # required
+            options=[
+                "FLD 2024 - GeoCLoak",
+                "FDL 2023 - SHEATH",
+                "FDL 2020 - DAGGER",
+            ],  # required
             icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             default_index=0,  # optional
@@ -203,13 +217,15 @@ if selected == "FLD 2024 - GeoCLoak":
         unsafe_allow_html=True,
     )
     # response = requests.get("https://storage.googleapis.com/india-jackson-1/FDL_GeoCLoak_3.png")
-    response = requests.get("https://storage.googleapis.com/india-jackson-1/geocloak_2.png")
+    response = requests.get(
+        "https://storage.googleapis.com/india-jackson-1/geocloak_2.png"
+    )
     img = Image.open(BytesIO(response.content))
     st.image(
-       img,
-       # caption="FDL-Geoeffectiveness Banner",
-       # width=800,
-       channels="RGB",
+        img,
+        # caption="FDL-Geoeffectiveness Banner",
+        # width=800,
+        channels="RGB",
     )
 
     # Add the box with depth effect
@@ -235,13 +251,15 @@ if selected == "FDL 2023 - SHEATH":
         """,
         unsafe_allow_html=True,
     )
-    response = requests.get("https://storage.googleapis.com/india-jackson-1/SHEATH_3.png")
+    response = requests.get(
+        "https://storage.googleapis.com/india-jackson-1/SHEATH_3.png"
+    )
     img = Image.open(BytesIO(response.content))
     st.image(
-       img,
-       # caption="FDL-Geoeffectiveness Banner",
-       # width=800,
-       channels="RGB",
+        img,
+        # caption="FDL-Geoeffectiveness Banner",
+        # width=800,
+        channels="RGB",
     )
 
     # Add the box with depth effect
@@ -269,10 +287,10 @@ if selected == "FDL 2020 - DAGGER":
     response = requests.get("https://storage.googleapis.com/india-jackson-1/DAGGER.png")
     img = Image.open(BytesIO(response.content))
     st.image(
-       img,
-       # caption="FDL-Geoeffectiveness Banner",
-       # width=800,
-       channels="RGB",
+        img,
+        # caption="FDL-Geoeffectiveness Banner",
+        # width=800,
+        channels="RGB",
     )
 
     # Add the box with depth effect
@@ -290,21 +308,16 @@ if selected == "FDL 2020 - DAGGER":
     )
 
 # Define constants for bucket and measurement names
-buckets = {
-    "ACE": "ace_bucket",
-    "DSCOVR": "dscovr_bucket"
-}
-measurements = {
-    "ACE": "ace_data",
-    "DSCOVR": "dscovr_data"
-}
+buckets = {"ACE": "ace_bucket", "DSCOVR": "dscovr_bucket"}
+measurements = {"ACE": "ace_data", "DSCOVR": "dscovr_data"}
 
 # Display section title
 if selected == "Data Sources":
     st.markdown(f"<center><h1>{selected}</h1></center>", unsafe_allow_html=True)
 
     # Create buttons for selecting data source
-    st.markdown("""
+    st.markdown(
+        """
                 <style>
                     div[data-testid="column"] {
                         width: fit-content !important;
@@ -314,30 +327,32 @@ if selected == "Data Sources":
                         width: fit-content !important;
                     }
                 </style>
-                """, unsafe_allow_html=True)
+                """,
+        unsafe_allow_html=True,
+    )
 
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        ace_button = st.button('ACE')
+        ace_button = st.button("ACE")
     with col2:
-        dscovr_button = st.button('DSCOVR')
+        dscovr_button = st.button("DSCOVR")
 
     # Determine which button is clicked and set parameters
     if ace_button:
         bucket = buckets["ACE"]
         measurement = measurements["ACE"]
-        csv_file = 'ace_data.csv'
+        csv_file = "ace_data.csv"
     elif dscovr_button:
         bucket = buckets["DSCOVR"]
         measurement = measurements["DSCOVR"]
-        csv_file = 'dscovr_data.csv'
+        csv_file = "dscovr_data.csv"
     else:
         # Default or fallback scenario if no button is clicked yet
         st.stop()
 
     # Fetch and display data for the selected source
-    with st.spinner(f'Fetching {measurement} data...'):
+    with st.spinner(f"Fetching {measurement} data..."):
         result = fetch_data(token, org, url, bucket, measurement)
         df = prepare_dataframe(result)
 
@@ -355,5 +370,5 @@ if selected == "Data Sources":
         label="Download Data as CSV",
         data=open(csv_file, "rb"),
         file_name=csv_file,
-        mime='text/csv',
+        mime="text/csv",
     )

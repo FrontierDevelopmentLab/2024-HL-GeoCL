@@ -11,9 +11,9 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import DataLoader, Dataset
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
 def load_scaler_from_json(filename, scaler_type="standard"):

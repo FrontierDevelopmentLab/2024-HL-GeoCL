@@ -5,17 +5,17 @@ Using the method (i) Ballistic back propagation, (ii) HUX and use the backtracke
 information to create the training data set for SHEATH.
 """
 
-import pandas as pd
-import numpy as np
+import csv
+import os
+import sys
+from multiprocessing import Process, current_process
+
 import astropy.constants as const
 import astropy.units as u
-import os
-from astropy.time import Time
+import numpy as np
+import pandas as pd
 import tqdm.auto as tq
-import csv
-import sys
-from multiprocessing import Process
-from multiprocessing import current_process
+from astropy.time import Time
 from sunpy.coordinates.sun import (
     L0,
     carrington_rotation_number,
@@ -24,8 +24,7 @@ from sunpy.coordinates.sun import (
 
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
-from geocloak.preprocess.backtrack import ballistic, HUX
-
+from geocloak.preprocess.backtrack import HUX, ballistic
 
 # Top level variables for the run
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

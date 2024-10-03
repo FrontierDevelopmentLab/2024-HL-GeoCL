@@ -3,17 +3,17 @@ This python script will transform the omni time stamp into sdo time stamp.
 Basically traceback the solar wind plasma back to the Sun through the parker Spiral.
 """
 
-import sys
 import os
 import pathlib
+import sys
+
 import pandas as pd
 import tqdm as tq
 
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from geocloak.preprocess.backtrack import ballistic, HUX
-
+from geocloak.preprocess.backtrack import HUX, ballistic
 
 OMNI_DIR = "/home/bjha/data/geocloak/formatted_data/OMNI/omniweb_1m"
 omnipath = pathlib.Path(OMNI_DIR)

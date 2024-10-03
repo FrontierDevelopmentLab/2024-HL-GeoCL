@@ -8,25 +8,23 @@ Author: Opal Issan (oissan@ucsd.edu) PhD @ ucsd
 Last Modified: July 30th, 2024
 """
 
-import numpy as np
 import cartopy.crs as ccrs
-from supermag_api import *
 import GPy
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
 import stripy
 from sec import T_df, get_mesh, remove_duplicate_lonlat
+from supermag_api import *
 
-import matplotlib.pyplot as plt
-import matplotlib
-
-matplotlib.use('TkAgg')
+matplotlib.use("TkAgg")
 from mycolorpy import colorlist as mcp
 
-font = {'family': 'serif',
-        'size': 14}
+font = {"family": "serif", "size": 14}
 
-matplotlib.rc('font', **font)
-matplotlib.rc('xtick', labelsize=14)
-matplotlib.rc('ytick', labelsize=14)
+matplotlib.rc("font", **font)
+matplotlib.rc("xtick", labelsize=14)
+matplotlib.rc("ytick", labelsize=14)
 
 # # read in SuperMAG data using api (we will have a more efficient approach for website near-real-time)
 # # see supermag_api.py for more details
@@ -75,11 +73,19 @@ R_ionosphere = R_earth + 100  # in km
 # setup the SECs "node" grid
 # n_lon and n_lat are free parameters but are limited to n_lon*n_lat ~ number of stations
 lon, lat = remove_duplicate_lonlat(lon=geo_lon, lat=geo_lat)
-mesh = stripy.sTriangulation(lon * np.pi/180 - np.pi*0.99, lat * np.pi/180, refinement_levels=1)
-mesh_lat = mesh.lats[::4] * 180/np.pi
-mesh_lon = (mesh.lons[::4] * 180/np.pi + 180)
+mesh = stripy.sTriangulation(
+    lon * np.pi / 180 - np.pi * 0.99, lat * np.pi / 180, refinement_levels=1
+)
+mesh_lat = mesh.lats[::4] * 180 / np.pi
+mesh_lon = mesh.lons[::4] * 180 / np.pi + 180
 # specify the secs grid
-secs_lat_lon_r = np.hstack((mesh_lat.reshape(-1, 1), mesh_lon.reshape(-1, 1), R_ionosphere * np.ones(len(mesh_lat)).reshape(-1, 1)))
+secs_lat_lon_r = np.hstack(
+    (
+        mesh_lat.reshape(-1, 1),
+        mesh_lon.reshape(-1, 1),
+        R_ionosphere * np.ones(len(mesh_lat)).reshape(-1, 1),
+    )
+)
 # setup the SuperMAG stations grid
 obs_lat_lon_r = np.vstack((geo_lat, geo_lon, R_earth * np.ones(len(geo_lon)))).T
 
@@ -101,21 +107,36 @@ model.optimize(messages=True)
 
 # predicted grid
 n_lat, n_lon = 100, 200
-pred_lat_lon_r, pred_lat, pred_lon = get_mesh(n_lon=n_lon, n_lat=n_lat, radius=R_earth,
-                                              lat_max=80, lat_min=-80, endpoint_lon=True)
+pred_lat_lon_r, pred_lat, pred_lon = get_mesh(
+    n_lon=n_lon, n_lat=n_lat, radius=R_earth, lat_max=80, lat_min=-80, endpoint_lon=True
+)
 # predict via GP
-mean_, sd_ = model.predict(Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r, include_Bz=False))
+mean_, sd_ = model.predict(
+    Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r, include_Bz=False)
+)
 
 # plot results
 fig = plt.figure(figsize=(9, 4))
 ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 ax.coastlines()
-pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0], np.reshape(mean_[:n_lat * n_lon], (n_lat, n_lon), "C"),
-                  alpha=0.6,
-                  transform=ccrs.PlateCarree())
+pos = ax.contourf(
+    pred_lon[:, :, 0],
+    pred_lat[:, :, 0],
+    np.reshape(mean_[: n_lat * n_lon], (n_lat, n_lon), "C"),
+    alpha=0.6,
+    transform=ccrs.PlateCarree(),
+)
 
-ax.scatter(geo_lon, geo_lat, c=data_Bn, vmin=np.min(mean_[:n_lat * n_lon]), vmax=np.max(mean_[:n_lat * n_lon]),
-           s=10, cmap='viridis', transform=ccrs.PlateCarree())
+ax.scatter(
+    geo_lon,
+    geo_lat,
+    c=data_Bn,
+    vmin=np.min(mean_[: n_lat * n_lon]),
+    vmax=np.max(mean_[: n_lat * n_lon]),
+    s=10,
+    cmap="viridis",
+    transform=ccrs.PlateCarree(),
+)
 cbar = fig.colorbar(pos)
 cbar.ax.set_ylabel("mean $B_{n}$ [nT]", rotation=90)
 ax.set_xticks([-180, -90, 0, 90, 180])
@@ -124,19 +145,30 @@ ax.set_ylim(-80, 80)
 ax.set_xlabel("longitude [deg]")
 ax.set_ylabel("latitude [deg]")
 plt.tight_layout()
-plt.savefig("figures/secgp_mean_Bn.png", bbox_inches='tight', dpi=600)
+plt.savefig("figures/secgp_mean_Bn.png", bbox_inches="tight", dpi=600)
 plt.show()
 
 # plot results
 fig = plt.figure(figsize=(9, 4))
 ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 ax.coastlines()
-pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0],
-                  np.reshape(mean_[n_lat * n_lon:2 * n_lat * n_lon], (n_lat, n_lon), "C"),
-                  alpha=0.6,
-                  transform=ccrs.PlateCarree())
-ax.scatter(geo_lon, geo_lat, c=data_Be, vmin=np.min(mean_[n_lat * n_lon:2 * n_lat * n_lon]),
-           vmax=np.max(mean_[n_lat * n_lon:2 * n_lat * n_lon]), s=10, cmap='viridis', transform=ccrs.PlateCarree())
+pos = ax.contourf(
+    pred_lon[:, :, 0],
+    pred_lat[:, :, 0],
+    np.reshape(mean_[n_lat * n_lon : 2 * n_lat * n_lon], (n_lat, n_lon), "C"),
+    alpha=0.6,
+    transform=ccrs.PlateCarree(),
+)
+ax.scatter(
+    geo_lon,
+    geo_lat,
+    c=data_Be,
+    vmin=np.min(mean_[n_lat * n_lon : 2 * n_lat * n_lon]),
+    vmax=np.max(mean_[n_lat * n_lon : 2 * n_lat * n_lon]),
+    s=10,
+    cmap="viridis",
+    transform=ccrs.PlateCarree(),
+)
 cbar = fig.colorbar(pos)
 cbar.ax.set_ylabel("mean $B_{e}$ [nT]", rotation=90)
 ax.set_xticks([-180, -90, 0, 90, 180])
@@ -145,17 +177,21 @@ ax.set_ylim(-80, 80)
 ax.set_xlabel("longitude [deg]")
 ax.set_ylabel("latitude [deg]")
 plt.tight_layout()
-plt.savefig("figures/secgp_mean_Be.png", bbox_inches='tight', dpi=600)
+plt.savefig("figures/secgp_mean_Be.png", bbox_inches="tight", dpi=600)
 plt.show()
 
 # plot results
 fig = plt.figure(figsize=(9, 4))
 ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 ax.coastlines()
-pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0], np.reshape(np.sqrt(sd_)[:n_lat * n_lon], (n_lat, n_lon), "C"),
-                  alpha=0.6,
-                  cmap="plasma",
-                  transform=ccrs.PlateCarree())
+pos = ax.contourf(
+    pred_lon[:, :, 0],
+    pred_lat[:, :, 0],
+    np.reshape(np.sqrt(sd_)[: n_lat * n_lon], (n_lat, n_lon), "C"),
+    alpha=0.6,
+    cmap="plasma",
+    transform=ccrs.PlateCarree(),
+)
 
 ax.scatter(mesh_lon, mesh_lat, c="blue", s=7, marker="x")
 ax.scatter(geo_lon, geo_lat, c="red", s=7)
@@ -167,18 +203,21 @@ ax.set_ylim(-80, 80)
 ax.set_xlabel("longitude [deg]")
 ax.set_ylabel("latitude [deg]")
 plt.tight_layout()
-plt.savefig("figures/secgp_sd_Bn.png", bbox_inches='tight', dpi=600)
+plt.savefig("figures/secgp_sd_Bn.png", bbox_inches="tight", dpi=600)
 plt.show()
 
 # plot results
 fig = plt.figure(figsize=(9, 4))
 ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 ax.coastlines()
-pos = ax.contourf(pred_lon[:, :, 0], pred_lat[:, :, 0],
-                  np.reshape(np.sqrt(sd_)[n_lat * n_lon:2 * n_lat * n_lon], (n_lat, n_lon), "C"),
-                  alpha=0.6,
-                  cmap="plasma",
-                  transform=ccrs.PlateCarree())
+pos = ax.contourf(
+    pred_lon[:, :, 0],
+    pred_lat[:, :, 0],
+    np.reshape(np.sqrt(sd_)[n_lat * n_lon : 2 * n_lat * n_lon], (n_lat, n_lon), "C"),
+    alpha=0.6,
+    cmap="plasma",
+    transform=ccrs.PlateCarree(),
+)
 
 ax.scatter(mesh_lon, mesh_lat, c="blue", s=7, marker="x")
 ax.scatter(geo_lon, geo_lat, c="red", s=7)
@@ -190,5 +229,5 @@ ax.set_ylim(-80, 80)
 ax.set_xlabel("longitude [deg]")
 ax.set_ylabel("latitude [deg]")
 plt.tight_layout()
-plt.savefig("figures/secgp_sd_Be.png", bbox_inches='tight', dpi=600)
+plt.savefig("figures/secgp_sd_Be.png", bbox_inches="tight", dpi=600)
 plt.show()

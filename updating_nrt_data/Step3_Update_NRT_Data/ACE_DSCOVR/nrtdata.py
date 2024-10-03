@@ -1,8 +1,10 @@
 import logging
+
 import pandas as pd
+import urllib3
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
-import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Get Logger
@@ -36,7 +38,9 @@ class NRTData:
             dfmag = dfmag[["bt", "bx_gsm", "by_gsm", "bz_gsm", "source"]]
             dfsw = pd.read_json(self.rtsw_url.format(self.rtsw_files[1]))
             dfsw.set_index("time_tag", inplace=True)
-            dfsw = dfsw[["proton_speed", "proton_density", "proton_temperature", "source"]]
+            dfsw = dfsw[
+                ["proton_speed", "proton_density", "proton_temperature", "source"]
+            ]
         except FileNotFoundError:
             log.warning("The Real Time file is not available.")
             return None
@@ -77,14 +81,16 @@ class NRTData:
 
     def save_to_influxdb(self, df, measurement_name, bucket_name):
         for time, row in df.iterrows():
-            point = Point(measurement_name) \
-                .time(time, WritePrecision.NS) \
-                .field("bt", row['bt']) \
-                .field("bx_gsm", row['bx_gsm']) \
-                .field("by_gsm", row['by_gsm']) \
-                .field("bz_gsm", row['bz_gsm']) \
-                .field("proton_speed", row['proton_speed']) \
-                .field("proton_density", row['proton_density']) \
-                .field("proton_temperature", row['proton_temperature'])
+            point = (
+                Point(measurement_name)
+                .time(time, WritePrecision.NS)
+                .field("bt", row["bt"])
+                .field("bx_gsm", row["bx_gsm"])
+                .field("by_gsm", row["by_gsm"])
+                .field("bz_gsm", row["bz_gsm"])
+                .field("proton_speed", row["proton_speed"])
+                .field("proton_density", row["proton_density"])
+                .field("proton_temperature", row["proton_temperature"])
+            )
             write_api.write(bucket=bucket_name, org=org, record=point)
         log.info(f"Data saved to InfluxDB measurement '{measurement_name}'.")

@@ -2,11 +2,11 @@
 This script retrieves the best model from a W&B sweep and saves its configuration to a YAML file.
 """
 
-import wandb
-import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+import wandb
 import yaml
+from sklearn.preprocessing import MinMaxScaler
 
 
 def get_best_model(runs):

@@ -1,14 +1,17 @@
 import streamlit as st
-from style import render_custom_style
-from menu_options import streamlit_menu
 from about_content import render_about_content
-from sheath import get_sheath
 from dagger import get_dagger
-from geocloak import get_geocloak
 from data_sources import get_data
+from menu_options import streamlit_menu
+from sheath import get_sheath
+from style import render_custom_style
+
+from geocloak import get_geocloak
 
 # Set page configuration
-st.set_page_config(page_title="FDL-Geo", page_icon=None, layout='wide', initial_sidebar_state='auto')
+st.set_page_config(
+    page_title="FDL-Geo", page_icon=None, layout="wide", initial_sidebar_state="auto"
+)
 
 render_custom_style()
 
@@ -30,5 +33,3 @@ if selected == "DAGGER-CL":
 # Display section title
 if selected == "Data Sources":
     get_data()
-
-

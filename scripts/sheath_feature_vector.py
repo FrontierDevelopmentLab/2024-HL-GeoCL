@@ -5,21 +5,20 @@ to generate a feature set for the SHEATH machine learning model, which
 aims to predict the solar wind condition at L1 point. 
 """
 
-import zarr
-import pandas as pd
-import numpy as np
-from astropy.time import Time
-import tqdm as tq
+import csv
 import os
 import sys
-import csv
-from multiprocessing import current_process
-from multiprocessing import Process
+from multiprocessing import Process, current_process
+
+import numpy as np
+import pandas as pd
+import tqdm as tq
+import zarr
+from astropy.time import Time
 
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 from geocloak.preprocess.sdoprep import SDODataPreprocess
-
 
 # Directory setup
 # Later on it can be worked with the argparser

@@ -4,13 +4,14 @@ the SDO data from SDOMLv2 and generate the featuire vector
 returned as python dictionary.
 """
 
+import os
+from datetime import datetime
+from glob import glob
+
 import numpy as np
 import pandas as pd
 import zarr
 from sklearn.mixture import GaussianMixture as GMM
-from glob import glob
-import os
-from datetime import datetime
 
 
 class SDODataPreprocess:

@@ -2,31 +2,31 @@
 Code for SHEATH inference.
 """
 
-import sys
-import os
-import warnings
 import json
-import torch
-import torch.optim as optim
-import torch.nn as nn
-from torch.utils.data import DataLoader
-import wandb
-import numpy as np
-import yaml
-from sklearn.preprocessing import StandardScaler
-import tqdm as tq
-import matplotlib.pyplot as plt
-from astropy.time import Time
+import os
+import sys
+import warnings
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import tqdm as tq
+import wandb
+import yaml
+from astropy.time import Time
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader
 
 warnings.filterwarnings("ignore")
 
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from geocloak.models.sheath import SHEATH_MLP, DataProcessor
 from test import SHEATHDataLoader
 
+from geocloak.models.sheath import SHEATH_MLP, DataProcessor
 
 # Load Model
 use_cuda = torch.cuda.is_available()

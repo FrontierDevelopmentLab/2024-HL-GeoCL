@@ -1,8 +1,9 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from torch.utils.data import DataLoader, TensorDataset
 from generate_data import generate_sine_wave
+from torch.utils.data import DataLoader, TensorDataset
+
 
 # Define the LSTM model
 class LSTMPredictor(nn.Module):
@@ -15,6 +16,7 @@ class LSTMPredictor(nn.Module):
         out, _ = self.lstm(x)
         out = self.fc(out[:, -1, :])
         return out
+
 
 def train_model(data, labels):
     model = LSTMPredictor(input_dim=1, hidden_dim=50, num_layers=1, output_dim=1)
@@ -33,10 +35,11 @@ def train_model(data, labels):
             optimizer.step()
     return model
 
+
 if __name__ == "__main__":
     times, data = generate_sine_wave(freq=1, sample_rate=100, duration=10)
     # Preparing data (assuming sliding window of size 10)
-    inputs = np.array([data[i:i+10] for i in range(len(data)-10)])
+    inputs = np.array([data[i : i + 10] for i in range(len(data) - 10)])
     targets = np.array(data[10:])
     model = train_model(inputs, targets)
-    torch.save(model.state_dict(), 'lstm_model.pth')
+    torch.save(model.state_dict(), "lstm_model.pth")

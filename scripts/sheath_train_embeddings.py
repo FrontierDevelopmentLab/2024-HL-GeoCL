@@ -1,28 +1,25 @@
-import os
-import sys
-import pandas as pd
+import csv
 import json
 import os
-import yaml
-import h5py as h5
 import pathlib
-import matplotlib.pyplot as plt
-import tqdm as tq
+import sys
+import time
 
+import h5py as h5
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import time
-from astropy.time import Time
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from torch.utils.data import DataLoader, Dataset
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
 import torch
-import torch.optim as optim
 import torch.nn as nn
 import torch.nn.init as init
-import csv
+import torch.optim as optim
+import tqdm as tq
 import wandb
+import yaml
+from astropy.time import Time
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from torch.utils.data import DataLoader, Dataset
 
 sys.path.append(os.path.abspath("../"))
 # from magalert.models.sheath import calculate_individual_metrics, calculate_metrics
@@ -185,7 +182,9 @@ def seed_everything(seed: int):
     seed : int
         Seed value.
     """
-    import random, os
+    import os
+    import random
+
     import numpy as np
     import torch
 

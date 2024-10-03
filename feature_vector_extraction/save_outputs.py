@@ -1,16 +1,18 @@
-import torch
-import numpy as np
+import datetime
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 from google.cloud import storage
 from train_model import LSTMPredictor, generate_sine_wave
-import datetime
 
 
 def get_current_datetime():
     # Returns a formatted datetime string, e.g., '20230901_150505'
-    return datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-'''''
+
+"""''
 def load_model_and_save_output():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LSTMPredictor(input_dim=1, hidden_dim=50, num_layers=1, output_dim=1).to(device)
@@ -45,10 +47,12 @@ def load_model_and_save_output():
 
 if __name__ == "__main__":
     load_model_and_save_output()
-'''
+"""
 
 
-def upload_to_gcloud(project_name, bucket_name, source_file_name, destination_blob_name):
+def upload_to_gcloud(
+    project_name, bucket_name, source_file_name, destination_blob_name
+):
     """Uploads a file to the bucket."""
     storage_client = storage.Client(project=project_name)
     bucket = storage_client.bucket(bucket_name)
@@ -60,8 +64,10 @@ def upload_to_gcloud(project_name, bucket_name, source_file_name, destination_bl
 
 def load_model_and_save_output():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LSTMPredictor(input_dim=1, hidden_dim=50, num_layers=1, output_dim=1).to(device)
-    model.load_state_dict(torch.load('lstm_model.pth'))
+    model = LSTMPredictor(input_dim=1, hidden_dim=50, num_layers=1, output_dim=1).to(
+        device
+    )
+    model.load_state_dict(torch.load("lstm_model.pth"))
     model.eval()
 
     # Generate some test input data (e.g., a sine wave segment)
@@ -74,17 +80,21 @@ def load_model_and_save_output():
     current_datetime = get_current_datetime()
 
     plt.figure(figsize=(10, 5))
-    plt.plot(data, label='Actual Sine Wave')
-    plt.plot(output.cpu().numpy().flatten(), label='Predicted', linestyle='--')
+    plt.plot(data, label="Actual Sine Wave")
+    plt.plot(output.cpu().numpy().flatten(), label="Predicted", linestyle="--")
     plt.legend()
     plt.title("LSTM Time Series Prediction")
     plt.xlabel("Time steps")
     plt.ylabel("Amplitude")
-    plt.savefig(f'time_series_{current_datetime}.png')
-
+    plt.savefig(f"time_series_{current_datetime}.png")
 
     # Upload files to Google Cloud Storage
-    upload_to_gcloud('hl-geo', 'india-jackson-1', f'time_series_{current_datetime}.png', f'remote_vm_test/graphs/time_series_{current_datetime}.png')
+    upload_to_gcloud(
+        "hl-geo",
+        "india-jackson-1",
+        f"time_series_{current_datetime}.png",
+        f"remote_vm_test/graphs/time_series_{current_datetime}.png",
+    )
 
 
 if __name__ == "__main__":

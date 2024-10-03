@@ -1,26 +1,27 @@
-import logging
+import datetime as dt
 import json
+import logging
+import os
+import pickle
+import shutil
+import urllib.request
+import warnings
 from datetime import datetime, timedelta
+
+import dipole as dp
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import urllib3
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
-import urllib.request
-import urllib3
-import pickle
-import dipole as dp
-import datetime as dt
-import numpy as np
-import warnings
-import matplotlib.pyplot as plt
-import os
-import shutil
 
 # Suppress specific FutureWarning from the ppigrf module
 warnings.filterwarnings(
-    action='ignore',
+    action="ignore",
     message="The 'unit' keyword in TimedeltaIndex construction is deprecated",
     category=FutureWarning,
-    module='ppigrf'  # Target the module where the warning originates
+    module="ppigrf",  # Target the module where the warning originates
 )
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -45,13 +46,13 @@ def get_earliest_data_point(influxdb_client, bucket, measurement):
     query_api = influxdb_client.query_api()
 
     # Define a more targeted query with an updated range if data is known to start in 2001
-    query = f'''
+    query = f"""
     from(bucket: "{bucket}")
       |> range(start: 2000-01-01T00:00:00Z)  // Adjusted range start closer to known data start
       |> filter(fn: (r) => r._measurement == "{measurement}")
       |> first()
       |> keep(columns: ["_time"])
-    '''
+    """
 
     # Execute the query
     result = query_api.query(query=query)
@@ -67,7 +68,9 @@ def get_earliest_data_point(influxdb_client, bucket, measurement):
             return record.get_time()
 
     # If no records found, handle this scenario
-    print(f"No records found for {measurement} in {bucket}. The data may not go back as far as queried.")
+    print(
+        f"No records found for {measurement} in {bucket}. The data may not go back as far as queried."
+    )
     return None
 
 
@@ -86,9 +89,20 @@ def create_directory_structure():
     sub_dirs = ["ace", "dscovr"]
 
     # Define sub-subdirectories for both 'ace' and 'dscovr'
-    sub_sub_dirs_ace = ["feature_vectors_csv", "ace_indices_csv", "ace_indices_cleaned_csv", "ace_indices_pickle", "1_all"]
-    sub_sub_dirs_dscovr = ["feature_vectors_csv", "dscovr_indices_csv", "dscovr_indices_cleaned_csv",
-                           "dscovr_indices_pickle", "1_all"]
+    sub_sub_dirs_ace = [
+        "feature_vectors_csv",
+        "ace_indices_csv",
+        "ace_indices_cleaned_csv",
+        "ace_indices_pickle",
+        "1_all",
+    ]
+    sub_sub_dirs_dscovr = [
+        "feature_vectors_csv",
+        "dscovr_indices_csv",
+        "dscovr_indices_cleaned_csv",
+        "dscovr_indices_pickle",
+        "1_all",
+    ]
 
     # Check and create the main directory
     os.makedirs(main_dir, exist_ok=True)
@@ -110,12 +124,12 @@ def create_directory_structure():
 
 
 def fetch_data(bucket, measurement, start, stop):
-    query = f'''
+    query = f"""
     from(bucket: "{bucket}")
       |> range(start: {start}, stop: {stop})
       |> filter(fn: (r) => r._measurement == "{measurement}")
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-    '''
+    """
     tables = query_api.query(query=query)
     data = []
     for table in tables:
@@ -127,18 +141,18 @@ def fetch_data(bucket, measurement, start, stop):
 def process_dataframe(df, output_path):
     if not df.empty:
         # Drop unnecessary columns if they exist
-        columns_to_drop = ['result', 'table', '_start', '_stop']
+        columns_to_drop = ["result", "table", "_start", "_stop"]
         df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
-        df.fillna(method='ffill', inplace=True, limit=10)
+        df.fillna(method="ffill", inplace=True, limit=10)
 
-        if '_time' in df.columns:
-            df.rename(columns={'_time': 'Time'}, inplace=True)
-            df.set_index('Time', inplace=True)
+        if "_time" in df.columns:
+            df.rename(columns={"_time": "Time"}, inplace=True)
+            df.set_index("Time", inplace=True)
         else:
             print("The 'Time' column is not present in the DataFrame.")
 
         # Save to pickle
-        df.to_pickle(output_path + '.pkl')
+        df.to_pickle(output_path + ".pkl")
 
     else:
         print("DataFrame is empty.")
@@ -153,7 +167,7 @@ def load_and_display_pkl(file_path):
     """
     try:
         # Open the file in binary read mode
-        with open(file_path, 'rb') as file:
+        with open(file_path, "rb") as file:
             # Load the data from the file
             data = pickle.load(file)
     except Exception as e:
@@ -168,59 +182,91 @@ def calculate_and_merge_dipole(df):
 
     # Calculate dipole tilt for each day within the data range
     while time <= end_time:
-        fractional_year = time.year + (time.month - 1) / 12  # Correct calculation of fractional year
-        tilt = dp.Dipole(fractional_year).tilt(time)  # Assuming correct usage of Dipole class
+        fractional_year = (
+            time.year + (time.month - 1) / 12
+        )  # Correct calculation of fractional year
+        tilt = dp.Dipole(fractional_year).tilt(
+            time
+        )  # Assuming correct usage of Dipole class
         times.append(time)
         tilts.append(tilt)
         time += dt.timedelta(days=1)
 
     # Create the DataFrame correctly
-    dipole_tilt = pd.DataFrame({'tilt': tilts}, index=times)
+    dipole_tilt = pd.DataFrame({"tilt": tilts}, index=times)
 
     # Resample the tilt data to match the frequency of the input DataFrame
-    dipole = dipole_tilt.resample('1T').ffill()
+    dipole = dipole_tilt.resample("1T").ffill()
 
     # Merge the dipole data with the input DataFrame
-    merged_data = df.join(dipole, how='left')
-    merged_data['tilt'] = merged_data['tilt'].fillna(method='ffill')
+    merged_data = df.join(dipole, how="left")
+    merged_data["tilt"] = merged_data["tilt"].fillna(method="ffill")
 
     return merged_data
 
 
 def process_instrument_feature_vector(df):
     feature_vectors = pd.DataFrame(index=df.index)
-    feature_vectors['bx'] = df['bx_gsm']
-    feature_vectors['by'] = df['by_gsm']
-    feature_vectors['bz'] = df['bz_gsm']
-    feature_vectors['bt'] = df['bt']
-    feature_vectors['v'] = df['proton_speed']
-    feature_vectors['n'] = df['proton_density']
-    feature_vectors['t'] = df['proton_temperature']
+    feature_vectors["bx"] = df["bx_gsm"]
+    feature_vectors["by"] = df["by_gsm"]
+    feature_vectors["bz"] = df["bz_gsm"]
+    feature_vectors["bt"] = df["bt"]
+    feature_vectors["v"] = df["proton_speed"]
+    feature_vectors["n"] = df["proton_density"]
+    feature_vectors["t"] = df["proton_temperature"]
 
-    feature_vectors['dipole_tilt'] = df['tilt']
+    feature_vectors["dipole_tilt"] = df["tilt"]
 
-    feature_vectors['f107'] = df['Fadj']
-    feature_vectors['kp'] = df['Kp']
-    feature_vectors['hp30'] = df['Hp30']
-    feature_vectors['ap30'] = df['ap30']
+    feature_vectors["f107"] = df["Fadj"]
+    feature_vectors["kp"] = df["Kp"]
+    feature_vectors["hp30"] = df["Hp30"]
+    feature_vectors["ap30"] = df["ap30"]
 
-    feature_vectors['clock_angle'] = np.arctan2(feature_vectors['by'],feature_vectors['bz'])*180/np.pi
-    feature_vectors['sqrt_f107'] = np.sqrt(feature_vectors['f107'])
-    feature_vectors['derived_1'] = feature_vectors['bt']*np.cos(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_2'] = feature_vectors['v']*np.cos(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_3'] = feature_vectors['dipole_tilt']*np.cos(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_4'] = feature_vectors['sqrt_f107']*np.cos(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_5'] = feature_vectors['bt']*np.sin(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_6'] = feature_vectors['v']*np.sin(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_7'] = feature_vectors['dipole_tilt']*np.sin(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_8'] = feature_vectors['sqrt_f107']*np.sin(feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_9'] = feature_vectors['bt']*np.cos(2*feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_10'] = feature_vectors['v']*np.cos(2*feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_11'] = feature_vectors['bt']*np.sin(2*feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_12'] = feature_vectors['v']*np.sin(2*feature_vectors['clock_angle']*np.pi/180)
-    feature_vectors['derived_13'] = np.sin(feature_vectors['clock_angle']*np.pi/180)**2
-    feature_vectors['p'] = (2*1e-6)*feature_vectors['n']*feature_vectors['v']**2
-    feature_vectors['e'] = -feature_vectors['v']*feature_vectors['bz']*1e-3
+    feature_vectors["clock_angle"] = (
+        np.arctan2(feature_vectors["by"], feature_vectors["bz"]) * 180 / np.pi
+    )
+    feature_vectors["sqrt_f107"] = np.sqrt(feature_vectors["f107"])
+    feature_vectors["derived_1"] = feature_vectors["bt"] * np.cos(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_2"] = feature_vectors["v"] * np.cos(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_3"] = feature_vectors["dipole_tilt"] * np.cos(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_4"] = feature_vectors["sqrt_f107"] * np.cos(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_5"] = feature_vectors["bt"] * np.sin(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_6"] = feature_vectors["v"] * np.sin(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_7"] = feature_vectors["dipole_tilt"] * np.sin(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_8"] = feature_vectors["sqrt_f107"] * np.sin(
+        feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_9"] = feature_vectors["bt"] * np.cos(
+        2 * feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_10"] = feature_vectors["v"] * np.cos(
+        2 * feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_11"] = feature_vectors["bt"] * np.sin(
+        2 * feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_12"] = feature_vectors["v"] * np.sin(
+        2 * feature_vectors["clock_angle"] * np.pi / 180
+    )
+    feature_vectors["derived_13"] = (
+        np.sin(feature_vectors["clock_angle"] * np.pi / 180) ** 2
+    )
+    feature_vectors["p"] = (2 * 1e-6) * feature_vectors["n"] * feature_vectors["v"] ** 2
+    feature_vectors["e"] = -feature_vectors["v"] * feature_vectors["bz"] * 1e-3
     return feature_vectors
 
 
@@ -232,90 +278,138 @@ def complete_data_process(influxdb_client, instrument, start, stop):
     indices_measurement = "solar_indices"
 
     # Fetch earliest available data point for both instrument and indices
-    earliest_time = get_earliest_data_point(influxdb_client, instrument_bucket, instrument_measurement)
-    earliest_time_indices = get_earliest_data_point(influxdb_client, indices_bucket, indices_measurement)
+    earliest_time = get_earliest_data_point(
+        influxdb_client, instrument_bucket, instrument_measurement
+    )
+    earliest_time_indices = get_earliest_data_point(
+        influxdb_client, indices_bucket, indices_measurement
+    )
 
     # Convert start date to datetime object for comparison
-    start_datetime = datetime.fromisoformat(start.replace('Z', '+00:00'))
+    start_datetime = datetime.fromisoformat(start.replace("Z", "+00:00"))
 
     # Check availability of instrument and indices data
     if earliest_time is None or start_datetime < earliest_time:
         raise ValueError(
-            f"OOPS! No data available for {instrument} starting from {start}. Earliest data starts at {earliest_time}.")
+            f"OOPS! No data available for {instrument} starting from {start}. Earliest data starts at {earliest_time}."
+        )
     if earliest_time_indices is None or start_datetime < earliest_time_indices:
         raise ValueError(
-            f"OOPS! No data available for indices starting from {start}. Earliest data starts at {earliest_time_indices}.")
+            f"OOPS! No data available for indices starting from {start}. Earliest data starts at {earliest_time_indices}."
+        )
 
     formatted_start = format_datetime_for_filename(start)
     formatted_stop = format_datetime_for_filename(stop)
 
     # Fetch data for the instrument and indices
     instrument_data = fetch_data(instrument_bucket, instrument_measurement, start, stop)
-    indices_data = fetch_data(indices_bucket, indices_measurement, start, stop)  # Static call
+    indices_data = fetch_data(
+        indices_bucket, indices_measurement, start, stop
+    )  # Static call
 
     # Process both datasets
-    process_dataframe(instrument_data, f"saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_data_filled_processed_{formatted_start}_{formatted_stop}")
-    process_dataframe(indices_data, f"saved_dataframes/{instrument.lower()}/1_all/indices_data_filled_processed_{formatted_start}_{formatted_stop}")
+    process_dataframe(
+        instrument_data,
+        f"saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_data_filled_processed_{formatted_start}_{formatted_stop}",
+    )
+    process_dataframe(
+        indices_data,
+        f"saved_dataframes/{instrument.lower()}/1_all/indices_data_filled_processed_{formatted_start}_{formatted_stop}",
+    )
 
     # Define source and destination file paths
     instrument_pickle = f"saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_data_filled_processed_{formatted_start}_{formatted_stop}.pkl"
-    instrument_destination_dir = f"saved_dataframes/{instrument.lower()}/{instrument.lower()}_indices_pickle/"
+    instrument_destination_dir = (
+        f"saved_dataframes/{instrument.lower()}/{instrument.lower()}_indices_pickle/"
+    )
 
     indices_pickle = f"saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_data_filled_processed_{formatted_start}_{formatted_stop}.pkl"
 
-    instrument_destination_file = f"{instrument.lower()}_{formatted_start}_{formatted_stop}.pkl"
+    instrument_destination_file = (
+        f"{instrument.lower()}_{formatted_start}_{formatted_stop}.pkl"
+    )
     indices_destination_file = f"indices_{formatted_start}_{formatted_stop}.pkl"
     # Ensure the destination directory exists
     os.makedirs(instrument_destination_dir, exist_ok=True)
 
     # Copy the file
-    shutil.copy(os.path.join(instrument_pickle), os.path.join(instrument_destination_dir, instrument_destination_file))
-    shutil.copy(os.path.join(indices_pickle), os.path.join(instrument_destination_dir, indices_destination_file))
+    shutil.copy(
+        os.path.join(instrument_pickle),
+        os.path.join(instrument_destination_dir, instrument_destination_file),
+    )
+    shutil.copy(
+        os.path.join(indices_pickle),
+        os.path.join(instrument_destination_dir, indices_destination_file),
+    )
     # Load and display processed data
-    load_and_display_pkl(f'{instrument.lower()}_data_filled_processed.pkl')
-    load_and_display_pkl('indices_data_filled_processed.pkl')
+    load_and_display_pkl(f"{instrument.lower()}_data_filled_processed.pkl")
+    load_and_display_pkl("indices_data_filled_processed.pkl")
 
     # Load the processed data for further use
-    instrument_nrt_data = pd.read_pickle(f'saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_data_filled_processed_{formatted_start}_{formatted_stop}.pkl')
-    indices_nrt_data = pd.read_pickle(f'saved_dataframes/{instrument.lower()}/1_all/indices_data_filled_processed_{formatted_start}_{formatted_stop}.pkl')
+    instrument_nrt_data = pd.read_pickle(
+        f"saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_data_filled_processed_{formatted_start}_{formatted_stop}.pkl"
+    )
+    indices_nrt_data = pd.read_pickle(
+        f"saved_dataframes/{instrument.lower()}/1_all/indices_data_filled_processed_{formatted_start}_{formatted_stop}.pkl"
+    )
 
     # Prepare data
-    indices_nrt_data['Fadj'] = indices_nrt_data['Fadj'].fillna(method='ffill')
+    indices_nrt_data["Fadj"] = indices_nrt_data["Fadj"].fillna(method="ffill")
     instrument_nrt_data.index = pd.to_datetime(instrument_nrt_data.index)
     indices_nrt_data.index = pd.to_datetime(indices_nrt_data.index)
 
     instrument_nrt_data.reset_index(inplace=True)
     indices_nrt_data.reset_index(inplace=True)
 
-    instrument_nrt_data.sort_values('Time', inplace=True)
-    indices_nrt_data.sort_values('Time', inplace=True)
+    instrument_nrt_data.sort_values("Time", inplace=True)
+    indices_nrt_data.sort_values("Time", inplace=True)
 
     # Merge data using 'asof' merge
-    merged_data = pd.merge_asof(instrument_nrt_data, indices_nrt_data, on='Time', direction='backward')
-    merged_data.set_index('Time', inplace=True)
+    merged_data = pd.merge_asof(
+        instrument_nrt_data, indices_nrt_data, on="Time", direction="backward"
+    )
+    merged_data.set_index("Time", inplace=True)
 
     # Save the initial merged data
-    merged_data.to_csv(f'saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_indices_merged_data_{formatted_start}_{formatted_stop}.csv', index=True)
     merged_data.to_csv(
-        f'saved_dataframes/{instrument.lower()}/{instrument.lower()}_indices_csv/{formatted_start}_{formatted_stop}.csv',
-        index=True)
+        f"saved_dataframes/{instrument.lower()}/1_all/{instrument.lower()}_indices_merged_data_{formatted_start}_{formatted_stop}.csv",
+        index=True,
+    )
+    merged_data.to_csv(
+        f"saved_dataframes/{instrument.lower()}/{instrument.lower()}_indices_csv/{formatted_start}_{formatted_stop}.csv",
+        index=True,
+    )
 
     # Clean up the merged data
-    columns_to_remove = ['_measurement_x', '_measurement_y']
+    columns_to_remove = ["_measurement_x", "_measurement_y"]
     merged_data.drop(columns=columns_to_remove, inplace=True)
-    merged_data.to_csv(f'saved_dataframes/{instrument.lower()}/1_all/cleaned_{instrument.lower()}_indices_merged_data_{formatted_start}_{formatted_stop}.csv', index=True)
-    merged_data.to_csv(f'saved_dataframes/{instrument.lower()}/{instrument.lower()}_indices_cleaned_csv/{formatted_start}_{formatted_stop}.csv', index=True)
+    merged_data.to_csv(
+        f"saved_dataframes/{instrument.lower()}/1_all/cleaned_{instrument.lower()}_indices_merged_data_{formatted_start}_{formatted_stop}.csv",
+        index=True,
+    )
+    merged_data.to_csv(
+        f"saved_dataframes/{instrument.lower()}/{instrument.lower()}_indices_cleaned_csv/{formatted_start}_{formatted_stop}.csv",
+        index=True,
+    )
 
     # Calculate dipole tilt and merge it with the data
     final_merged_data = calculate_and_merge_dipole(merged_data)
 
     # Process the final instrument data and save to CSV
-    final_feature_vector = process_instrument_feature_vector(final_merged_data)  # This function needs to exist
-    final_feature_vector.to_csv(f'saved_dataframes/{instrument.lower()}/1_all/{instrument}_indices_feature_vectors_{formatted_start}_{formatted_stop}.csv', index=True)
-    final_feature_vector.to_csv(f'saved_dataframes/{instrument.lower()}/feature_vectors_csv/{formatted_start}_{formatted_stop}.csv', index=True)
+    final_feature_vector = process_instrument_feature_vector(
+        final_merged_data
+    )  # This function needs to exist
+    final_feature_vector.to_csv(
+        f"saved_dataframes/{instrument.lower()}/1_all/{instrument}_indices_feature_vectors_{formatted_start}_{formatted_stop}.csv",
+        index=True,
+    )
+    final_feature_vector.to_csv(
+        f"saved_dataframes/{instrument.lower()}/feature_vectors_csv/{formatted_start}_{formatted_stop}.csv",
+        index=True,
+    )
 
 
-'''''
+"""''
 earliest_time_ace = get_earliest_data_point(client, 'ace_bucket', 'ace_data')
 earliest_time_dscovr = get_earliest_data_point(client, 'dscovr_bucket', 'dscovr_data')
 earliest_indices_time = get_earliest_data_point(client, 'indices_bucket', 'solar_indices')
@@ -323,16 +417,16 @@ earliest_indices_time = get_earliest_data_point(client, 'indices_bucket', 'solar
 print("Earliest ACE record timestamp:", earliest_time_ace)
 print("Earliest DSCOVR record timestamp:", earliest_time_dscovr)
 print("Earliest Geomagnetic Indices record timestamp:", earliest_indices_time)
-'''
+"""
 
 # create_directory_structure()
 
 try:
-    complete_data_process(client, 'DSCOVR', '2001-08-07T00:00:00Z', '2001-08-07T23:59:59Z')
+    complete_data_process(
+        client, "DSCOVR", "2001-08-07T00:00:00Z", "2001-08-07T23:59:59Z"
+    )
 except ValueError as e:
     print(e)
 
 # complete_data_process('ACE', '2016-07-26T00:00:00Z', '2016-07-26T23:59:59Z')
 # complete_data_process('DSCOVR', '2016-07-26T00:00:00Z', '2016-07-26T23:59:59Z')
-
-

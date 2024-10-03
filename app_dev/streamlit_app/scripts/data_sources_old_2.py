@@ -1,6 +1,6 @@
-import streamlit as st
 import pandas as pd
-from data_module import fetch_data, prepare_dataframe, save_csv, plot_time_series
+import streamlit as st
+from data_module import fetch_data, plot_time_series, prepare_dataframe, save_csv
 
 # Constants for InfluxDB connection
 token = "8xj_AxxKhgKYz9oMfrsgyacXB-b8BgvG-KpBtKLZIK3yvQr7v7MCZmNQFOmyJ0N56m_OEnY1Snwn4O86foraEQ=="
@@ -8,19 +8,13 @@ org = "Google"
 url = "https://34.48.13.92:8086"
 
 # Define constants for bucket and measurement names
-buckets = {
-    "ACE": "ace_bucket",
-    "DSCOVR": "dscovr_bucket"
-}
-measurements = {
-    "ACE": "ace_data",
-    "DSCOVR": "dscovr_data"
-}
+buckets = {"ACE": "ace_bucket", "DSCOVR": "dscovr_bucket"}
+measurements = {"ACE": "ace_data", "DSCOVR": "dscovr_data"}
 
 
 def display_data_html(bucket, measurement, csv_file, title):
     # Fetch and display data
-    with st.spinner(f'Fetching {measurement} data...'):
+    with st.spinner(f"Fetching {measurement} data..."):
         result = fetch_data(token, org, url, bucket, measurement)
         df = prepare_dataframe(result)
 
@@ -50,23 +44,38 @@ def display_data_html(bucket, measurement, csv_file, title):
 
 
 def get_data():
-    st.html(f"<center><h1>DATA SOURCES</h1></center>",)
+    st.html(
+        f"<center><h1>DATA SOURCES</h1></center>",
+    )
 
     # Start the main box
-    st.html("""
+    st.html(
+        """
         <div class="box" style="display: flex; justify-content: space-between;">
-    """,)
+    """,
+    )
 
     # ACE Data
-    ace_html = display_data_html(buckets["ACE"], measurements["ACE"], 'ace_data.csv', "ACE Data")
-    st.html(f"<div style='flex: 1; margin-right: 10px;'>{ace_html}</div>",)
+    ace_html = display_data_html(
+        buckets["ACE"], measurements["ACE"], "ace_data.csv", "ACE Data"
+    )
+    st.html(
+        f"<div style='flex: 1; margin-right: 10px;'>{ace_html}</div>",
+    )
 
     # DSCOVR Data
-    dscovr_html = display_data_html(buckets["DSCOVR"], measurements["DSCOVR"], 'dscovr_data.csv', "DSCOVR Data")
-    st.html(f"<div style='flex: 1; margin-left: 10px;'>{dscovr_html}</div>",)
+    dscovr_html = display_data_html(
+        buckets["DSCOVR"], measurements["DSCOVR"], "dscovr_data.csv", "DSCOVR Data"
+    )
+    st.html(
+        f"<div style='flex: 1; margin-left: 10px;'>{dscovr_html}</div>",
+    )
 
     # Close the main box
-    st.html("</div>",)
+    st.html(
+        "</div>",
+    )
+
 
 if __name__ == "__main__":
     get_data()

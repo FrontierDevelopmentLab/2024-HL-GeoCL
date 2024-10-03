@@ -1,10 +1,11 @@
-import streamlit as st
-from streamlit_option_menu import option_menu
-from PIL import Image
-import requests
 from io import BytesIO
-import pandas as pd
+
 import h5py
+import pandas as pd
+import requests
+import streamlit as st
+from PIL import Image
+from streamlit_option_menu import option_menu
 
 # Add background color
 st.markdown(
@@ -66,7 +67,12 @@ def streamlit_menu(example=1):
         with st.sidebar:
             selected = option_menu(
                 menu_title="Main Menu",  # required
-                options=["FLD 2024 - GeoCLoak", "FDL 2023 - SHEATH", "FDL 2020 - DAGGER", "Data Sources"],  # required
+                options=[
+                    "FLD 2024 - GeoCLoak",
+                    "FDL 2023 - SHEATH",
+                    "FDL 2020 - DAGGER",
+                    "Data Sources",
+                ],  # required
                 icons=["house", "book", "envelope"],  # optional
                 menu_icon="cast",  # optional
                 default_index=0,  # optional
@@ -77,7 +83,11 @@ def streamlit_menu(example=1):
         # 2. horizontal menu w/o custom style
         selected = option_menu(
             menu_title=None,  # required
-            options=["FLD 2024 - GeoCLoak", "FDL 2023 - SHEATH", "FDL 2020 - DAGGER"],  # required
+            options=[
+                "FLD 2024 - GeoCLoak",
+                "FDL 2023 - SHEATH",
+                "FDL 2020 - DAGGER",
+            ],  # required
             icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             default_index=0,  # optional
@@ -89,7 +99,11 @@ def streamlit_menu(example=1):
         # 2. horizontal menu with custom style
         selected = option_menu(
             menu_title=None,  # required
-            options=["FLD 2024 - GeoCLoak", "FDL 2023 - SHEATH", "FDL 2020 - DAGGER"],  # required
+            options=[
+                "FLD 2024 - GeoCLoak",
+                "FDL 2023 - SHEATH",
+                "FDL 2020 - DAGGER",
+            ],  # required
             icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             default_index=0,  # optional
@@ -123,13 +137,15 @@ if selected == "FLD 2024 - GeoCLoak":
         unsafe_allow_html=True,
     )
     # response = requests.get("https://storage.googleapis.com/india-jackson-1/FDL_GeoCLoak_3.png")
-    response = requests.get("https://storage.googleapis.com/india-jackson-1/geocloak_2.png")
+    response = requests.get(
+        "https://storage.googleapis.com/india-jackson-1/geocloak_2.png"
+    )
     img = Image.open(BytesIO(response.content))
     st.image(
-       img,
-       # caption="FDL-Geoeffectiveness Banner",
-       # width=800,
-       channels="RGB",
+        img,
+        # caption="FDL-Geoeffectiveness Banner",
+        # width=800,
+        channels="RGB",
     )
 
     # Add the box with depth effect
@@ -155,13 +171,15 @@ if selected == "FDL 2023 - SHEATH":
         """,
         unsafe_allow_html=True,
     )
-    response = requests.get("https://storage.googleapis.com/india-jackson-1/SHEATH_3.png")
+    response = requests.get(
+        "https://storage.googleapis.com/india-jackson-1/SHEATH_3.png"
+    )
     img = Image.open(BytesIO(response.content))
     st.image(
-       img,
-       # caption="FDL-Geoeffectiveness Banner",
-       # width=800,
-       channels="RGB",
+        img,
+        # caption="FDL-Geoeffectiveness Banner",
+        # width=800,
+        channels="RGB",
     )
 
     # Add the box with depth effect
@@ -189,10 +207,10 @@ if selected == "FDL 2020 - DAGGER":
     response = requests.get("https://storage.googleapis.com/india-jackson-1/DAGGER.png")
     img = Image.open(BytesIO(response.content))
     st.image(
-       img,
-       # caption="FDL-Geoeffectiveness Banner",
-       # width=800,
-       channels="RGB",
+        img,
+        # caption="FDL-Geoeffectiveness Banner",
+        # width=800,
+        channels="RGB",
     )
 
     # Add the box with depth effect
@@ -213,7 +231,8 @@ if selected == "Data Sources":
     st.markdown(f"<center><h1>{selected}</h1></center>", unsafe_allow_html=True)
 
     # URL of the HDF5 file on Google Cloud Storage
-    url = 'https://storage.googleapis.com/india-jackson-1/formatted_data_OMNI_omniweb_formatted_2000.h5'
+    url = "https://storage.googleapis.com/india-jackson-1/formatted_data_OMNI_omniweb_formatted_2000.h5"
+
     def download_h5_from_gcs(url):
         response = requests.get(url)
         response.raise_for_status()
@@ -223,13 +242,13 @@ if selected == "Data Sources":
     h5_data = download_h5_from_gcs(url)
 
     # Open the HDF5 file and extract data
-    with h5py.File(h5_data, 'r') as hdf:
-        labels = [label.decode('utf-8') for label in hdf['data/axis0'][:]]
-        timestamps = hdf['data/axis1'][:]
-        data_values = hdf['data/block0_values'][:]
+    with h5py.File(h5_data, "r") as hdf:
+        labels = [label.decode("utf-8") for label in hdf["data/axis0"][:]]
+        timestamps = hdf["data/axis1"][:]
+        data_values = hdf["data/block0_values"][:]
         timestamps = pd.to_datetime(timestamps)
         df = pd.DataFrame(data=data_values, index=timestamps, columns=labels)
-        df_reset = df.reset_index().rename(columns={'index': 'Timestamp'})
+        df_reset = df.reset_index().rename(columns={"index": "Timestamp"})
 
     # Display the DataFrame in Streamlit
     st.write("Data from HDF5 file:")

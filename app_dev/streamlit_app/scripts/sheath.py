@@ -1,7 +1,8 @@
+from io import BytesIO
+
+import requests
 import streamlit as st
 from PIL import Image
-import requests
-from io import BytesIO
 
 
 def get_sheath():
@@ -12,7 +13,9 @@ def get_sheath():
         </center>
         """,
     )
-    response = requests.get("https://storage.googleapis.com/india-jackson-1/SHEATH_3.png")
+    response = requests.get(
+        "https://storage.googleapis.com/india-jackson-1/SHEATH_3.png"
+    )
     img = Image.open(BytesIO(response.content))
     st.image(
         img,

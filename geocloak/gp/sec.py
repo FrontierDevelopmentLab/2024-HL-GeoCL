@@ -12,6 +12,7 @@ using spherical elementary current systems." Earth, Planets and Space 51.6: 431-
 Author: Opal Issan (PhD student @ucsd). email: oissan@ucsd.edu.
 Last Modified: July 23st, 2024
 """
+
 import numpy as np
 
 
@@ -45,29 +46,33 @@ def T_df(obs_loc: np.ndarray, sec_loc: np.ndarray, include_Bz=True):
     r_ratio = obs_loc[0, 2] / sec_loc[0, 2]
 
     # first term in the parenthesis in Eq. (9) [2]
-    factor_term = 1. / np.sqrt(1 - 2 * r_ratio * np.cos(theta) + (r_ratio ** 2))
+    factor_term = 1.0 / np.sqrt(1 - 2 * r_ratio * np.cos(theta) + (r_ratio**2))
 
     # Eq. (9) [2]
     Br = (factor_term - 1) / obs_loc[0, 2]
 
     # Eq. (10) [2]
-    Bt = np.divide(-(factor_term * (r_ratio - np.cos(theta)) + np.cos(theta)) / obs_loc[0, 2], np.sin(theta),
-                   out=np.zeros_like(np.sin(theta)), where=np.sin(theta) != 0)
+    Bt = np.divide(
+        -(factor_term * (r_ratio - np.cos(theta)) + np.cos(theta)) / obs_loc[0, 2],
+        np.sin(theta),
+        out=np.zeros_like(np.sin(theta)),
+        where=np.sin(theta) != 0,
+    )
 
     if include_Bz:
         # transform back to Bx, By, Bz at each local point
-        T = np.zeros((len(obs_loc)*3, len(sec_loc)))
+        T = np.zeros((len(obs_loc) * 3, len(sec_loc)))
         # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
-        T[:len(obs_loc), :] = -Bt * np.sin(alpha)
-        T[len(obs_loc):2*len(obs_loc), :] = -Bt * np.cos(alpha)
-        T[2*len(obs_loc):, :] = -Br
+        T[: len(obs_loc), :] = -Bt * np.sin(alpha)
+        T[len(obs_loc) : 2 * len(obs_loc), :] = -Bt * np.cos(alpha)
+        T[2 * len(obs_loc) :, :] = -Br
         return T
     else:
         # transform back to Bx, By, Bz at each local point
-        T = np.zeros((len(obs_loc)*2, len(sec_loc)))
+        T = np.zeros((len(obs_loc) * 2, len(sec_loc)))
         # alpha == angle (from cartesian x-axis (By), going towards y-axis (Bx))
-        T[:len(obs_loc), :] = -Bt * np.sin(alpha)
-        T[len(obs_loc):, :] = -Bt * np.cos(alpha)
+        T[: len(obs_loc), :] = -Bt * np.sin(alpha)
+        T[len(obs_loc) :, :] = -Bt * np.cos(alpha)
         return T
 
 
@@ -96,9 +101,11 @@ def calc_angular_distance(latlon1: np.ndarray, latlon2: np.ndarray):
     lon2 = np.deg2rad(latlon2[:, 1])[np.newaxis, :]
 
     # angular distance between two points
-    return np.arccos(np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(lat2) * np.cos(lon2 - lon1))
+    return np.arccos(
+        np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(lat2) * np.cos(lon2 - lon1)
+    )
 
-  
+
 def calc_bearing(latlon1: np.ndarray, latlon2: np.ndarray):
     """calculate the bearing (direction) between a set of latitude and longitude points.
 
@@ -123,8 +130,10 @@ def calc_bearing(latlon1: np.ndarray, latlon2: np.ndarray):
     # used to rotate the SEC coordinate frame into the observation coordinate frame
     # SEC coordinates are: theta (+ north), phi (+ east), r (+ out)
     # observation coordinates are: X (+ north), Y (+ east), Z (+ down)
-    return np.pi / 2 - np.arctan2(np.sin(lon2 - lon1) * np.cos(lat2),
-                                  np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(lon2 - lon1))
+    return np.pi / 2 - np.arctan2(
+        np.sin(lon2 - lon1) * np.cos(lat2),
+        np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(lon2 - lon1),
+    )
 
 
 def get_mesh(n_lon, n_lat, radius, lat_max=90, lat_min=-90, endpoint_lon=False):
@@ -159,7 +168,9 @@ def get_mesh(n_lon, n_lat, radius, lat_max=90, lat_min=-90, endpoint_lon=False):
         array with locations of SEC nodes
     """
     # latitude is uniform in sin(lat)
-    sin_dt = np.abs(np.sin(np.linspace(lat_min / 180 * np.pi, lat_max / 180 * np.pi, n_lat - 1)))
+    sin_dt = np.abs(
+        np.sin(np.linspace(lat_min / 180 * np.pi, lat_max / 180 * np.pi, n_lat - 1))
+    )
     dt_sphere = (lat_max - lat_min) / np.sum(sin_dt) * sin_dt
 
     # set up latitude mesh grid
@@ -169,12 +180,21 @@ def get_mesh(n_lon, n_lat, radius, lat_max=90, lat_min=-90, endpoint_lon=False):
         theta_vec[ii] = theta_vec[ii - 1] + dt_sphere[ii - 1]
 
     # specify the secs grid
-    lat_sec, lon_sec, r_sec = np.meshgrid(theta_vec,  # in deg [-90, 90]
-                                          np.linspace(0, 360, n_lon, endpoint=endpoint_lon),  # in deg [0, 360)
-                                          radius,  # in km
-                                          indexing='ij')
+    lat_sec, lon_sec, r_sec = np.meshgrid(
+        theta_vec,  # in deg [-90, 90]
+        np.linspace(0, 360, n_lon, endpoint=endpoint_lon),  # in deg [0, 360)
+        radius,  # in km
+        indexing="ij",
+    )
 
-    return np.hstack((lat_sec.reshape(-1, 1), lon_sec.reshape(-1, 1), r_sec.reshape(-1, 1))), lat_sec, lon_sec
+    return (
+        np.hstack(
+            (lat_sec.reshape(-1, 1), lon_sec.reshape(-1, 1), r_sec.reshape(-1, 1))
+        ),
+        lat_sec,
+        lon_sec,
+    )
+
 
 def remove_duplicate_lonlat(lon, lat):
     """
@@ -182,10 +202,10 @@ def remove_duplicate_lonlat(lon, lat):
     """
 
     a = np.ascontiguousarray(np.vstack((lon, lat)).T)
-    unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
+    unique_a = np.unique(a.view([("", a.dtype)] * a.shape[1]))
     llunique = unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
 
-    lon1 = llunique[:,0]
-    lat1 = llunique[:,1]
+    lon1 = llunique[:, 0]
+    lat1 = llunique[:, 1]
 
     return lon1, lat1

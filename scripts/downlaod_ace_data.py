@@ -2,8 +2,8 @@
 This module will downlaod the ACE and DISCOVER data from their respective websites.
 """
 
-import sys
 import os
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
