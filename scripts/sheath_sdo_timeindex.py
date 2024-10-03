@@ -22,7 +22,7 @@ sdodata = ["AIA.zarr", "HMI.zarr"]
 out_dir = "/home/bjha/data/geocloak/formatted_data/sdo"
 
 # List of years
-years = ["2013", "2014", "2015"]
+years = range(2011, 2024)
 
 # AIA Data
 dataaia = zarr.open("/mnt/sdoml/" + sdodata[0])
@@ -39,7 +39,7 @@ for year in years:
     hmi720times = pd.to_datetime(
         hmi720.attrs["T_OBS"], format="%Y.%m.%d_%H:%M:%S.%f_TAI"
     )
-    hmi720times = Time(np.sort(hmi720times))
+    hmi720times = Time(hmi720times)
 
     allind = {"Times": hmi720times.fits}
     alltimes = {"Times": hmi720times.fits}
@@ -47,7 +47,7 @@ for year in years:
     # AIA data
     channels = dataaia[f"{year}"]
     for ch in channels.array_keys():
-        _times = Time(np.sort(channels[ch].attrs["T_OBS"]))
+        _times = Time(channels[ch].attrs["T_OBS"])
         ind = []
         for result in tq.tqdm(hmi720times, desc=f"{year:4}/{ch:6}"):
             _ind = np.argmin(np.abs(_times.jd - result.jd))
@@ -61,7 +61,7 @@ for year in years:
         formated_time = pd.to_datetime(
             channels[ch].attrs["T_OBS"], format="%Y.%m.%d_%H:%M:%S.%f_TAI"
         )
-        _times = Time(np.sort(formated_time))
+        _times = Time(formated_time)
         ind = []
         for result in tq.tqdm(hmi720times, desc=f"{year:4}/{ch:6}"):
             _ind = np.argmin(np.abs(_times.jd - result.jd))
@@ -76,10 +76,13 @@ for year in years:
     indexfilename = f"time_index_{year}.csv"
     timestampfilename = f"timestamp_index_{year}.csv"
     print(f"Saving {indexfilename} in {_outdir}.")
-    pd.DataFrame(allind).to_csv(os.path.join(_outdir, indexfilename), index=False)
+
+    df = pd.DataFrame(allind).sort_values(by=["Times"])
+    df.to_csv(os.path.join(_outdir, indexfilename), index=False)
 
     print(f"Saving {timestampfilename} in {_outdir}.")
-    pd.DataFrame(alltimes).to_csv(os.path.join(_outdir, timestampfilename), index=False)
+    df = pd.DataFrame(alltimes).sort_values(by=["Times"])
+    df.to_csv(os.path.join(_outdir, timestampfilename), index=False)
 
     print("Completed")
     print("%" * 60)

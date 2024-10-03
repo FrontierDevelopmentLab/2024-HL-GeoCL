@@ -1,7 +1,8 @@
 """
-This is the python script which will generate the feature set
-used to generate the feature set for SHEATH by combining the multi
-wavelength observation from the SDO.
+This Python script extracts features from multi-wavelength observations of the Sun 
+collected by the Solar Dynamics Observatory (SDO). These features are then used 
+to generate a feature set for the SHEATH machine learning model, which  
+aims to predict the solar wind condition at L1 point. 
 """
 
 import zarr
@@ -12,10 +13,11 @@ import tqdm as tq
 import os
 import sys
 import csv
+from multiprocessing import current_process
 from multiprocessing import Process
 
 # Add geocloak in the python path
-sys.path.append(os.path.abspath("/home/bjha/girepo/2024-HL-GeoCL/"))
+sys.path.append(os.path.abspath("../"))
 from geocloak.preprocess.sdoprep import SDODataPreprocess
 
 
@@ -23,9 +25,9 @@ from geocloak.preprocess.sdoprep import SDODataPreprocess
 # Later on it can be worked with the argparser
 
 # Top level directories
-rootdir = "/mnt/sdoml/"
+rootdir = "/mnt/sdomlv2/sdomlv2a-static/"
 sdodata = ["AIA.zarr", "HMI.zarr"]
-out_dir = "/home/bjha/data/geocloak/formatted_data/sdo"
+out_dir = "/home/bjha/"
 timeind_dir = "/home/bjha/data/geocloak/formatted_data/sdo/timestamps"
 
 
@@ -56,13 +58,16 @@ def sdoyear(year):
     timeindex.set_index("Times", inplace=True)
     timeindex.index = pd.to_datetime(timeindex.index)
 
-    _outdir = os.path.join(out_dir, "sdoprep")
+    _outdir = os.path.join(out_dir, "sdoprepv2")
     if not os.path.exists(_outdir):
         os.makedirs(_outdir, exist_ok=True)
 
     filepath = os.path.join(_outdir, f"sdo_prep_{year}.csv")
+    current_pro = current_process()._identity[0]
     with open(filepath, "w") as csvfile, tq.tqdm(
-        total=timeindex.shape[0], desc=f"{year}"
+        total=timeindex.shape[0],
+        desc=f"{year}",
+        position=current_pro,
     ) as pbar:
         for i, times in enumerate(timeindex.index):
             pbar.update()
@@ -81,7 +86,12 @@ def sdoyear(year):
 
 
 def main():
-    years = ["2011", "2012", "2013"]
+    years = [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+    ]
     processes = []
     for year in years:
         p = Process(target=sdoyear, args=(year,))

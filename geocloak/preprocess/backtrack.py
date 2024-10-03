@@ -8,7 +8,10 @@ import astropy.units as u
 import pandas as pd
 import sunpy.coordinates.sun as sun
 import numpy as np
+import warnings
 from datetime import datetime
+
+warnings.filterwarnings("ignore")
 
 
 def ballistic(times: pd.Timestamp | str, velocity: float):
@@ -38,7 +41,7 @@ def ballistic(times: pd.Timestamp | str, velocity: float):
     return newtime
 
 
-def HUX(times: list | np.ndarray, vr: list | np.ndarray):
+def HUX(times: list | np.ndarray, vr: list | np.ndarray, backward=True):
     """
     This function will map the give time and velocity to SDO time
     using the HUX back propogation approach.
@@ -53,6 +56,9 @@ def HUX(times: list | np.ndarray, vr: list | np.ndarray):
         The time for which the SDO time needs to be calculated.
     vr : list | np.ndarray
         Radial velocity at the given time at L1 (OMNI/ACE/DSCOVR).
+    backward: bool
+        Whether to calculate time in backward direction or not.
+
 
     Returns
     -------
@@ -126,11 +132,13 @@ def HUX(times: list | np.ndarray, vr: list | np.ndarray):
     # Calculate total shift
     dphi = phi_shift_mat[0, :] - phi_shift_mat[-1, :]
 
-    # get time based on fractiona carrington rotation number
-    crn = sun.carrington_rotation_number(times[ind])
-    crnf = crn - (dphi / (2.0 * np.pi))
-    newtime = sun.carrington_rotation_time(crnf)
-
     # Unsort it again to get back in to input order
-    newtime = newtime[np.argsort(ind)]
+    dphi = dphi[np.argsort(ind)][-1]
+
+    # get time based on fractiona carrington rotation number
+    crn = sun.carrington_rotation_number(times[-1])
+
+    direction = -1 if backward else 1
+    crnf = crn + (direction * (dphi / (2.0 * np.pi)))
+    newtime = sun.carrington_rotation_time(crnf)
     return newtime
