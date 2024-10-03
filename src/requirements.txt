@@ -20,3 +20,5 @@ black
 isort 
 flake8 
 black[jupyter]
+netCDF4
+ppigrf
