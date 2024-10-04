@@ -12,8 +12,11 @@ In terms of contributing to the project, the project makes use of black for code
 ```bash
 black .
 isort --profile black .
-flake8 --extend-ignore E203,E501,W605
+flake8 --extend-ignore E203,E501
 ```
+
+If you deem any lines of code correct and want to overwrite the PEP8 checks, add a `# noqa: CODE` at the end of the line (e.g. `# noqa: W605`).
+
 Please fix any errors that are raised by these commands before submitting a pull request.
 
 ## Further Development
