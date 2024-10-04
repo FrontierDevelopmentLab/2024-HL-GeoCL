@@ -7,7 +7,7 @@ from PIL import Image
 
 def get_sheath():
     st.html(
-        f"""
+        """
         <center>
             <h1>SHEATH</h1>
         </center>

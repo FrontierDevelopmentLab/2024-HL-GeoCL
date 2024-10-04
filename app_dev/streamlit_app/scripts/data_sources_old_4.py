@@ -1,11 +1,5 @@
-import os
-
-import h5py
-import pandas as pd
 import plotly.graph_objs as go
 import streamlit as st
-
-# from data_module import fetch_data, prepare_dataframe, save_csv, plot_time_series
 from data_module import fetch_data, prepare_dataframe, save_csv
 
 token = "8xj_AxxKhgKYz9oMfrsgyacXB-b8BgvG-KpBtKLZIK3yvQr7v7MCZmNQFOmyJ0N56m_OEnY1Snwn4O86foraEQ=="
@@ -48,8 +42,6 @@ def plot_time_series(df):
 
     return fig
 """
-
-import plotly.graph_objs as go
 
 
 def plot_time_series(df):

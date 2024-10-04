@@ -1,12 +1,9 @@
-import csv
 import json
 import os
-import pathlib
 import sys
 import time
 
 import h5py as h5
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -14,9 +11,6 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.optim as optim
 import tqdm as tq
-import wandb
-import yaml
-from astropy.time import Time
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import DataLoader, Dataset
@@ -567,10 +561,8 @@ def train(config):
     # config = wandb.config
 
     # Load data
-    directory = "/Users/bjha/Data/fdl2024/omni/omni_backtracked"
     scaler_dir = "/home/bjha/data/geocloak/formatted_data/sdoembeddings/"
     inputfile = "/home/bjha/data/sdo_latent_dataset_21504.h5"
-    targetfile = "/home/bjha/data/geocloak/formatted_data/sdoembeddings/omniweb_back_tracked_ballistic.csv"
 
     print(time.perf_counter())
     train_dataset = SHEATHDataLoader(
@@ -658,9 +650,9 @@ def train(config):
 
         # Calculate individual metrics for each target feature
         # train_individual_metrics = calculate_individual_metrics(all_train_predictions, all_train_targets, scaler_dir)
-        val_individual_metrics = calculate_individual_metrics(
-            all_val_predictions, all_val_targets, scaler_dir
-        )
+        # val_individual_metrics = calculate_individual_metrics(
+        #     all_val_predictions, all_val_targets, scaler_dir
+        # )
 
         # Ensure metrics are logged as floats
         train_rmse = float(train_rmse)

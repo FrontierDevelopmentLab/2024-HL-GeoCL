@@ -207,7 +207,7 @@ class NRTData:
                 return None
 
             # Get list of timestamp
-            lastdata = np.sort([l for l in _path.glob("*") if l.is_dir()])
+            lastdata = np.sort([lst for lst in _path.glob("*") if lst.is_dir()])
             times = [
                 datetime.strptime(s.name, "hmi.b_720s.%Y%m%d_%H%M%S_TAI")
                 for s in lastdata
@@ -220,10 +220,10 @@ class NRTData:
 
         else:
             # Get the last data for given year and month
-            year = np.sort([l for l in sdopath.glob("HMI/*") if l.is_dir()])[-1]
-            month = np.sort([l for l in year.glob("*") if l.is_dir()])[-1]
-            day = np.sort([l for l in month.glob("*") if l.is_dir()])[-1]
-            lastdata = np.sort([l for l in day.glob("*") if l.is_dir()])[-1]
+            year = np.sort([lst for lst in sdopath.glob("HMI/*") if lst.is_dir()])[-1]
+            month = np.sort([lst for lst in year.glob("*") if lst.is_dir()])[-1]
+            day = np.sort([lst for lst in month.glob("*") if lst.is_dir()])[-1]
+            lastdata = np.sort([lst for lst in day.glob("*") if lst.is_dir()])[-1]
             lasthmitime = datetime.strptime(
                 lastdata.name, "hmi.b_720s.%Y%m%d_%H%M%S_TAI"
             )
@@ -248,9 +248,9 @@ class NRTData:
         # List existing channels
         waves = tuple(
             {
-                l.stem.split("_")[-1]
-                for l in aiapath.glob("*")
-                if l.name.endswith("fits")
+                lst.stem.split("_")[-1]
+                for lst in aiapath.glob("*")
+                if lst.name.endswith("fits")
             }
         )
 

@@ -104,8 +104,9 @@ def getKpindex(starttime, endtime, index, status="all"):
             result_index = tuple(data[index])
             if index not in ["Hp30", "Hp60", "ap30", "ap60", "Fobs", "Fadj"]:
                 result_s = tuple(data["status"])
-        except:
+        except Exception as er:
             print(text)
+            print(er)
 
     except NameError as er:
         print(er)

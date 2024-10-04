@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from geocloak.datautilus.downloader import DataDownloader
+from geocloak.datautilus.downloader import DataDownloader  # noqa: E402
 
 out_dir = "/home/bjha/data/geocloak/formatted_data/OMNI/omniweb_1m"
 file_dir = "/home/bjha/data/landingpage/omni/"

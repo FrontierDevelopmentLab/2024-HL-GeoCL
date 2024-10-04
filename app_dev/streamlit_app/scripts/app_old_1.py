@@ -23,16 +23,16 @@ st.markdown(
         justify-content: center;
         padding: 20px;
     }
+
     section[data-testid="stSidebar"] {
         top: 100px;
         //width: 500px;
-        
     }
-    
+
     div[data-testid="stVerticalBlockBorderWrapper"] {
         width: 100%; //calc(100% - 350px); /* Adjust the width to use full space, considering sidebar width */
     }
-    
+
     .box {
         background: #ffffff;
         border: 2px solid #ffffff;

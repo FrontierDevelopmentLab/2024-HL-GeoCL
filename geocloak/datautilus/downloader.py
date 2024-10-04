@@ -425,7 +425,11 @@ class DataDownloader:
 
         # Read data from lst file
         data = pd.read_csv(
-            datafile, sep="\s{1,}", engine="python", header=None, names=heads
+            datafile,
+            sep="\s{1,}",  # noqa: W605
+            engine="python",
+            header=None,
+            names=heads,
         )
 
         # Convert day of year to ISO datetime format

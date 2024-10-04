@@ -1,7 +1,6 @@
 import datetime
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from google.cloud import storage
 from train_model import LSTMPredictor, generate_sine_wave

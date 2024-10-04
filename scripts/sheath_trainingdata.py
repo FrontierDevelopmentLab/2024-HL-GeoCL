@@ -10,21 +10,13 @@ import os
 import sys
 from multiprocessing import Process, current_process
 
-import astropy.constants as const
-import astropy.units as u
 import numpy as np
 import pandas as pd
 import tqdm.auto as tq
-from astropy.time import Time
-from sunpy.coordinates.sun import (
-    L0,
-    carrington_rotation_number,
-    carrington_rotation_time,
-)
 
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
-from geocloak.preprocess.backtrack import HUX, ballistic
+from geocloak.preprocess.backtrack import ballistic  # noqa: E402
 
 # Top level variables for the run
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

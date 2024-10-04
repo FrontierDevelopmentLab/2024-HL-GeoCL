@@ -1,4 +1,3 @@
-import json
 import os
 
 import numpy as np
@@ -7,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import yaml
 from dataloader import SHEATHDataLoader
-from evaluation_metric import calculate_individual_metrics, calculate_metrics
+from evaluation_metric import calculate_metrics
 from model import SHEATH_MLP
 from torch.utils.data import DataLoader
 
@@ -110,10 +109,10 @@ def train(config):
             all_val_predictions, all_val_targets, scaler_dir
         )
 
-        # Calculate individual metrics for each target feature
-        train_individual_metrics = calculate_individual_metrics(
-            all_train_predictions, all_train_targets, scaler_dir
-        )
+        # # Calculate individual metrics for each target feature
+        # train_individual_metrics = calculate_individual_metrics(
+        #     all_train_predictions, all_train_targets, scaler_dir
+        # )
 
         # Ensure metrics are logged as floats
         train_rmse = float(train_rmse)

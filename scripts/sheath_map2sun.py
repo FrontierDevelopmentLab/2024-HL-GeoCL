@@ -13,7 +13,7 @@ import tqdm as tq
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from geocloak.preprocess.backtrack import HUX, ballistic
+from geocloak.preprocess.backtrack import HUX, ballistic  # noqa: E402
 
 OMNI_DIR = "/home/bjha/data/geocloak/formatted_data/OMNI/omniweb_1m"
 omnipath = pathlib.Path(OMNI_DIR)

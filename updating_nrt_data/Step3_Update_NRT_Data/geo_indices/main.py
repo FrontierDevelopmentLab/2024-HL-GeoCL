@@ -1,8 +1,6 @@
 import logging
-from datetime import datetime
 
 import functions_framework
-from flask import jsonify
 from indicesdata import collect_fadj_data, collect_hp_ap_data, collect_kp_data
 
 # Set up logging
@@ -31,7 +29,7 @@ def main(request):
         log.info(f"Collecting data for index {index}")
         collect_kp_data()
     elif index in ["Hp30", "ap30"]:
-        log.info(f"Collecting data for indices Hp30 and ap30")
+        log.info("Collecting data for indices Hp30 and ap30")
         collect_hp_ap_data()
     elif index == "Fadj":
         log.info(f"Collecting data for index {index}")

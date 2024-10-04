@@ -1,5 +1,3 @@
-import logging
-
 import functions_framework
 from flask import jsonify
 from nrtdata import NRTData

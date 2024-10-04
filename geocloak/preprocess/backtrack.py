@@ -1,13 +1,11 @@
 """
-The Backtrack module will provides various (at least 3) methods 
+The Backtrack module will provides various (at least 3) methods
 of backtracking from L1 time stamp to SDO time stamp.
 """
 
 import warnings
-from datetime import datetime
 
 import astropy.constants as const
-import astropy.units as u
 import numpy as np
 import pandas as pd
 import sunpy.coordinates.sun as sun

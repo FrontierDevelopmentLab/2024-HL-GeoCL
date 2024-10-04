@@ -1,6 +1,3 @@
-import os
-
-import numpy as np
 import torch
 from dataloader_eval import GeoCLoakDataLoader
 from model import DAGGERStationNet

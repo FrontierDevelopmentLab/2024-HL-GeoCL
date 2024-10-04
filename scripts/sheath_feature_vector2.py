@@ -1,8 +1,8 @@
 """
-This Python script extracts features from multi-wavelength observations of the Sun 
-collected by the Solar Dynamics Observatory (SDO). These features are then used 
-to generate a feature set for the SHEATH machine learning model, which  
-aims to predict the solar wind condition at L1 point. 
+This Python script extracts features from multi-wavelength observations of the Sun
+collected by the Solar Dynamics Observatory (SDO). These features are then used
+to generate a feature set for the SHEATH machine learning model, which
+aims to predict the solar wind condition at L1 point.
 """
 
 import csv
@@ -10,15 +10,13 @@ import os
 import sys
 from multiprocessing import Process, current_process
 
-import numpy as np
 import pandas as pd
 import tqdm as tq
 import zarr
-from astropy.time import Time
 
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
-from geocloak.preprocess.sdoprep import SDODataPreprocess
+from geocloak.preprocess.sdoprep import SDODataPreprocess  # noqa: E402
 
 # Directory setup
 # Later on it can be worked with the argparser

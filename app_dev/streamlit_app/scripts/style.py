@@ -24,7 +24,7 @@ def render_custom_style():
         div[data-testid="stVerticalBlockBorderWrapper"] {
          /*   width: 100%;*/
         }
-        
+
         div[data-testid="stVerticalBlock"] {
             width: 100vh;
             width: 500px;
@@ -58,14 +58,13 @@ def render_custom_style():
             margin: 20px auto;
             color: white;
         }
-           
-        
+
         div.st-emotion-cache-ocqkz7.e1f1d6gn5 {
             width: 100vh;  /* Adjust the padding as needed */
             text-align: center;
             color: white;
         }
-        
+
         div.st-emotion-cache-ef2wwy.e1f1d6gn2 {
             padding-top: 100px;
             border: 2px solid grey;
@@ -76,7 +75,7 @@ def render_custom_style():
             margin: 20px auto;
             color: white;
         }
-        
+
         div.st-emotion-cache-keje6w.e1f1d6gn3 {
             padding-top: 100px;
             border: 2px solid grey;

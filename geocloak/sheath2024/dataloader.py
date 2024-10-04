@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 
 class SHEATHDataLoader(Dataset):

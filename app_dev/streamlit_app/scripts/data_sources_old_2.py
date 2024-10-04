@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 from data_module import fetch_data, plot_time_series, prepare_dataframe, save_csv
 
@@ -32,8 +31,8 @@ def display_data_html(bucket, measurement, csv_file, title):
     download_link = f'<a href="data:file/csv;base64,{st.download_button(csv_file)}" download="{csv_file}">Download {title} Data as CSV</a>'
 
     return f"""
-    <div style="text-align: justify; border: 2px solid #ffffff; border-radius: 10px; 
-                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); transition: 0.3s; 
+    <div style="text-align: justify; border: 2px solid #ffffff; border-radius: 10px;
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); transition: 0.3s;
                 width: 100%; margin: auto; margin-top: 20px; padding: 20px; color: black;">
         <h2>{title}</h2>
         {df_html}
@@ -45,7 +44,7 @@ def display_data_html(bucket, measurement, csv_file, title):
 
 def get_data():
     st.html(
-        f"<center><h1>DATA SOURCES</h1></center>",
+        "<center><h1>DATA SOURCES</h1></center>",
     )
 
     # Start the main box

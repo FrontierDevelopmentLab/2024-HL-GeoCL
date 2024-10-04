@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore")
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from geocloak.datautilus.downloader import DataDownloader
+from geocloak.datautilus.downloader import DataDownloader  # noqa: E402
 
 START_YEAR = 2001
 END_YEAR = None

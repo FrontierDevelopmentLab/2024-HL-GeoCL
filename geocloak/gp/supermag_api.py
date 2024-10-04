@@ -1,19 +1,20 @@
+# flake8: noqa
+
+import datetime
+import importlib
+import json
+import re
+import urllib.request
+
+import pandas as pd  # dataframes and also to_datetime
+
 # the 'certifi' library is required at APL and other sites that
 # require SSL certs for web fetches.  If you need this, install certifi
 # (pip install certifi)
-import importlib
-import urllib.request
-
 certspec = importlib.util.find_spec("certifi")
 found = certspec is not None
 if found:
-    import certifi
-
-import datetime
-import json
-import re
-
-import pandas as pd  # dataframes and also to_datetime
+    import certifi  # noqa: E402
 
 """
 ;supermag_api.py
@@ -22,17 +23,17 @@ import pandas as pd  # dataframes and also to_datetime
 
 
 ; (c) 2021  The Johns Hopkins University Applied Physics Laboratory
-;LLC.  All Rights Reserved. 
+;LLC.  All Rights Reserved.
 
 ;This material may be only be used, modified, or reproduced by or for
-;the U.S. Government pursuant to the license rights granted under the 
+;the U.S. Government pursuant to the license rights granted under the
 ;clauses at DFARS 252.227-7013/7014 or FAR 52.227-14. For any other
-;permission, 
+;permission,
 ;please contact the Office of Technology Transfer at JHU/APL.
 
 ; NO WARRANTY, NO LIABILITY. THIS MATERIAL IS PROVIDED "AS IS."
 ; JHU/APL MAKES NO REPRESENTATION OR WARRANTY WITH RESPECT TO THE
-; PERFORMANCE OF THE MATERIALS, INCLUDING THEIR SAFETY, EFFECTIVENESS, 
+; PERFORMANCE OF THE MATERIALS, INCLUDING THEIR SAFETY, EFFECTIVENESS,
 ; OR COMMERCIAL VIABILITY, AND DISCLAIMS ALL WARRANTIES IN THE
 ; MATERIAL, WHETHER EXPRESS OR IMPLIED, INCLUDING (BUT NOT LIMITED TO)
 ; ANY AND ALL IMPLIED WARRANTIES OF PERFORMANCE, MERCHANTABILITY,
@@ -42,7 +43,7 @@ import pandas as pd  # dataframes and also to_datetime
 ; MATERIAL. IN NO EVENT SHALL JHU/APL BE LIABLE TO ANY USER OF THE
 ; MATERIAL FOR ANY ACTUAL, INDIRECT, CONSEQUENTIAL, SPECIAL OR OTHER
 ; DAMAGES ARISING FROM THE USE OF, OR INABILITY TO USE, THE MATERIAL,
-; INCLUDING, BUT NOT LIMITED TO, ANY DAMAGES FOR LOST PROFITS. 
+; INCLUDING, BUT NOT LIMITED TO, ANY DAMAGES FOR LOST PROFITS.
 """
 # Sample URLs, type into browser if you want to compare the data vs python
 # https://supermag.jhuapl.edu/services/data-api.php?fmt=json&logon=YOURNAME&start=2019-10-15T10:40&extent=3600&all&station=NCK
@@ -88,7 +89,7 @@ def sm_csvitem_to_dict(myarr, **kwargs):
         # little sanity check to make sure float subitems remain floats
         try:
             elements = {item: float(value) for (item, value) in elements.items()}
-        except:
+        except Exception:
             pass
 
         # type(elements)
@@ -305,7 +306,7 @@ def sm_GetUrl(fetchurl, fetch="raw"):
         # to have stronger backward compatability with earlier versions
         try:
             cafile = certifi.where()
-        except:
+        except Exception:
             cafile = ""
         with urllib.request.urlopen(fetchurl, cafile=cafile) as response:
             longstring = response.read()
@@ -327,7 +328,7 @@ def sm_GetUrl(fetchurl, fetch="raw"):
     except urllib.error.URLError as e:
         # print, !ERROR_STATE.msg
         mydata = ["ERROR:HTTP error", e.reason]
-    except:
+    except Exception:
         longstring = longstring.decode("UTF-8")
         mydata = [longstring]  # catch-all if nothing below works
 
@@ -347,9 +348,6 @@ def sm_GetUrl(fetchurl, fetch="raw"):
 
 def SuperMAGGetInventory(logon, start, extent):
     # One of the core 3 functions
-
-    iarr = ""
-    errstr = ""
 
     # construct URL
     urlstr = sm_coreurl("inventory.php", logon, start, extent)
@@ -452,11 +450,11 @@ def sm_microtest(choice, userid):
         print(data.keys())
 
         tval = data.tval
-        mlt = data.mlt
-        ### Python way
+        # mlt = data.mlt
+        # Python way
         N_nez = [temp["nez"] for temp in data.N]
         N_geo = [temp["geo"] for temp in data.N]
-        ### or, supermag helper shorthand way
+        # or, supermag helper shorthand way
         N_nez = sm_grabme(data, "N", "nez")
         N_geo = sm_grabme(data, "N", "geo")
         #
@@ -530,8 +528,6 @@ def supermag_testing(userid):
     # just IMFALL = 5 columns, Index(['tval', 'bgse', 'bgsm', 'vgse', 'vgsm'], dtype='object')
     # just SWIALL = 7 columns, Index(['tval', 'clockgse', 'clockgsm', 'density', 'dynpres', 'epsilon', 'newell'], dtype='object')
     #
-    # Dataframes are awesome!  To manipulate, just pull out what you need
-    import pandas as pd  # call once at the top of your code if you are using dataframes
 
     tval = idxdata.tval
     density = idxdata.density
@@ -545,10 +541,6 @@ def supermag_testing(userid):
     idxdata.to_csv("mydata.csv")
 
     # to read it back in later
-    import re
-
-    import pandas as pd
-
     mydata2b = pd.read_csv(
         "mydata.csv", index_col=0
     )  # you can read it into any variable name, we just used 'mydata2b' as an example

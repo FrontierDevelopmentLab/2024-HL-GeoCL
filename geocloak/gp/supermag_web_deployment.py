@@ -14,11 +14,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import stripy
+
+# import supermag_api as smapi
 from sec import T_df, get_mesh, remove_duplicate_lonlat
-from supermag_api import *
 
 matplotlib.use("TkAgg")
-from mycolorpy import colorlist as mcp
 
 font = {"family": "serif", "size": 14}
 
@@ -31,7 +31,7 @@ matplotlib.rc("ytick", labelsize=14)
 # # start date year-month-day-hour-min-sec
 # start = [2018, 3, 17, 18, 40, 0]
 # # read in SuperMAG data
-# (status, stations) = SuperMAGGetInventory("opaliss", start, 3600)
+# (status, stations) = smapi.SuperMAGGetInventory("opaliss", start, 3600)
 # # number of stations available at this time
 # n_stations = len(stations)
 # print("number of stations =", n_stations)
@@ -42,7 +42,7 @@ matplotlib.rc("ytick", labelsize=14)
 # # note: this is very slow... we will use something better thanks to the one and only @bibhuti
 # kk = 0
 # for ii in range(0, n_stations):
-#     (status, sm_data) = SuperMAGGetData("opaliss", start, 3600, 'geo', stations[ii])
+#     (status, sm_data) = amapi.SuperMAGGetData("opaliss", start, 3600, 'geo', stations[ii])
 #     try:
 #         print("kk = ", kk)
 #         if sm_data.glat[0] not in geo_lat and sm_data.glon[0] not in geo_lon:

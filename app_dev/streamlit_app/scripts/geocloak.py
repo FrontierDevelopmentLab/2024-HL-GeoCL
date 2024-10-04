@@ -8,7 +8,7 @@ from PIL import Image
 def get_geocloak():
     # st.title(f"{selected}")
     st.html(
-        f"""
+        """
         <center>
             <h1>GeoCloak</h1>
         </center>

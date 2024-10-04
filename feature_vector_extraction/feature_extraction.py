@@ -1,19 +1,16 @@
 import datetime as dt
-import json
 import logging
 import os
 import pickle
 import shutil
-import urllib.request
 import warnings
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import dipole as dp
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import urllib3
-from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Suppress specific FutureWarning from the ppigrf module
@@ -170,6 +167,7 @@ def load_and_display_pkl(file_path):
         with open(file_path, "rb") as file:
             # Load the data from the file
             data = pickle.load(file)
+        return data
     except Exception as e:
         print(f"An error occurred while loading the pickle file: {e}")
 

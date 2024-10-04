@@ -4,13 +4,10 @@ the SDO data from SDOMLv2 and generate the featuire vector
 returned as python dictionary.
 """
 
-import os
 from datetime import datetime
-from glob import glob
 
 import numpy as np
 import pandas as pd
-import zarr
 from sklearn.mixture import GaussianMixture as GMM
 
 
@@ -187,7 +184,7 @@ class SDODataPreprocess:
             else:
                 try:
                     _timestamp = pd.to_datetime(_timestamp)
-                except:
+                except Exception:
                     raise SyntaxError("Unable to interprate time format.")
         elif isinstance(_timestamp, datetime):
             _timestamp = pd.to_datetime(_timestamp)

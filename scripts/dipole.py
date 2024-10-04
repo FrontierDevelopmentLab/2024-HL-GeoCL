@@ -6,12 +6,12 @@ get the relevant dipole Gauss coefficients from the IGRF coefficients. After ini
 the following methods are available (all are vectorized):
  * B(lat, r)                                 - calculate dipole magnetic field values
  * tilt(times)                               - calculate dipole tilt angle for one or more times
- * geo2mag(lat, lon)                         - convert from geocentric to centered dipole coords and components 
+ * geo2mag(lat, lon)                         - convert from geocentric to centered dipole coords and components
  * mag2geo(lat, lon)                         - convert from centered dipole to geocentric coords and components
  * mlt2mlon(mlt , time)                      - convert magnetic local time to magnetic longitude
  * mlon2mlt(mlon, time)                      - convert magnetic longitude to magnetic local time
  * get_apex_base_vectors(lat, r, R = 6371.2) - get apex basis vectors appropriate for dipole field **not using full IGRF**
- * get_flux(lon, lat)                        - calculate magnetic flux inside boundar(y/ies) defined by lon, lat 
+ * get_flux(lon, lat)                        - calculate magnetic flux inside boundar(y/ies) defined by lon, lat
  * get_flux_numerical(lon, lat)              - alternative way to calculate flux (but only for one boundary at a time)
 
 Note: As an alterntive to the epoch initialization, the dipole pole location and reference magnetic field can be specified
@@ -21,9 +21,9 @@ and the following parameters:
  * north_pole - dipole pole position in northern hemisphere
  * south_pole - dipole pole position in southern hemisphere
  * axis       - ECEF dipole axis unit vector (pointing to north)
- * B0         - reference magnetic field 
+ * B0         - reference magnetic field
 
-For definitions see Section 3 in 
+For definitions see Section 3 in
 "Magnetic Coordinate Systems" by Laundal & Richmond (2017), DOI 10.1007/s11214-016-0275-y
 
 
@@ -69,7 +69,7 @@ def sph_to_car(sph, deg=True):
 
     r, theta, phi = sph
 
-    if deg == False:
+    if deg is False:
         conv = 1.0
     else:
         conv = d2r
@@ -103,7 +103,7 @@ def car_to_sph(car, deg=True):
 
     x, y, z = car
 
-    if deg == False:
+    if deg is False:
         conv = 1.0
     else:
         conv = r2d
@@ -256,14 +256,14 @@ def subsol(datetimes):
     gf = 0.9856003 * df
 
     # Mean longitude of Sun:
-    l = l0 + lf
+    l_lon = l0 + lf
 
     # Mean anomaly:
     g = g0 + gf
     grad = g * np.pi / 180.0
 
     # Ecliptic longitude:
-    lmbda = l + 1.915 * np.sin(grad) + 0.020 * np.sin(2.0 * grad)
+    lmbda = l_lon + 1.915 * np.sin(grad) + 0.020 * np.sin(2.0 * grad)
     lmrad = lmbda * np.pi / 180.0
     sinlm = np.sin(lmrad)
 
@@ -284,7 +284,7 @@ def subsol(datetimes):
     sbsllat = delta
 
     # Equation of time (degrees):
-    etdeg = l - alpha
+    etdeg = l_lon - alpha
     nrot = np.round(etdeg / 360.0)
     etdeg = etdeg - 360.0 * nrot
 
@@ -518,7 +518,7 @@ class Dipole(object):
             lat, lon, Ae, An = np.broadcast_arrays(lat, lon, Ae, An)
             shape = lat.shape
             lat, lon, Ae, An = lat.flatten(), lon.flatten(), Ae.flatten(), An.flatten()
-        except:
+        except Exception:
             raise Exception("Input have inconsistent shapes")
 
         # make rotation matrix from geo to cd
@@ -543,7 +543,7 @@ class Dipole(object):
         _, colat_cd, lon_cd = car_to_sph(r_cd, deg=True)
 
         # return coords if vector components are not to be calculated
-        if return_components == False:
+        if return_components is False:
             return 90 - colat_cd.reshape(shape), lon_cd.reshape(shape)
 
         # convert components:
@@ -718,7 +718,7 @@ class Dipole(object):
 
         try:
             r, la = map(np.ravel, np.broadcast_arrays(r, lat))
-        except:
+        except Exception:
             raise ValueError("get_apex_base_vectors: Input not broadcastable")
 
         la = np.deg2rad(la)
@@ -919,7 +919,7 @@ class Dipole(object):
 
         try:
             from scipy.interpolate import CubicSpline
-        except:
+        except Exception:
             raise Exception("get_flux: Could not import scipy.interpolate.CubicSpline")
 
         lon = lon.flatten()
@@ -929,8 +929,8 @@ class Dipole(object):
 
         if not np.allclose([lon[0], lon[-1] - 360], 0):
             print(
-                """Warning: lon is assumed to be periodic at lon[0] and lon[-1]. 
-                     Your input does not start at 0 and end at 360. 
+                """Warning: lon is assumed to be periodic at lon[0] and lon[-1].
+                     Your input does not start at 0 and end at 360.
                      This can cause inaccuracies if the boundary latitudes vary a lot"""
             )
 
@@ -1097,9 +1097,9 @@ if __name__ == "__main__":
     print("testing flux calculation")
     lon = np.linspace(0, 360, 100)
     lat0s = [80, 70, 40, 20]
-    lats = np.array([5 * np.cos(4 * np.deg2rad(lon)) + l for l in lat0s])
+    lats = np.array([5 * np.cos(4 * np.deg2rad(lon)) + l_lat for l_lat in lat0s])
     num_flux = np.array(
-        [d.get_flux_numerical(lon, l, dlon=0.1, dlat=0.1, R=R) for l in lats]
+        [d.get_flux_numerical(lon, lat, dlon=0.1, dlat=0.1, R=R) for lat in lats]
     )
     flux = d.get_flux(lon, lats, R=R)
 

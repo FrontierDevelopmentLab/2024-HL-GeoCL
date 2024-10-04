@@ -2,7 +2,6 @@
 This is main sheath training script for training SHEATH based.
 """
 
-import json
 import os
 import sys
 import warnings
@@ -12,9 +11,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import tqdm as tq
-import wandb
 import yaml
-from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 warnings.filterwarnings("ignore")
@@ -22,14 +19,9 @@ warnings.filterwarnings("ignore")
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from test import SHEATHDataLoader
+from test import SHEATHDataLoader  # noqa: E402
 
-from geocloak.models.sheath import (
-    SHEATH_MLP,
-    DataProcessor,
-    calculate_individual_metrics,
-    calculate_metrics,
-)
+from geocloak.models.sheath import SHEATH_MLP, DataProcessor  # noqa: E402
 
 
 def train_test_val_split(directory: str, output_directory: str):
@@ -125,7 +117,6 @@ def train(config):
         model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"]
     )
 
-    best_val_rmse = float("inf")
     best_model_state = None
 
     # Training loop

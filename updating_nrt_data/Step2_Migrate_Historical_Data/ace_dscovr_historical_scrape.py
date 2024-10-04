@@ -60,7 +60,6 @@ def collect_and_save_data(year, dataset):
 
         # Create a DataFrame
         df = pd.DataFrame(data=data_values, index=timestamps, columns=labels)
-        df_reset = df.reset_index().rename(columns={"index": "Timestamp"})
 
     # Save to InfluxDB
     save_to_influxdb(df, f"{dataset}_data", f"{dataset}_bucket")

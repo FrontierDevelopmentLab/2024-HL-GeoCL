@@ -10,6 +10,6 @@ isort --profile black .
 
 # Run flake8 to lint the code, ignoring specified errors
 echo "Running flake8..."
-flake8 --extend-ignore E203,E501,W605
+flake8 --extend-ignore E203,E501
 
 echo "All tasks completed."

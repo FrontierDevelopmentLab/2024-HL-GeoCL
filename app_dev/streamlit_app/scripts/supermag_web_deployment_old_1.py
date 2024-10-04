@@ -9,7 +9,6 @@ Last Modified: July 30th, 2024
 """
 
 import os
-import tkinter
 from io import BytesIO
 
 import cartopy.crs as ccrs
@@ -17,10 +16,9 @@ import GPy
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from google.cloud import storage
-from mycolorpy import colorlist as mcp
 from sec import T_df, get_mesh
-from supermag_api import *
 
 
 def supermag_setup():
@@ -86,7 +84,7 @@ def split_lat_lon_df(df):
     return glat, glon
 
 
-def call_supermag(storage_client):
+def prepare_supermag(storage_client):
     bucket_name = "geocloak2024"
     csv_files = {
         "inference_outputs/DAGGER/202405120000/dbn_geo/202405120000.csv": "data_Bn.npy",
@@ -134,17 +132,6 @@ def call_supermag(storage_client):
     print(f"geo_lat shape: {geo_lat.shape}")
     print(f"geo_lon shape: {geo_lon.shape}")
 
-    # set up constants for SECs
-    R_earth = 6371  # in km
-    R_ionosphere = R_earth + 100  # in km
-
-    # setup the SECs "node" grid
-    # n_lon and n_lat are free parameters but are limited to n_lon*n_lat ~ number of stations
-    n_lon, n_lat = 35, 35
-    secs_lat_lon_r, lat_sec, lon_sec = get_mesh(
-        n_lon=n_lon, n_lat=n_lat, radius=R_ionosphere
-    )
-
     ############################################################################################
     # Setup the SuperMAG stations grid
     min_length = min(
@@ -157,6 +144,12 @@ def call_supermag(storage_client):
     geo_lat = geo_lat[:min_length]
     geo_lon = geo_lon[:min_length]
     ############################################################################################
+    return data_Bn, data_Be, data_Bz, geo_lat, geo_lon
+
+
+def process_supermag_data(
+    data_Bn, data_Be, data_Bz, geo_lat, geo_lon, secs_lat_lon_r, R_earth
+):
 
     # setup the SuperMAG stations grid
     obs_lat_lon_r = np.vstack((geo_lat, geo_lon, R_earth * np.ones(len(geo_lon)))).T
@@ -194,10 +187,29 @@ def call_supermag(storage_client):
     mean_, sd_ = model.predict(
         Xnew=T_df(obs_loc=pred_lat_lon_r, sec_loc=secs_lat_lon_r)
     )
+    return mean_, sd_, pred_lat, pred_lon, n_lat, n_lon
 
-    # plot results
-    fig = plt.figure(figsize=(9, 4))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+
+def plot_supermag_results(
+    mean_,
+    sd_,
+    pred_lat,
+    pred_lon,
+    n_lat,
+    n_lon,
+    geo_lat,
+    geo_lon,
+    data_Bn,
+    data_Be,
+    lon_sec,
+    lat_sec,
+):
+    figs = []
+
+    # Plot mean Bn
+    fig, ax = plt.subplots(
+        figsize=(9, 4), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
     ax.coastlines()
     pos = ax.contourf(
         pred_lon[:, :, 0],
@@ -206,7 +218,6 @@ def call_supermag(storage_client):
         alpha=0.6,
         transform=ccrs.PlateCarree(),
     )
-
     ax.scatter(
         geo_lon,
         geo_lat,
@@ -224,13 +235,12 @@ def call_supermag(storage_client):
     ax.set_ylim(-80, 80)
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
-    plt.tight_layout()
-    plt.savefig("figures/secgp_mean_Bn.png", bbox_inches="tight", dpi=600)
-    plt.show()
+    figs.append(fig)
 
-    # plot results
-    fig = plt.figure(figsize=(9, 4))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+    # Plot mean Be
+    fig, ax = plt.subplots(
+        figsize=(9, 4), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
     ax.coastlines()
     pos = ax.contourf(
         pred_lon[:, :, 0],
@@ -256,13 +266,12 @@ def call_supermag(storage_client):
     ax.set_ylim(-80, 80)
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
-    plt.tight_layout()
-    plt.savefig("figures/secgp_mean_Be.png", bbox_inches="tight", dpi=600)
-    plt.show()
+    figs.append(fig)
 
-    # plot results
-    fig = plt.figure(figsize=(9, 4))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+    # Plot standard deviation Bn
+    fig, ax = plt.subplots(
+        figsize=(9, 4), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
     ax.coastlines()
     pos = ax.contourf(
         pred_lon[:, :, 0],
@@ -272,7 +281,6 @@ def call_supermag(storage_client):
         cmap="plasma",
         transform=ccrs.PlateCarree(),
     )
-
     ax.scatter(lon_sec[:, :, 0], lat_sec[:, :, 0], c="blue", s=7, marker="x")
     ax.scatter(geo_lon, geo_lat, c="red", s=7)
     cbar = fig.colorbar(pos)
@@ -282,13 +290,12 @@ def call_supermag(storage_client):
     ax.set_ylim(-80, 80)
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
-    plt.tight_layout()
-    plt.savefig("figures/secgp_sd_Bn.png", bbox_inches="tight", dpi=600)
-    plt.show()
+    figs.append(fig)
 
-    # plot results
-    fig = plt.figure(figsize=(9, 4))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+    # Plot standard deviation Be
+    fig, ax = plt.subplots(
+        figsize=(9, 4), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
     ax.coastlines()
     pos = ax.contourf(
         pred_lon[:, :, 0],
@@ -300,7 +307,6 @@ def call_supermag(storage_client):
         cmap="plasma",
         transform=ccrs.PlateCarree(),
     )
-
     ax.scatter(lon_sec[:, :, 0], lat_sec[:, :, 0], c="blue", s=7, marker="x")
     ax.scatter(geo_lon, geo_lat, c="red", s=7)
     cbar = fig.colorbar(pos)
@@ -310,6 +316,44 @@ def call_supermag(storage_client):
     ax.set_ylim(-80, 80)
     ax.set_xlabel("longitude [deg]")
     ax.set_ylabel("latitude [deg]")
-    plt.tight_layout()
-    plt.savefig("figures/secgp_sd_Be.png", bbox_inches="tight", dpi=600)
+    figs.append(fig)
+
+    return figs
+
+
+# set up constants for SECs
+R_earth = 6371  # in km
+R_ionosphere = R_earth + 100  # in km
+
+# setup the SECs "node" grid
+# n_lon and n_lat are free parameters but are limited to n_lon*n_lat ~ number of stations
+n_lon, n_lat = 35, 35
+secs_lat_lon_r, lat_sec, lon_sec = get_mesh(
+    n_lon=n_lon, n_lat=n_lat, radius=R_ionosphere
+)
+
+client = supermag_setup()
+data_Bn, data_Be, data_Bz, geo_lat, geo_lon = prepare_supermag(client)
+# Process the data
+mean_, sd_, pred_lat, pred_lon, n_lat, n_lon = process_supermag_data(
+    data_Bn, data_Be, data_Bz, geo_lat, geo_lon, secs_lat_lon_r, R_earth
+)
+
+# Plot the results and display in Streamlit
+figs = plot_supermag_results(
+    mean_,
+    sd_,
+    pred_lat,
+    pred_lon,
+    n_lat,
+    n_lon,
+    geo_lat,
+    geo_lon,
+    data_Bn,
+    data_Be,
+    lon_sec,
+    lat_sec,
+)
+
+for fig in figs:
     plt.show()

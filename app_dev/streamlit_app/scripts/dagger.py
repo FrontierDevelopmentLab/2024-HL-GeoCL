@@ -1,10 +1,8 @@
 import datetime
-from io import BytesIO
 
 import requests
 import streamlit as st
 from google.cloud import storage
-from PIL import Image
 
 
 def get_last_uploaded_object(project_name, bucket_name, prefix):
@@ -96,9 +94,9 @@ def get_dagger():
     formatted_timestamp = extract_timestamp_from_filename(last_uploaded_dbe_mean_graph)
 
     st.html(
-        f"""
+        """
         <div class = "box">
-            <div style="background-color: black; text-align: justify; border: 2px solid #ffffff; border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); transition: 0.3s; width: 100%; margin: auto; margin-top: 20px; padding: 20px; color: white;"> 
+            <div style="background-color: black; text-align: justify; border: 2px solid #ffffff; border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); transition: 0.3s; width: 100%; margin: auto; margin-top: 20px; padding: 20px; color: white;">
                 <div class="box-header">Geomagnetic Pertubations</div>
                  <p style="color:white; font-size:16px;">The plots provided show two graphs that refer to the magnetic field components in a geographic coordinate system. The ground stations are represented by the yellow and red dots on the maps.</p>
 

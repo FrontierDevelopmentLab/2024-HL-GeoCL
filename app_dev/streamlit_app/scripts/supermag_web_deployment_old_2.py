@@ -9,7 +9,6 @@ Last Modified: July 30th, 2024
 """
 
 import os
-import tkinter
 from io import BytesIO
 
 import cartopy.crs as ccrs
@@ -17,10 +16,9 @@ import GPy
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from google.cloud import storage
-from mycolorpy import colorlist as mcp
 from sec import T_df, get_mesh
-from supermag_api import *
 
 
 def supermag_setup():
@@ -42,13 +40,12 @@ def supermag_setup():
     return storage_client
 
 
-# Function to download CSV from Google Cloud Storage
 def download_csv_from_gcs(storage_client, bucket_name, source_blob_name):
     """Downloads a blob from the bucket and returns it as a pandas DataFrame."""
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(source_blob_name)
     content = blob.download_as_bytes()
-    df = pd.read_csv(BytesIO(content))
+    df = pd.read_csv(BytesIO(content), header=None)
     return df
 
 

@@ -2,26 +2,18 @@
 
 import json
 import os
+import time
 import warnings
 from os import path
 
 import numpy as np
 import pandas as pd
 import torch
+from paths import ace_input_path, mapping_train_files, scaler_dir, supermag_target_paths
 from sklearn.preprocessing import PowerTransformer, StandardScaler
 from torch.utils.data import DataLoader, Dataset
 
 warnings.filterwarnings("ignore")
-import time
-
-from paths import (
-    ace_input_path,
-    mapping_test_file,
-    mapping_train_files,
-    mapping_val_file,
-    scaler_dir,
-    supermag_target_paths,
-)
 
 
 class GeoCLoakDataLoader(Dataset):

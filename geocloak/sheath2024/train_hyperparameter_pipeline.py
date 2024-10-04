@@ -1,5 +1,5 @@
-import json
 import os
+import random
 
 import numpy as np
 import torch
@@ -10,17 +10,10 @@ import yaml
 from dataloader import SHEATHDataLoader
 from evaluation_metric import calculate_individual_metrics, calculate_metrics
 from model import SHEATH_MLP
-from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 
 def seed_everything(seed: int):
-    import os
-    import random
-
-    import numpy as np
-    import torch
-
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)

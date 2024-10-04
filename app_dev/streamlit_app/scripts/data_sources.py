@@ -1,10 +1,3 @@
-import os
-
-# from data_module import fetch_data, prepare_dataframe, save_csv, plot_time_series
-from datetime import datetime
-
-import h5py
-import pandas as pd
 import plotly.graph_objs as go
 import streamlit as st
 from data_module import fetch_data, prepare_dataframe, save_csv
@@ -82,10 +75,10 @@ def get_data():
 
     with col1:
         # Display ACE data for the selected date
-        display_data(buckets["ACE"], measurements["ACE"], "ace_data.csv", f"ACE Data")
+        display_data(buckets["ACE"], measurements["ACE"], "ace_data.csv", "ACE Data")
 
     with col2:
         # Display DSCOVR data for the selected date
         display_data(
-            buckets["DSCOVR"], measurements["DSCOVR"], "dscovr_data.csv", f"DSCOVR Data"
+            buckets["DSCOVR"], measurements["DSCOVR"], "dscovr_data.csv", "DSCOVR Data"
         )

@@ -7,16 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from model import DAGGERStationNet
 from paths import (
     ace_mapping_train_files,
     dscovr_mapping_train_files,
-    mapping_test_file,
     mapping_test_file_ace,
     mapping_test_file_dscovr,
-    mapping_val_file,
     mapping_val_file_ace,
     mapping_val_file_dscovr,
     scaler_dir,
