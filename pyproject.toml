@@ -8,7 +8,7 @@ license = "MIT"
 dependencies = [
     "numpy<2",
     "matplotlib",
-    "pandas",
+    "pandas<3",
     "scipy",
     "sympy",
     "torch<2.3",
@@ -23,7 +23,7 @@ dependencies = [
     "pyproj",
     "tables",
     "astropy",
-    "zarr",
+    "zarr<3",
     "netCDF4",
     "ppigrf",
 ]
@@ -34,6 +34,7 @@ dev = [
     "black[jupyter]",
     "isort",
     "flake8",
+    "pytest",
 ]
 
 [build-system]

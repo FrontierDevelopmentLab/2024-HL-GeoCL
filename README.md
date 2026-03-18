@@ -47,7 +47,7 @@ brew install uv
 ### Create environment and install dependencies
 
 ```bash
-uv venv --python 3.10
+uv venv --python 3.11
 uv sync
 ```
 
