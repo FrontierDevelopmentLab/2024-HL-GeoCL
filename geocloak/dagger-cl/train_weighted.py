@@ -1,13 +1,13 @@
 import os
 import random
 import time
-from test import GeoCLoakDataLoader
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
 import torch.optim as optim
+from dataloader import GeoCLoakDataLoader
 from model import DAGGERStationNet
 from paths import (
     ace_mapping_train_files,

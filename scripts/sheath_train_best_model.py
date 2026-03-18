@@ -19,9 +19,11 @@ warnings.filterwarnings("ignore")
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from test import SHEATHDataLoader  # noqa: E402
-
-from geocloak.models.sheath import SHEATH_MLP, DataProcessor  # noqa: E402
+from geocloak.models.sheath import (  # noqa: E402
+    SHEATH_MLP,
+    DataProcessor,
+    SHEATHDataLoader,
+)
 
 
 def train_test_val_split(directory: str, output_directory: str):

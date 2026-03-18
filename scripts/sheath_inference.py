@@ -16,9 +16,7 @@ from torch.utils.data import DataLoader
 # Add geocloak in the python path
 sys.path.append(os.path.abspath("../"))
 
-from test import SHEATHDataLoader  # noqa: E402
-
-from geocloak.models.sheath import SHEATH_MLP  # noqa: E402
+from geocloak.models.sheath import SHEATH_MLP, SHEATHDataLoader  # noqa: E402
 
 warnings.filterwarnings("ignore")
 
