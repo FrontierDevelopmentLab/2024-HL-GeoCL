@@ -1,1 +1,1 @@
-# Use dipole.py from /scripts/dipole.py
+../scripts/dipole.py
