@@ -2,7 +2,9 @@
 This is main sheath training script for training SHEATH based.
 """
 
+import argparse
 import os
+import random
 import sys
 import warnings
 
@@ -60,12 +62,6 @@ def seed_everything(seed: int):
     seed : int
         Seed value.
     """
-    import os
-    import random
-
-    import numpy as np
-    import torch
-
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
@@ -76,10 +72,9 @@ def seed_everything(seed: int):
     torch.backends.cudnn.benchmark = False
 
 
-def train(config):
+def train(config, data_dir, scaler_dir, output_checkpoint):
     """
-    The Main training function which uses wandb to configuration for
-    hyperparamete tuning.
+    The Main training function.
     """
     seed_everything(40)
 
@@ -87,14 +82,11 @@ def train(config):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Load data
-    directory = "/home/bjha/data/geocloak/formatted_data/sheath_splits"
-    scaler_dir = "/home/bjha/sheath_scalar"
-
     train_dataset = SHEATHDataLoader(
-        directory, "sheath_train_set.csv", scaler_dir, is_train=True
+        data_dir, "sheath_train_set.csv", scaler_dir, is_train=True
     )
     val_dataset = SHEATHDataLoader(
-        directory, "sheath_val_set.csv", scaler_dir, is_train=False
+        data_dir, "sheath_val_set.csv", scaler_dir, is_train=False
     )
 
     train_loader = DataLoader(
@@ -119,10 +111,7 @@ def train(config):
         model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"]
     )
 
-    best_model_state = None
-
     # Training loop
-    # --------------------------------------
     for epoch in range(config["epochs"]):
         model.train()
         running_loss = 0.0
@@ -159,52 +148,56 @@ def train(config):
         all_val_targets = np.concatenate(all_val_targets, axis=0)
         all_val_predictions = np.concatenate(all_val_predictions, axis=0)
 
-        # # Calculate metrics using the saved scaler
-        # train_rmse, train_mae, train_r2 = calculate_metrics(
-        #     all_train_predictions, all_train_targets, scaler_dir
-        # )
-        # val_rmse, val_mae, val_r2 = calculate_metrics(
-        #     all_val_predictions, all_val_targets, scaler_dir
-        # )
-
-        # # Calculate individual metrics for each target feature
-        # # train_individual_metrics = calculate_individual_metrics(all_train_predictions, all_train_targets, scaler_dir)
-        # val_individual_metrics = calculate_individual_metrics(
-        #     all_val_predictions, all_val_targets, scaler_dir
-        # )
-
-        # # Ensure metrics are logged as floats
-        # train_rmse = float(train_rmse)
-        # train_mae = float(train_mae)
-        # train_r2 = float(train_r2)
-        # val_rmse = float(val_rmse)
-        # val_mae = float(val_mae)
-        # val_r2 = float(val_r2)
-
-        # print(
-        #     f'Epoch {epoch + 1}/{config["epochs"]}, Train RMSE: {train_rmse}, Val RMSE: {val_rmse}'
-        # )
-
-        # if val_rmse < best_val_rmse:
-        #     best_val_rmse = val_rmse
-        #     best_model_state = model.state_dict()
-
     best_model_state = model.state_dict()
     # Save the best model checkpoint
     if best_model_state is not None:
-        torch.save(best_model_state, "../models/sheath_best_model_checkpoint_1.pth")
-        print("Best model saved with config to final_sweep.yaml")
+        torch.save(best_model_state, output_checkpoint)
+        print(f"Best model saved to {output_checkpoint}")
 
 
-# This should be false mostly
-train_test_split = False
-if __name__ == "__main__":
-    if train_test_split:
-        train_test_val_split(
-            "/home/bjha/data/geocloak/formatted_data/sheath_trainv2",
-            "/home/bjha/data/geocloak/formatted_data/sheath_splits",
-        )
+def main():
+    parser = argparse.ArgumentParser(description="Train the SHEATH model.")
+    parser.add_argument(
+        "--data-dir",
+        default="/home/bjha/data/geocloak/formatted_data/sheath_splits",
+        help="Directory containing train/val CSV data splits",
+    )
+    parser.add_argument(
+        "--scaler-dir",
+        default="/home/bjha/sheath_scalar",
+        help="Directory for saving/loading scaler JSON files",
+    )
+    parser.add_argument(
+        "--config",
+        default="sheath_best_hyper.yml",
+        help="Path to hyperparameter YAML config",
+    )
+    parser.add_argument(
+        "--output-checkpoint",
+        default="../models/sheath_best_model_checkpoint_1.pth",
+        help="Path to save the trained model checkpoint",
+    )
+    parser.add_argument(
+        "--split",
+        action="store_true",
+        help="Run train/test/val split before training",
+    )
+    parser.add_argument(
+        "--raw-data-dir",
+        default="/home/bjha/data/geocloak/formatted_data/sheath_trainv2",
+        help="Directory with raw CSV files (used with --split)",
+    )
+    args = parser.parse_args()
+
+    if args.split:
+        train_test_val_split(args.raw_data_dir, args.data_dir)
+
     # Load Config file
-    with open("sheath_best_hyper.yml") as f:
+    with open(args.config) as f:
         config = yaml.safe_load(f)
-        train(config)
+
+    train(config, args.data_dir, args.scaler_dir, args.output_checkpoint)
+
+
+if __name__ == "__main__":
+    main()
