@@ -1,14 +1,53 @@
 # 2024-HL-GeoCL
 ## FDL-X Heliolab 2024: Geoeffectiveness Continuous Learning
 
-Currently two modules are included in the src folder, namely DAGGER and SHEATH. 
+Currently two modules are included in the geocloak folder, namely DAGGER and SHEATH.
 
-Current implementation uses Python 3.10.0. To run the code, you need to install the required packages. You can do this by running the following command in the terminal:
+## Setup
+
+This project requires Python 3.10+ (< 3.13) and uses [uv](https://docs.astral.sh/uv/) for dependency management.
+
+### Install uv
+
+If you don't have uv installed:
 ```bash
-pip install -r requirements.txt
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or via Homebrew
+brew install uv
 ```
 
-In terms of contributing to the project, the project makes use of black for code formatting and isort for import sorting. Further PEP8 standards are enforced using flake8. To ensure that your code is formatted correctly, you can run the following commands in the terminal:
+### Create environment and install dependencies
+
+```bash
+uv venv --python 3.10
+uv sync
+```
+
+This creates a `.venv/` virtual environment and installs all dependencies from `pyproject.toml`.
+
+### Activate the environment
+
+```bash
+source .venv/bin/activate
+```
+
+Or run commands directly without activating:
+```bash
+uv run python your_script.py
+```
+
+### Install dev tools (optional)
+
+To also install code formatting and linting tools (black, isort, flake8):
+```bash
+uv sync --extra dev
+```
+
+## Contributing
+
+The project uses black for code formatting, isort for import sorting, and flake8 for linting. Run these before submitting a pull request:
 ```bash
 black .
 isort --profile black .
