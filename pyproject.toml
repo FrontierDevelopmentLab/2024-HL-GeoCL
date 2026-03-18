@@ -1,7 +1,7 @@
 [project]
 name = "geocloak"
 version = "0.1.0"
-description = "GEO-CLoak: Geoeffectiveness Continual Learning"
+description = "GEO-CLoak: Geoeffectiveness Continual Learning or Active Knowledge"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = "MIT"

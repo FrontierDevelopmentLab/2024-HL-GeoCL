@@ -89,4 +89,9 @@ Please fix any errors that are raised by these commands before submitting a pull
 1. Train SHEATH with NRT SDOML (Embeddings, AR&CH Features), using OMNI as targets.
 
 ## Acknowledgements
-This work is the research product of FDL-X Heliolab a public/private partnership between NASA, Trillium Technologies Inc (trillium.tech) and commercial AI partners Google Cloud, NVIDIA and Pasteur Labs & ISI, developing open science for all Humankind. 
+This work is the research product of FDL-X Heliolab, a public/private partnership between NASA, Trillium Technologies Inc., and commercial AI partners Google Cloud, NVIDIA, and Pasteur Labs & ISI.
+
+FDL-X Heliolab and its outputs have been designed, managed and delivered by Trillium Technologies Inc (trillium.tech). Trillium is a research and development company with a focus on intelligent systems and collaborative communities for planetary stewardship, space exploration, and human health. We express our gratitude to Google Cloud and NVIDIA for providing
+extensive computational resources.
+
+The material is based upon work supported by NASA under award No(s) 80NSSC24M0122. Any opinions, findings, conclusions, or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Aeronautics and Space Administration.
