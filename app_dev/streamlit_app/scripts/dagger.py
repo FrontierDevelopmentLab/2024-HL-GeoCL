@@ -93,8 +93,7 @@ def get_dagger():
     """
     formatted_timestamp = extract_timestamp_from_filename(last_uploaded_dbe_mean_graph)
 
-    st.html(
-        """
+    st.html("""
         <div class = "box">
             <div style="background-color: black; text-align: justify; border: 2px solid #ffffff; border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); transition: 0.3s; width: 100%; margin: auto; margin-top: 20px; padding: 20px; color: white;">
                 <div class="box-header">Geomagnetic Pertubations</div>
@@ -107,8 +106,7 @@ def get_dagger():
                 <p style="color:white; font-size:16px;">The yellow and red dots on the maps represent the ground stations or observational points where these measurements were taken. The color gradient on the map provides a visual representation of the magnetic field strength in nanoteslas (nT) for the respective components.</p>
 
             </div>
-        </div>"""
-    )
+        </div>""")
 
     # Create a 2x2 grid for images
     col1, col2 = st.columns(2)

@@ -1,4 +1,4 @@
-""" Module for Spherical Harmonics
+"""Module for Spherical Harmonics
 
 Author: Opal Issan (PhD student @ UCSD). contact: oissan@ucsd.edu
 Last modified: July 21st, 2024

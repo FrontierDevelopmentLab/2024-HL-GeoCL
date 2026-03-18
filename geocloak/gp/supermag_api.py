@@ -353,7 +353,7 @@ def SuperMAGGetInventory(logon, start, extent):
     urlstr = sm_coreurl("inventory.php", logon, start, extent)
 
     # get the string array of stations
-    (success, stations) = sm_GetUrl(urlstr, "raw")
+    success, stations = sm_GetUrl(urlstr, "raw")
 
     # if the inventory is valid extract the stations to an array
     # if an error occurs set the the ERROR keyword to be the error string
@@ -380,7 +380,7 @@ def SuperMAGGetIndices(logon, start, extent, flagstring="", **kwargs):
     urlstr += indices
 
     # get the string array of JSON data
-    (status, data_list) = sm_GetUrl(urlstr, "json")
+    status, data_list = sm_GetUrl(urlstr, "json")
 
     # default is to return a dataframe, but can also return an array
     if (kwargs.get("FORMAT", "none")).lower() == "list":
@@ -408,7 +408,7 @@ def SuperMAGGetData(logon, start, extent, flagstring, station, **kwargs):
     urlstr += indices
     urlstr += "&station=" + station.upper()
 
-    (status, data_list) = sm_GetUrl(urlstr, "json")
+    status, data_list = sm_GetUrl(urlstr, "json")
 
     # default is to return a dataframe, but can also return an array
     if (kwargs.get("FORMAT", "none")).lower() == "list":
@@ -437,12 +437,12 @@ def sm_microtest(choice, userid):
     start = [2019, 11, 15, 10, 40, 00]  # alt: start='2019-11-15T10:40'
 
     if choice == 1 or choice == 4:
-        (status, stations) = SuperMAGGetInventory(userid, start, 3600)
+        status, stations = SuperMAGGetInventory(userid, start, 3600)
         print(status)
         print(stations)
 
     if choice == 2 or choice == 4:
-        (status, data) = SuperMAGGetData(
+        status, data = SuperMAGGetData(
             userid, start, 3600, "all,delta=start,baseline=yearly", "HBK"
         )
         print(status)
@@ -465,7 +465,7 @@ def sm_microtest(choice, userid):
         plt.show()
 
     if choice == 3 or choice == 4:
-        (status, idxdata) = SuperMAGGetIndices(
+        status, idxdata = SuperMAGGetIndices(
             userid, start, 3600, "swiall,density,darkall,regall,smes"
         )
         # print(status)
@@ -486,30 +486,28 @@ def supermag_testing(userid):
 
     start = [2019, 11, 15, 10, 40, 00]  # alt: start='2019-11-15T10:40'
 
-    (status, stations) = SuperMAGGetInventory(userid, start, 3600)
+    status, stations = SuperMAGGetInventory(userid, start, 3600)
 
     # DATA fetches
     # BARE CALL, dataframe returned
-    (status, mydata1a) = SuperMAGGetData(userid, start, 3600, "", "HBK")
+    status, mydata1a = SuperMAGGetData(userid, start, 3600, "", "HBK")
     mydata1a  # is 1440 rows x 6 columns dataframe
     mydata1a.keys()  # Index(['tval', 'ext', 'iaga', 'N', 'E', 'Z'], dtype='object')
 
     # CALL with ALLINDICES, dataframe returned
-    (status, mydata1a) = SuperMAGGetData(userid, start, 3600, "all", "HBK")
+    status, mydata1a = SuperMAGGetData(userid, start, 3600, "all", "HBK")
     mydata1a  # is 1440 rows x 12 columns dataframe
     mydata1a.keys()  # Index(['tval', 'ext', 'iaga', 'glon', 'glat', 'mlt', 'mcolat', 'decl', 'sza', 'N', 'E', 'Z'], dtype='object')
 
     # BARE CALL, list returned
-    (status, mydata1b) = SuperMAGGetData(userid, start, 3600, "", "HBK", FORMAT="list")
+    status, mydata1b = SuperMAGGetData(userid, start, 3600, "", "HBK", FORMAT="list")
     len(mydata1b)  # is 1440 rows of dicts (key-value pairs)
     mydata1b[
         0:1
     ]  # {'tval': 1572726240.0, 'ext': 60.0, 'iaga': 'DOB', 'N': {'nez': -3.942651, 'geo': -5.964826}, 'E': {'nez': 4.492887, 'geo': 0.389075}, 'Z': {'nez': 7.608168, 'geo': 7.608168}}
 
     # CALL with ALLINDICES, list returned
-    (status, mydata1b) = SuperMAGGetData(
-        userid, start, 3600, "all", "HBK", FORMAT="list"
-    )
+    status, mydata1b = SuperMAGGetData(userid, start, 3600, "all", "HBK", FORMAT="list")
     mydata1b  # is 1440 rows of dicts (key-value pairs)
     mydata1b[
         0:1
@@ -517,10 +515,10 @@ def supermag_testing(userid):
 
     ####################
     # INDICES fetches
-    (status, idxdata) = SuperMAGGetIndices(userid, start, 3600)
+    status, idxdata = SuperMAGGetIndices(userid, start, 3600)
     idxdata  # empty!
 
-    (status, idxdata) = SuperMAGGetIndices(userid, start, 3600, "all,swiall,imfall")
+    status, idxdata = SuperMAGGetIndices(userid, start, 3600, "all,swiall,imfall")
     idxdata  # 1440 rows x 77 columns dataframe
     idxdata.keys()  # Index(['tval', 'SME', 'SML', 'SMLmlat', 'SMLmlt', 'SMLglat', 'SMLglon', 'SMLstid', 'SMU', 'SMUmlat', 'SMUmlt', 'SMUglat', 'SMUglon', 'SMUstid', 'SMEnum', 'SMEs', 'SMLs', 'SMLsmlat', 'SMLsmlt', 'SMLsglat', 'SMLsglon', 'SMLsstid', 'SMUs', 'SMUsmlat', 'SMUsmlt', 'SMUsglat', 'SMUsglon', 'SMUsstid', 'SMEsnum', 'SMEd', 'SMLd', 'SMLdmlat', 'SMLdmlt', 'SMLdglat', 'SMLdglon', 'SMLdstid', 'SMUd', 'SMUdmlat', 'SMUdmlt', 'SMUdglat', 'SMUdglon', 'SMUdstid', 'SMEdnum', 'SMEr', 'SMLr', 'SMLrmlat', 'SMLrmlt', 'SMLrglat', 'SMLrglon', 'SMLrstid', 'SMUr', 'SMUrmlat', 'SMUrmlt', 'SMUrglat', 'SMUrglon', 'SMUrstid', 'SMErnum', 'smr', 'smr00', 'smr06', 'smr12', 'smr18', 'smrnum', 'smrnum00', 'smrnum06', 'smrnum12', 'smrnum18', 'bgse', 'bgsm', 'vgse', 'vgsm', 'clockgse', 'clockgsm', 'density', 'dynpres', 'epsilon', 'newell'], dtype='object')
     #
@@ -561,7 +559,7 @@ def supermag_testing(userid):
     vgse_xyz = [(mydat["X"], mydat["Y"], mydat["Z"]) for mydat in vgse]  # grab all 3
 
     # We also offer a list format, for users who prefer to work in python lists
-    (status, mydata2c) = SuperMAGGetIndices(
+    status, mydata2c = SuperMAGGetIndices(
         userid, start, 3600, "all,swiall,imfall", FORMAT="list"
     )
     len(mydata2c)  # is 1440 rows of dicts (key-value pairs)
