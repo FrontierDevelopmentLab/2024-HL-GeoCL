@@ -31,7 +31,7 @@ models/                      Trained model checkpoints and scaler files
 
 ## Setup
 
-This project requires Python 3.10+ (< 3.13) and uses [uv](https://docs.astral.sh/uv/) for dependency management.
+This project requires Python 3.11+ (< 3.13) and uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
 ### Install uv
 
