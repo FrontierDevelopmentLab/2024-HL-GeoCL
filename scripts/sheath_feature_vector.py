@@ -61,11 +61,14 @@ def sdoyear(year):
 
     filepath = os.path.join(_outdir, f"sdo_prep_{year}.csv")
     current_pro = current_process()._identity[0]
-    with open(filepath, "w") as csvfile, tq.tqdm(
-        total=timeindex.shape[0],
-        desc=f"{year}",
-        position=current_pro,
-    ) as pbar:
+    with (
+        open(filepath, "w") as csvfile,
+        tq.tqdm(
+            total=timeindex.shape[0],
+            desc=f"{year}",
+            position=current_pro,
+        ) as pbar,
+    ):
         for i, times in enumerate(timeindex.index):
             pbar.update()
             imagedict = {}

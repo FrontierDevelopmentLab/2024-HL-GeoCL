@@ -1,14 +1,14 @@
 [project]
 name = "geocloak"
 version = "0.1.0"
-description = "GEO-CLoak: Geoeffectiveness Continual Learning"
+description = "GEO-CLoak: Geoeffectiveness Continual Learning or Active Knowledge"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = "MIT"
 dependencies = [
     "numpy<2",
     "matplotlib",
-    "pandas",
+    "pandas<3",
     "scipy",
     "sympy",
     "torch<2.3",
@@ -23,7 +23,7 @@ dependencies = [
     "pyproj",
     "tables",
     "astropy",
-    "zarr",
+    "zarr<3",
     "netCDF4",
     "ppigrf",
 ]
@@ -34,6 +34,7 @@ dev = [
     "black[jupyter]",
     "isort",
     "flake8",
+    "pytest",
 ]
 
 [build-system]

@@ -1,7 +1,33 @@
 # 2024-HL-GeoCL
 ## FDL-X Heliolab 2024: Geoeffectiveness Continuous Learning
 
-Currently two modules are included in the geocloak folder, namely DAGGER and SHEATH.
+GEO-CLoak (GEOeffectiveness Continual Learning Or Active Knowledge) is an end-to-end ML pipeline for forecasting geomagnetic perturbations. It combines two models to produce predictions at different lead times:
+
+- **SHEATH**: Predicts solar wind parameters (speed, density, temperature, magnetic field) from SDO solar imagery features. Uses a 3-layer MLP. Provides multi-day lead time, lower-fidelity forecasts.
+- **DAGGER-CL**: Predicts ground-level geomagnetic field perturbations (dBe, dBn, dBz) at ~175 SuperMAG magnetometer stations. Uses a GRU encoder with continual learning (Elastic Weight Consolidation) to adapt to new data without forgetting. Provides ~30-minute lead time, higher-fidelity forecasts.
+
+The pipeline flows: **Sun (SDO imagery) → SHEATH → solar wind forecast → DAGGER-CL (with real-time L1 data) → station predictions → global maps → web app**
+
+## Project Structure
+
+```
+geocloak/              Main Python package
+  sheath2024/          SHEATH model, dataloader, training
+  dagger-cl/           DAGGER-CL model, dataloaders, inference, continual learning
+  gp/                  Gaussian process & spherical harmonic interpolation
+  preprocess/          SDO image preprocessing (coronal hole/active region segmentation)
+  datautilus/           Real-time data download from NOAA SWPC
+
+public/                Standalone scripts for public use
+  inference_sheath.py  Run SHEATH inference from the command line
+  example_data/        Sample input files
+
+feature_vector_extraction/   Feature engineering pipeline (InfluxDB → 26 SHEATH features)
+updating_nrt_data/           Near-real-time data collection (ACE, DSCOVR, geomagnetic indices)
+app_dev/                     Streamlit web application
+scripts/                     Training scripts, utilities, and Jupyter notebooks
+models/                      Trained model checkpoints and scaler files
+```
 
 ## Setup
 
@@ -21,7 +47,7 @@ brew install uv
 ### Create environment and install dependencies
 
 ```bash
-uv venv --python 3.10
+uv venv --python 3.11
 uv sync
 ```
 
@@ -63,4 +89,9 @@ Please fix any errors that are raised by these commands before submitting a pull
 1. Train SHEATH with NRT SDOML (Embeddings, AR&CH Features), using OMNI as targets.
 
 ## Acknowledgements
-This work is the research product of FDL-X Heliolab a public/private partnership between NASA, Trillium Technologies Inc (trillium.tech) and commercial AI partners Google Cloud, NVIDIA and Pasteur Labs & ISI, developing open science for all Humankind. 
+This work is the research product of FDL-X Heliolab, a public/private partnership between NASA, Trillium Technologies Inc., and commercial AI partners Google Cloud, NVIDIA, and Pasteur Labs & ISI.
+
+FDL-X Heliolab and its outputs have been designed, managed and delivered by Trillium Technologies Inc (trillium.tech). Trillium is a research and development company with a focus on intelligent systems and collaborative communities for planetary stewardship, space exploration, and human health. We express our gratitude to Google Cloud and NVIDIA for providing
+extensive computational resources.
+
+The material is based upon work supported by NASA under award No(s) 80NSSC24M0122. Any opinions, findings, conclusions, or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Aeronautics and Space Administration.

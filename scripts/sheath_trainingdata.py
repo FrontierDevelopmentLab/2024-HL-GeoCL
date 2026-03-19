@@ -76,9 +76,10 @@ def sheath_training(year):
     fieldnames = ["Time", "TimeSDO"] + list(sdodf.columns) + list(omnidf.columns)
 
     # Strat back tracking using specified method and writing data
-    with open(filepath, "w") as csvfile, tq.tqdm(
-        total=omnidf.shape[0], position=current_pro, desc=f"{year}"
-    ) as pbar:
+    with (
+        open(filepath, "w") as csvfile,
+        tq.tqdm(total=omnidf.shape[0], position=current_pro, desc=f"{year}") as pbar,
+    ):
         csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csvwriter.writeheader()
         for ii, _time in enumerate(omnidf.index):
